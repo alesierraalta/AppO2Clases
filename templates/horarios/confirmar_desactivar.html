@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar {% if horario.activo %}Desactivación{% else %}Activación{% endif %} de Horario - Sistema de Gestión de Clases{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-{% if horario.activo %}warning{% else %}success{% endif %}">
+                    <h5 class="card-title text-white mb-0">
+                        <i class="fas fa-{% if horario.activo %}power-off{% else %}check-circle{% endif %} me-2"></i>
+                        Confirmar {% if horario.activo %}Desactivación{% else %}Activación{% endif %} de Horario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h4 class="mb-3">{{ horario.nombre }}</h4>
+                    <p class="mb-4">
+                        <strong>Día:</strong> {{ horario.nombre_dia }} |
+                        <strong>Hora:</strong> {{ horario.hora_inicio.strftime('%H:%M') }} |
+                        <strong>Profesor:</strong> {{ horario.profesor.nombre }} {{ horario.profesor.apellido }}
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Información importante:</strong>
+                        </p>
+                        <ul class="mb-0 mt-2">
+                            {% if horario.activo %}
+                                <li>El horario está actualmente <strong>activado</strong>.</li>
+                                <li>Al desactivarlo, dejará de aparecer en la lista de clases pendientes y clases no registradas.</li>
+                                <li>El historial de clases realizadas se mantendrá intacto.</li>
+                                <li>Puedes volver a activar el horario en cualquier momento.</li>
+                            {% else %}
+                                <li>El horario está actualmente <strong>desactivado</strong>.</li>
+                                <li>Al activarlo, volverá a aparecer en la lista de clases pendientes y clases no registradas.</li>
+                                <li>El historial de clases realizadas no ha sido afectado.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <form action="{{ url_for('desactivar_horario', id=horario.id) }}" method="POST" class="mt-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        {% if horario.activo %}
+                            <input type="hidden" name="opcion" value="desactivar">
+                            <p>¿Estás seguro que deseas <strong>desactivar</strong> este horario?</p>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('listar_horarios') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                                <button type="submit" class="btn btn-warning">Desactivar Horario</button>
+                            </div>
+                        {% else %}
+                            <input type="hidden" name="opcion" value="activar">
+                            <p>¿Estás seguro que deseas <strong>activar</strong> este horario?</p>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('listar_horarios') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                                <button type="submit" class="btn btn-success">Activar Horario</button>
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

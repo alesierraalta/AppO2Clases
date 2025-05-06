@@ -1,6 +1,7 @@
 from app import db, HorarioClase
 import sqlite3
 import os
+from app import app
 
 def add_tipo_clase_column():
     """
@@ -75,5 +76,97 @@ def add_tipo_clase_column():
     conn.close()
     print("Database update completed.")
 
+def update_database():
+    """
+    Actualiza el esquema de la base de datos para incorporar nuevas características.
+    - Agrega campo 'activo' a la tabla horario_clase si no existe
+    - Crea índices para optimizar consultas
+    """
+    print("="*50)
+    print("Actualizando esquema de base de datos...")
+    print("="*50)
+    
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db')
+    print(f"Base de datos: {db_path}")
+    
+    # Verificar si el archivo existe
+    if not os.path.exists(db_path):
+        print("Error: No se encontró la base de datos. Asegúrate de que el archivo existe.")
+        return False
+    
+    # Conectar directamente con sqlite3 para operaciones de bajo nivel
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # 1. Verificar si existe la columna 'activo' en horario_clase
+        cursor.execute("PRAGMA table_info(horario_clase)")
+        columnas = cursor.fetchall()
+        
+        tiene_activo = any(col[1] == 'activo' for col in columnas)
+        
+        if not tiene_activo:
+            print("Agregando columna 'activo' a la tabla horario_clase...")
+            try:
+                cursor.execute("ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1")
+                conn.commit()
+                print("✅ Columna 'activo' agregada con éxito")
+            except sqlite3.Error as e:
+                print(f"❌ Error al agregar columna 'activo': {str(e)}")
+                conn.rollback()
+        else:
+            print("✅ La columna 'activo' ya existe en la tabla horario_clase")
+        
+        # 2. Crear índice para mejorar rendimiento
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_horario_activo ON horario_clase (activo)")
+            conn.commit()
+            print("✅ Índice idx_horario_activo creado o verificado")
+        except sqlite3.Error as e:
+            print(f"❌ Error al crear índice en 'activo': {str(e)}")
+            conn.rollback()
+        
+        # 3. Asegurarse de que todos los horarios tengan un valor para 'activo'
+        if tiene_activo:
+            try:
+                cursor.execute("UPDATE horario_clase SET activo = 1 WHERE activo IS NULL")
+                conn.commit()
+                filas_actualizadas = cursor.rowcount
+                if filas_actualizadas > 0:
+                    print(f"✅ Se actualizaron {filas_actualizadas} horarios sin valor en 'activo'")
+                else:
+                    print("✅ Todos los horarios tienen valor en 'activo'")
+            except sqlite3.Error as e:
+                print(f"❌ Error al actualizar valores nulos en 'activo': {str(e)}")
+                conn.rollback()
+        
+        # 4. Mostrar estadísticas
+        cursor.execute("SELECT COUNT(*) FROM horario_clase")
+        total_horarios = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM horario_clase WHERE activo = 1")
+        horarios_activos = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM horario_clase WHERE activo = 0")
+        horarios_inactivos = cursor.fetchone()[0]
+        
+        print("\nEstadísticas de la base de datos:")
+        print(f"Total de horarios: {total_horarios}")
+        print(f"Horarios activos: {horarios_activos}")
+        print(f"Horarios inactivos: {horarios_inactivos}")
+        
+        cursor.close()
+        conn.close()
+        
+        print("\n✅ Actualización de base de datos completada con éxito")
+        print("="*50)
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error al actualizar la base de datos: {str(e)}")
+        print("="*50)
+        return False
+
 if __name__ == "__main__":
-    add_tipo_clase_column() 
+    with app.app_context():
+        update_database() 

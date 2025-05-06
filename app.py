@@ -233,6 +233,7 @@ class HorarioClase(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     capacidad_maxima = db.Column(db.Integer, default=20)  # Capacidad máxima de alumnos
     tipo_clase = db.Column(db.String(20), default='OTRO')  # Tipo de clase: MOVE, RIDE, BOX o OTRO
+    activo = db.Column(db.Boolean, default=True)  # Indica si el horario está activo
     clases_realizadas = db.relationship('ClaseRealizada', backref='horario', lazy=True)
     
     def __repr__(self):
@@ -334,8 +335,8 @@ def index():
         hoy = date.today()
         dia_semana = hoy.weekday()  # 0 for Monday, 6 for Sunday
         
-        # Get classes scheduled for today
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).all()
+        # Get classes scheduled for today - ONLY ACTIVE
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).all()
         
         # Check which ones already have attendance recorded
         clases_registradas = {cr.horario_id: cr for cr in ClaseRealizada.query.filter_by(fecha=hoy).all()}
@@ -351,11 +352,11 @@ def index():
 @app.route('/simple')
 def index_simple():
     try:
-        # Obtener clases programadas para hoy
+        # Obtener clases programadas para hoy - SOLO ACTIVAS
         hoy = datetime.now().date()
         dia_semana = hoy.weekday()  # 0 es lunes, 6 es domingo
         
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
         
         return render_template('index_simple.html', 
                               horarios_hoy=horarios_hoy, 
@@ -447,6 +448,7 @@ def eliminar_varios_profesores():
 # Rutas para Horarios de Clases
 @app.route('/horarios')
 def listar_horarios():
+    # Mostrar todos los horarios pero indicando su estado (activo/inactivo)
     horarios = HorarioClase.query.order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
     return render_template('horarios/lista.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
 
@@ -631,6 +633,43 @@ def eliminar_varios_horarios():
     
     return redirect(url_for('listar_horarios'))
 
+@app.route('/horarios/desactivar/<int:id>', methods=['GET', 'POST'])
+def desactivar_horario(id):
+    """
+    Permite activar o desactivar un horario sin eliminarlo.
+    Un horario desactivado no aparecerá en la lista de clases pendientes 
+    ni en las clases no registradas, pero seguirá visible en la lista de horarios.
+    """
+    horario = HorarioClase.query.get_or_404(id)
+    
+    # Si es una petición POST, proceder con la activación/desactivación
+    if request.method == 'POST':
+        opcion = request.form.get('opcion')
+        
+        if opcion == 'desactivar':
+            # Desactivar el horario
+            horario.activo = False
+            db.session.commit()
+            flash(f'Horario "{horario.nombre}" desactivado con éxito. Ya no aparecerá en la lista de clases pendientes.', 'success')
+        elif opcion == 'activar':
+            # Activar el horario
+            horario.activo = True
+            db.session.commit()
+            flash(f'Horario "{horario.nombre}" activado con éxito. Ahora aparecerá en la lista de clases pendientes.', 'success')
+        else:
+            flash('Operación cancelada', 'info')
+            
+        return redirect(url_for('listar_horarios'))
+    
+    # Para solicitudes GET, mostrar la confirmación
+    estado_actual = "activado" if horario.activo else "desactivado"
+    accion = "desactivar" if horario.activo else "activar"
+    
+    return render_template('horarios/confirmar_desactivar.html', 
+                          horario=horario,
+                          estado_actual=estado_actual,
+                          accion=accion)
+
 # Rutas para Control de Asistencia
 @app.route('/asistencia')
 def control_asistencia():
@@ -640,8 +679,8 @@ def control_asistencia():
         # En Python, weekday() devuelve 0 (lunes) a 6 (domingo)
         dia_semana = hoy.weekday()
         
-        # Horarios programados para hoy
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        # Horarios programados para hoy - SOLO ACTIVOS
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
         
         # Clases ya registradas hoy
         clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -923,8 +962,9 @@ def clases_no_registradas():
     
     # 1. Obtener todos los horarios activos utilizando una consulta más completa y directa
     sql_horarios = """
-        SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion 
+        SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, h.activo 
         FROM horario_clase h 
+        WHERE h.activo = 1
         ORDER BY h.nombre
     """
     
@@ -989,7 +1029,8 @@ def clases_no_registradas():
             'dia_semana': row.dia_semana,
             'profesor_id': row.profesor_id,
             'duracion': duracion,
-            'hora_fin_str': hora_fin_str
+            'hora_fin_str': hora_fin_str,
+            'activo': bool(row.activo)  # Convertir a booleano
         }
         
         # Verificar si es clase POWER BIKE para depuración
