@@ -323,14 +323,18 @@
                                                                     {% if clase.profesor_suplente %}
                                                                         <span class="badge bg-info">Impartida por suplente</span>
                                                                         <div class="small text-muted mt-1">{{ clase.profesor_suplente.nombre }} {{ clase.profesor_suplente.apellido }}</div>
-                                                                    {% elif clase.ausencia_profesor %}
-                                                                        <span class="badge bg-danger">Clase cancelada</span>
-                                                                        <div class="small text-muted mt-1">{{ clase.motivo_ausencia }}</div>
+                                                                    {% elif clase.ausencia_profesor or (clase.observaciones and 'CLASE CANCELADA' in clase.observaciones) or not clase.hora_llegada_profesor %}
+                                                                        <div class="d-flex flex-column align-items-center">
+                                                                            <span class="badge bg-danger fs-6 mb-1">CLASE CANCELADA</span>
+                                                                            {% if clase.motivo_ausencia %}
+                                                                                <small class="text-danger d-block">{{ clase.motivo_ausencia }}</small>
+                                                                            {% endif %}
+                                                                        </div>
                                                                     {% else %}
                                                                         <span class="badge bg-success">Impartida por titular</span>
                                                                     {% endif %}
                                                                 </td>
-                                                                <td>
+                                                                <td class="align-middle">
                                                                     {% if clase.hora_llegada_str %}
                                                                         {{ clase.hora_llegada_str }}
                                                                     {% elif clase.profesor_suplente %}
@@ -338,7 +342,7 @@
                                                                     {% elif clase.ausencia_profesor %}
                                                                         <span class="text-muted fst-italic">No asistió</span>
                                                                     {% else %}
-                                                                        <span class="text-muted fst-italic">No registrada</span>
+                                                                        <span class="text-danger fw-bold">SIN REGISTRO DE ASISTENCIA</span>
                                                                     {% endif %}
                                                                 </td>
                                                                 <td class="align-middle">
@@ -454,10 +458,15 @@
                                     </td>
                                     <td class="align-middle">
                                         {% if clase.profesor_suplente %}
-                                            <span class="badge bg-info">Suplente</span>
-                                        {% elif clase.ausencia_profesor %}
-                                            <span class="badge bg-danger">Cancelada</span>
-                                            <div class="small text-muted d-block mt-1">{{ clase.motivo_ausencia }}</div>
+                                            <span class="badge bg-info">Impartida por suplente</span>
+                                            <div class="small text-muted mt-1">{{ clase.profesor_suplente.nombre }} {{ clase.profesor_suplente.apellido }}</div>
+                                        {% elif clase.ausencia_profesor or (clase.observaciones and 'CLASE CANCELADA' in clase.observaciones) or not clase.hora_llegada_profesor %}
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-danger fs-6 mb-1">CLASE CANCELADA</span>
+                                                {% if clase.motivo_ausencia %}
+                                                    <small class="text-danger d-block">{{ clase.motivo_ausencia }}</small>
+                                                {% endif %}
+                                            </div>
                                         {% else %}
                                             <span class="badge bg-success">Normal</span>
                                         {% endif %}
@@ -468,9 +477,9 @@
                                         {% elif clase.profesor_suplente %}
                                             <span class="text-muted fst-italic">Suplente</span>
                                         {% elif clase.ausencia_profesor %}
-                                            <span class="text-muted fst-italic">No asistió</span>
+                                            <span class="text-danger fw-bold">SIN REGISTRO DE ASISTENCIA</span>
                                         {% else %}
-                                            <span class="text-muted fst-italic">No registrada</span>
+                                            <span class="text-danger fw-bold">SIN REGISTRO DE ASISTENCIA</span>
                                         {% endif %}
                                     </td>
                                     <td class="align-middle">

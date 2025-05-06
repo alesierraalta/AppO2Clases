@@ -1758,9 +1758,9 @@ def informe_mensual():
         if isinstance(alumnos_count, str):
             alumnos_count = int(alumnos_count) if alumnos_count.isdigit() else 0
         
-        # Check if the class was cancelled based on observations
+        # Check if the class was cancelled based on observations or ausencia_profesor flag
         observaciones = clase.get('observaciones', '').upper()
-        clase_cancelada = any(keyword in observaciones for keyword in [
+        clase_cancelada = clase.get('ausencia_profesor', False) or any(keyword in observaciones for keyword in [
             'CLASE CANCELADA', 
             'CANCELAD', 
             'CANCEL', 
@@ -1770,18 +1770,43 @@ def informe_mensual():
             'NO SE REALIZÓ'
         ])
         
-        # Payment calculation:
-        # - If class was cancelled: 0% pay
-        # - If teacher attended but no students: 50% pay
-        # - Normal class: 100% pay
+        # Add a status attribute to clearly identify canceled classes
         if clase_cancelada:
-            pago_clase = 0
-        elif clase['hora_llegada_profesor'] and alumnos_count == 0:
-            pago_clase = profesor['tarifa_por_clase'] / 2
+            clase['estado'] = "CANCELADA"
+        elif not clase.get('hora_llegada_profesor'):
+            # If there's no arrival time, mark as CANCELED
+            clase['estado'] = "CANCELADA"
+            # Add this class to the list of canceled classes
+            if not clase.get('ausencia_profesor'):
+                clase['ausencia_profesor'] = True
+                # Add an observation if none exists
+                add_note = "ATENCIÓN: No se registró hora de llegada del profesor. Clase CANCELADA."
+                if clase.get('observaciones'):
+                    if "No se registró hora de llegada" not in clase.get('observaciones'):
+                        clase['observaciones'] = add_note + " " + clase.get('observaciones')
+                else:
+                    clase['observaciones'] = add_note
+        elif clase.get('profesor_suplente'):
+            clase['estado'] = "SUPLENCIA"
         else:
-            pago_clase = profesor['tarifa_por_clase']
+            clase['estado'] = "NORMAL"
         
-        # Almacenar el pago individual por clase
+        # Payment calculation:
+        # - If class was cancelled or no arrival time: 0% pay
+        # - If teacher attended but no students: 50% pay
+        # - Normal class with students: 100% pay
+        if clase_cancelada or not clase.get('hora_llegada_profesor'):
+            pago_clase = 0  # No payment for canceled classes or no arrival time
+        else:
+            # Ensure cantidad_alumnos is treated as a number for the comparison
+            alumnos_count = clase['cantidad_alumnos']
+            if isinstance(alumnos_count, str):
+                alumnos_count = int(alumnos_count) if alumnos_count.isdigit() else 0
+                
+            # Teacher showed up (has arrival time) but no students: 50% pay
+            pago_clase = profesor['tarifa_por_clase'] / 2 if alumnos_count == 0 else profesor['tarifa_por_clase']
+        
+        # Store the individual payment per class
         clase['pago_calculado'] = pago_clase
         
         # Añadir al total del profesor

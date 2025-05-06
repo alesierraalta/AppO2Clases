@@ -86,7 +86,12 @@
                     {% if clases_realizadas %}
                     <div class="list-group">
                         {% for clase in clases_realizadas %}
-                        <div class="list-group-item list-group-item-action">
+                        <div class="list-group-item list-group-item-action {% if clase.ausencia_profesor or (clase.observaciones and 'CLASE CANCELADA' in clase.observaciones) or not clase.hora_llegada_profesor %}bg-danger bg-opacity-10 border-danger{% endif %}">
+                            {% if clase.ausencia_profesor or (clase.observaciones and 'CLASE CANCELADA' in clase.observaciones) or not clase.hora_llegada_profesor %}
+                            <div class="alert alert-danger mb-2 p-2">
+                                <h4 class="mb-0 text-center"><i class="fas fa-ban me-2"></i>CLASE CANCELADA<i class="fas fa-ban ms-2"></i></h4>
+                            </div>
+                            {% endif %}
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <div>
                                     <h5 class="mb-1">{{ clase.horario.nombre }} {% if clase.audio_file %}<span class="badge bg-info text-white ms-1"><i class="fas fa-volume-up"></i> Audio</span>{% endif %}</h5>
@@ -97,7 +102,7 @@
                                                 {{ clase.puntualidad() }} (Llegada: {{ clase.hora_llegada_profesor.strftime('%H:%M') }})
                                             </span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Hora de llegada no registrada</span>
+                                            <span class="badge bg-danger">SIN REGISTRO DE ASISTENCIA</span>
                                         {% endif %}
                                     </p>
                                     <p class="mb-1">
