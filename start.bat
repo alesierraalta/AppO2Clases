@@ -18,6 +18,14 @@ if %errorlevel% neq 0 (
     echo Warning: Database check failed. Attempting to start anyway...
 )
 
+echo Updating database schema...
+python update_db.py
+if %errorlevel% neq 0 (
+    echo Warning: Database schema update failed. Some features might not work correctly.
+) else (
+    echo Database schema updated successfully.
+)
+
 set FLASK_APP=app.py
 set FLASK_ENV=development
 

@@ -61,6 +61,14 @@ if %errorlevel% neq 0 (
 )
 echo Database initialized successfully.
 
+echo Updating database schema...
+python update_db.py
+if %errorlevel% neq 0 (
+    echo Warning: Failed to update database schema. Some features might not work correctly.
+) else (
+    echo Database schema updated successfully.
+)
+
 echo Installation complete.
 echo You can now run the application using start.bat.
 

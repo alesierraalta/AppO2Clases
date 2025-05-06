@@ -18,6 +18,14 @@ fi
 echo "Checking database connection..."
 python check_db.py || echo "Warning: Database check failed. Attempting to start anyway..."
 
+echo "Updating database schema..."
+python update_db.py
+if [ $? -ne 0 ]; then
+    echo "Warning: Database schema update failed. Some features might not work correctly."
+else
+    echo "Database schema updated successfully."
+fi
+
 export FLASK_APP=app.py
 export FLASK_ENV=development
 

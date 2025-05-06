@@ -27,6 +27,23 @@ import io
 import base64
 import time as time_module  # Renamed to avoid conflict with datetime.time
 
+# Inicializar la aplicación Flask
+app = Flask(__name__, static_folder='static', template_folder='templates')
+# Configurar Flask para aceptar URLs con o sin barra final
+app.url_map.strict_slashes = False
+app.config['SECRET_KEY'] = 'tu-clave-secreta'
+csrf = CSRFProtect(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+
+# Inicializar la base de datos
+db = SQLAlchemy(app)
+
+# Importar modelos después de inicializar db y app
+from models import Profesor, HorarioClase, ClaseRealizada
+
 # Importar el blueprint de API
 from api_routes import api
 
@@ -47,27 +64,28 @@ ALLOWED_EXTENSIONS_AUDIO = {'mp3', 'wav', 'ogg', 'webm', 'm4a'}
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-# Inicializar la aplicación Flask
-app = Flask(__name__, static_folder='static', template_folder='templates')
-# Configurar Flask para aceptar URLs con o sin barra final
-app.url_map.strict_slashes = False
-app.config['SECRET_KEY'] = 'tu-clave-secreta'
-csrf = CSRFProtect(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
-
-# Configuración para notificaciones WhatsApp
-app.config['NOTIFICATION_PHONE_NUMBER'] = os.environ.get('NOTIFICATION_PHONE_NUMBER')
-
 # Añade esto después de crear tu aplicación Flask en app.py
 # Nota: SOLO PARA DESARROLLO, no usar en producción
 app.config['WTF_CSRF_ENABLED'] = False
 
+# Configuración para notificaciones WhatsApp
+app.config['NOTIFICATION_PHONE_NUMBER'] = os.environ.get('NOTIFICATION_PHONE_NUMBER')
+
 # Configuración para PyWhatKit
 app.config['WHATSAPP_NUMBER'] = os.environ.get('WHATSAPP_NUMBER')
 app.config['WHATSAPP_MESSAGE'] = os.environ.get('WHATSAPP_MESSAGE')
+
+# Exempt certain routes from CSRF
+csrf.exempt('/import/asistencia')
+csrf.exempt('/import/clases')
+csrf.exempt('/import/horarios')
+csrf.exempt('/import/profesores')
+# Añadir esta línea para eximir la ruta de carga de audio
+csrf.exempt('/asistencia/upload_audio/<int:horario_id>')
+
+# Create database tables if they don't exist
+with app.app_context():
+    db.create_all()
 
 # Configurar logging para depuración
 try:
@@ -102,20 +120,6 @@ def divmod_filter(value, arg):
 @app.template_filter('now')
 def now_filter(value=None):
     return datetime.now()
-
-# Inicializar la base de datos
-db = SQLAlchemy(app)
-# Exempt certain routes from CSRF
-csrf.exempt('/import/asistencia')
-csrf.exempt('/import/clases')
-csrf.exempt('/import/horarios')
-csrf.exempt('/import/profesores')
-# Añadir esta línea para eximir la ruta de carga de audio
-csrf.exempt('/asistencia/upload_audio/<int:horario_id>')
-
-# Create database tables if they don't exist
-with app.app_context():
-    db.create_all()
 
 # Función para convertir un valor decimal de Excel a objeto time
 def excel_time_to_time(excel_time):
@@ -186,138 +190,6 @@ def excel_time_to_time(excel_time):
     # Si llegamos aquí, no pudimos convertir el valor
     print(f"Tipo de dato no manejado para hora: {type(excel_time)}, valor: {excel_time}")
     return None
-
-# Modelos
-class Profesor(db.Model):
-    __tablename__ = 'profesor'  # Explicitly define the table name
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)
-    tarifa_por_clase = db.Column(db.Float, nullable=False)
-    telefono = db.Column(db.String(20))
-    email = db.Column(db.String(100))
-    horarios = db.relationship('HorarioClase', backref='profesor', lazy=True)
-    clases_realizadas = db.relationship('ClaseRealizada', backref='profesor', lazy=True)
-    
-    def __repr__(self):
-        return f"{self.nombre} {self.apellido}"
-
-# Días de la semana
-DIAS_SEMANA = [
-    (0, 'Lunes'),
-    (1, 'Martes'),
-    (2, 'Miércoles'),
-    (3, 'Jueves'),
-    (4, 'Viernes'),
-    (5, 'Sábado'),
-    (6, 'Domingo')
-]
-
-# Tipos de clase
-TIPOS_CLASE = [
-    ('MOVE', 'MOVE'),
-    ('RIDE', 'RIDE'),
-    ('BOX', 'BOX'),
-    ('OTRO', 'OTRO')
-]
-
-class HorarioClase(db.Model):
-    # Clase para horarios semanales
-    __tablename__ = 'horario_clase'  # Explicitly define the table name
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    dia_semana = db.Column(db.Integer, nullable=False)  # 0=Lunes, 1=Martes, etc.
-    hora_inicio = db.Column(db.Time, nullable=False)
-    duracion = db.Column(db.Integer, default=60)  # Duración en minutos
-    profesor_id = db.Column(db.Integer, db.ForeignKey('profesor.id'), nullable=False)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    capacidad_maxima = db.Column(db.Integer, default=20)  # Capacidad máxima de alumnos
-    tipo_clase = db.Column(db.String(20), default='OTRO')  # Tipo de clase: MOVE, RIDE, BOX o OTRO
-    activo = db.Column(db.Boolean, default=True)  # Indica si el horario está activo
-    clases_realizadas = db.relationship('ClaseRealizada', backref='horario', lazy=True)
-    
-    def __repr__(self):
-        dia = dict(DIAS_SEMANA).get(self.dia_semana)
-        return f"{self.nombre} - {dia} {self.hora_inicio.strftime('%H:%M')}"
-    
-    def nombre_dia(self):
-        return dict(DIAS_SEMANA).get(self.dia_semana)
-        
-    def hora_fin_str(self):
-        """Devuelve la hora de finalización como string"""
-        minutos_totales = self.hora_inicio.hour * 60 + self.hora_inicio.minute + self.duracion
-        horas, minutos = divmod(minutos_totales, 60)
-        return f"{horas:02d}:{minutos:02d}"
-
-class ClaseRealizada(db.Model):
-    """Representa una instancia real de una clase que fue impartida"""
-    __tablename__ = 'clase_realizada'  # Explicitly define the table name
-    id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.Date, nullable=False)
-    horario_id = db.Column(db.Integer, db.ForeignKey('horario_clase.id'), nullable=False)
-    profesor_id = db.Column(db.Integer, db.ForeignKey('profesor.id'), nullable=False)
-    hora_llegada_profesor = db.Column(db.Time, nullable=True)  # Hora real de llegada
-    cantidad_alumnos = db.Column(db.Integer, default=0)
-    observaciones = db.Column(db.Text)
-    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
-    audio_file = db.Column(db.String(255), nullable=True)  # Nombre del archivo de audio
-    
-    def __repr__(self):
-        return f"{self.horario.nombre} - {self.fecha.strftime('%d/%m/%Y')}"
-    
-    def estado(self):
-        if not self.hora_llegada_profesor:
-            return "Pendiente"
-        return "Realizada"
-    
-    def puntualidad(self):
-        if not self.hora_llegada_profesor:
-            return "N/A"
-        
-        # Usar la hora_inicio de la instancia si está disponible
-        hora_inicio_original = self.horario.hora_inicio
-        
-        # Log extensivo para depuración
-        print("="*50)
-        print(f"DEBUG PUNTUALIDAD para clase ID={self.id}, fecha={self.fecha}")
-        print(f"Horario ID={self.horario_id}, Nombre={self.horario.nombre}")
-        print(f"Hora llegada registrada: {self.hora_llegada_profesor}")
-        print(f"Hora programada original en DB: {hora_inicio_original}, tipo: {type(hora_inicio_original)}")
-        
-        # Convertir la hora de inicio usando nuestra función global
-        hora_inicio_referencia = convertir_hora_con_microsegundos(hora_inicio_original)
-        print(f"Hora programada convertida: {hora_inicio_referencia}")
-        
-        # CORRECCIÓN ESPECÍFICA PARA POWER BIKE
-        if "POWER BIKE" in self.horario.nombre:
-            # Para POWER BIKE, sabemos que la hora de inicio es 7:30
-            hora_inicio_referencia = time(hour=7, minute=30)
-            print(f"CORRECCIÓN: Clase POWER BIKE, usando hora fija 7:30 como hora de inicio")
-        
-        if not hora_inicio_referencia:
-            print("ERROR: Sin hora de inicio programada")
-            return "Error: Sin hora de inicio programada"
-        
-        # Calcular diferencia en minutos
-        diferencia_minutos = (
-            datetime.combine(date.min, self.hora_llegada_profesor) - 
-            datetime.combine(date.min, hora_inicio_referencia)
-        ).total_seconds() / 60
-        
-        print(f"Diferencia en minutos: {diferencia_minutos:.2f}")
-        
-        resultado = ""
-        if diferencia_minutos <= 0:
-            resultado = "Puntual"
-        elif diferencia_minutos <= 10:
-            resultado = "Retraso leve"
-        else:
-            resultado = "Retraso significativo"
-        
-        print(f"Resultado puntualidad: {resultado}")
-        print("="*50)
-        
-        return resultado
 
 # Rutas
 @app.route('/test')
