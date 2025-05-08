@@ -643,6 +643,25 @@ def registrar_asistencia(horario_id):
         return redirect(url_for('control_asistencia'))
     
     if request.method == 'POST':
+        # Obtener fecha manual si se proporciona, de lo contrario usar la fecha actual
+        fecha_registro = hoy
+        if request.form.get('fecha_manual'):
+            try:
+                fecha_registro = datetime.strptime(request.form.get('fecha_manual'), '%Y-%m-%d').date()
+            except ValueError:
+                flash('Formato de fecha inválido. Se utilizará la fecha actual.', 'warning')
+        
+        # Verificar si ya existe una clase realizada para este horario en la fecha seleccionada
+        if fecha_registro != hoy:
+            clase_existente = ClaseRealizada.query.filter_by(
+                horario_id=horario_id,
+                fecha=fecha_registro
+            ).first()
+            
+            if clase_existente:
+                flash(f'Ya existe un registro para este horario en la fecha {fecha_registro.strftime("%d/%m/%Y")}', 'warning')
+                return redirect(url_for('control_asistencia'))
+        
         # Obtener el estado de la clase (normal, suplencia, cancelada)
         estado_clase = request.form.get('estado_clase', 'normal')
         
@@ -694,7 +713,7 @@ def registrar_asistencia(horario_id):
                 
             # Crear un nuevo registro
             nueva_clase = ClaseRealizada(
-                fecha=hoy,
+                fecha=fecha_registro,  # Use the selected date instead of today
                 horario_id=horario_id,
                 profesor_id=profesor_id,
                 hora_llegada_profesor=hora_llegada_time,
@@ -729,7 +748,9 @@ def registrar_asistencia(horario_id):
             db.session.add(nueva_clase)
             db.session.commit()
             
-            flash('Registro de asistencia guardado correctamente', 'success')
+            # Mostrar mensaje de éxito con la fecha
+            fecha_str = fecha_registro.strftime('%d/%m/%Y')
+            flash(f'Registro de asistencia para el {fecha_str} guardado correctamente', 'success')
             return redirect(url_for('control_asistencia'))
         except Exception as e:
             db.session.rollback()
@@ -745,22 +766,53 @@ def editar_asistencia(id):
     clase_realizada = ClaseRealizada.query.get_or_404(id)
     
     if request.method == 'POST':
-        hora_llegada = None
-        if request.form['hora_llegada']:
-            hora_llegada = datetime.strptime(request.form['hora_llegada'], '%H:%M').time()
+        # Obtener el estado de la clase del formulario
+        estado_clase = request.form.get('estado_clase', 'normal')
         
-        # Actualizar la fecha de la clase
+        # Inicializar variables
+        hora_llegada = None
+        cantidad_alumnos = 0
+        observaciones = ""
+        profesor_id = clase_realizada.profesor_id  # Default al profesor actual
+        
+        # Actualizar fecha en cualquier caso
         if request.form['fecha']:
             nueva_fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
             clase_realizada.fecha = nueva_fecha
         
-        # Actualizar el profesor si se cambió
-        if 'profesor_id' in request.form and request.form['profesor_id']:
-            clase_realizada.profesor_id = int(request.form['profesor_id'])
+        # Procesar según el tipo de estado seleccionado
+        if estado_clase == 'normal':
+            # Clase normal con profesor regular
+            if request.form.get('hora_llegada'):
+                hora_llegada = datetime.strptime(request.form['hora_llegada'], '%H:%M').time()
+            
+            cantidad_alumnos = int(request.form.get('cantidad_alumnos', 0))
+            observaciones = request.form.get('observaciones', '')
+            profesor_id = request.form.get('profesor_id') or profesor_id
+            
+        elif estado_clase == 'suplencia':
+            # Clase con profesor suplente
+            if request.form.get('hora_llegada_suplente'):
+                hora_llegada = datetime.strptime(request.form['hora_llegada_suplente'], '%H:%M').time()
+            
+            cantidad_alumnos = int(request.form.get('cantidad_alumnos_suplencia', 0))
+            motivo_suplencia = request.form.get('motivo_suplencia', 'otro')
+            profesor_id = request.form.get('profesor_suplente') or profesor_id
+            observaciones = f"SUPLENCIA - Motivo: {motivo_suplencia} - " + request.form.get('observaciones', '')
+            
+        elif estado_clase == 'cancelada':
+            # Clase cancelada
+            hora_llegada = None  # No hay llegada en clases canceladas
+            cantidad_alumnos = 0  # No hay alumnos en clases canceladas
+            motivo_ausencia = request.form.get('motivo_ausencia', 'otro')
+            aviso_alumnos = request.form.get('aviso_alumnos', 'no')
+            observaciones = f"CLASE CANCELADA - Motivo: {motivo_ausencia} - Aviso: {aviso_alumnos} - " + request.form.get('observaciones', '')
         
+        # Actualizar los datos en la base de datos
         clase_realizada.hora_llegada_profesor = hora_llegada
-        clase_realizada.cantidad_alumnos = int(request.form['cantidad_alumnos'])
-        clase_realizada.observaciones = request.form['observaciones']
+        clase_realizada.cantidad_alumnos = cantidad_alumnos
+        clase_realizada.observaciones = observaciones
+        clase_realizada.profesor_id = int(profesor_id) if profesor_id else clase_realizada.profesor_id
         
         db.session.commit()
         flash('Registro de asistencia actualizado con éxito', 'success')
@@ -782,10 +834,40 @@ def editar_asistencia(id):
 
 @app.route('/asistencia/eliminar/<int:id>')
 def eliminar_asistencia(id):
-    clase_realizada = ClaseRealizada.query.get_or_404(id)
-    db.session.delete(clase_realizada)
-    db.session.commit()
-    flash('Registro de asistencia eliminado con éxito', 'success')
+    try:
+        # Use a fresh session to avoid "already attached to session" errors
+        # First try to get the class ID without attaching it to a session
+        clase_id = id
+        
+        # Get audio file path before deletion to delete the file after db operation
+        audio_path = None
+        try:
+            clase = ClaseRealizada.query.filter_by(id=clase_id).first()
+            if clase and clase.audio_file:
+                audio_path = clase.audio_file
+        except Exception as e:
+            app.logger.warning(f"Error retrieving audio file before deletion: {str(e)}")
+        
+        # Use execute() with parameters to avoid SQL injection
+        db.session.execute("DELETE FROM clase_realizada WHERE id = :id", {"id": clase_id})
+        db.session.commit()
+        
+        # If there was an audio file, try to delete it
+        if audio_path:
+            try:
+                full_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'static/uploads'), audio_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+                    app.logger.info(f"Deleted audio file: {full_path}")
+            except Exception as e:
+                app.logger.error(f"Error deleting audio file: {str(e)}")
+        
+        flash('Registro de asistencia eliminado con éxito', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar el registro: {str(e)}', 'danger')
+        app.logger.error(f"Error in eliminar_asistencia: {str(e)}")
+    
     return redirect(url_for('control_asistencia'))
 
 @app.route('/asistencia/historial')
