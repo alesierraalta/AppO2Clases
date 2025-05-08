@@ -179,7 +179,8 @@
                         </thead>
                         <tbody>
                             {% for horario in horarios %}
-                            <tr class="clase-{{ horario.tipo_clase|lower }} {% if not horario.activo %}table-secondary{% endif %}" data-tipo="{{ horario.tipo_clase }}" data-dia="{{ horario.dia_semana }}" data-activo="{{ horario.activo|int }}">
+                            {% set is_active = horario.activo if horario is defined and horario.activo is defined else True %}
+                            <tr class="clase-{{ horario.tipo_clase|lower }} {% if not is_active %}table-secondary{% endif %}" data-tipo="{{ horario.tipo_clase }}" data-dia="{{ horario.dia_semana }}" data-activo="{{ is_active|int }}">
                                 <td class="checkbox-column">
                                     <div class="form-check">
                                         <input class="form-check-input checkbox-horario" type="checkbox" name="horarios_ids[]" value="{{ horario.id }}">
@@ -198,13 +199,13 @@
                                     <span class="badge bg-secondary">OTRO</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ horario.nombre_dia() }}</td>
+                                <td>{{ horario.nombre_dia }}</td>
                                 <td>{{ horario.hora_inicio.strftime('%H:%M') }}</td>
                                 <td class="d-none d-md-table-cell">{{ horario.duracion }} min</td>
                                 <td class="d-none d-lg-table-cell">{{ horario.capacidad_maxima }}</td>
                                 <td class="d-none d-md-table-cell">{{ horario.profesor.nombre }} {{ horario.profesor.apellido }}</td>
                                 <td>
-                                    {% if horario.activo %}
+                                    {% if is_active %}
                                     <span class="badge bg-success">Activo</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Inactivo</span>
@@ -215,7 +216,7 @@
                                         <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        {% if horario.activo %}
+                                        {% if is_active %}
                                         <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-secondary" title="Desactivar horario">
                                             <i class="fas fa-power-off"></i>
                                         </a>
@@ -273,7 +274,7 @@
                                     <div class="p-1 mb-1 border rounded clase-{{ h.tipo_clase|lower }}-bg">
                                         <strong>{{ h.nombre }}</strong><br>
                                         <span class="badge bg-{{ h.tipo_clase|lower }}">{{ h.tipo_clase }}</span><br>
-                                        {{ h.hora_inicio.strftime('%H:%M') }} - {{ h.hora_fin_str() }}<br>
+                                        {{ h.hora_inicio.strftime('%H:%M') }} - {{ h.hora_fin_str }}<br>
                                         <small>{{ h.profesor.nombre }} {{ h.profesor.apellido }}</small>
                                     </div>
                                     {% endif %}
@@ -315,7 +316,7 @@
                                             <h5 class="mb-1">{{ h.nombre }}</h5>
                                             <span class="badge bg-{{ h.tipo_clase|lower }}">{{ h.tipo_clase }}</span>
                                         </div>
-                                        <p class="mb-1">{{ h.hora_inicio.strftime('%H:%M') }} - {{ h.hora_fin_str() }}</p>
+                                        <p class="mb-1">{{ h.hora_inicio.strftime('%H:%M') }} - {{ h.hora_fin_str }}</p>
                                         <small>{{ h.profesor.nombre }} {{ h.profesor.apellido }}</small>
                                     </a>
                                     {% endif %}

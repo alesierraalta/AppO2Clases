@@ -27,6 +27,24 @@ import io
 import base64
 import time as time_module  # Renamed to avoid conflict with datetime.time
 
+# Definir constantes utilizadas en la aplicación
+DIAS_SEMANA = [
+    (0, 'Lunes'),
+    (1, 'Martes'),
+    (2, 'Miércoles'),
+    (3, 'Jueves'),
+    (4, 'Viernes'),
+    (5, 'Sábado'),
+    (6, 'Domingo')
+]
+
+TIPOS_CLASE = [
+    'MOVE',
+    'RIDE',
+    'BOX',
+    'OTRO'
+]
+
 # Inicializar la aplicación Flask
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Configurar Flask para aceptar URLs con o sin barra final
@@ -518,24 +536,34 @@ def desactivar_horario(id):
     if request.method == 'POST':
         opcion = request.form.get('opcion')
         
-        if opcion == 'desactivar':
-            # Desactivar el horario
-            horario.activo = False
-            db.session.commit()
-            flash(f'Horario "{horario.nombre}" desactivado con éxito. Ya no aparecerá en la lista de clases pendientes.', 'success')
-        elif opcion == 'activar':
-            # Activar el horario
-            horario.activo = True
-            db.session.commit()
-            flash(f'Horario "{horario.nombre}" activado con éxito. Ahora aparecerá en la lista de clases pendientes.', 'success')
-        else:
-            flash('Operación cancelada', 'info')
+        try:
+            if opcion == 'desactivar':
+                # Desactivar el horario
+                horario.activo = False
+                db.session.commit()
+                flash(f'Horario "{horario.nombre}" desactivado con éxito. Ya no aparecerá en la lista de clases pendientes.', 'success')
+            elif opcion == 'activar':
+                # Activar el horario
+                horario.activo = True
+                db.session.commit()
+                flash(f'Horario "{horario.nombre}" activado con éxito. Ahora aparecerá en la lista de clases pendientes.', 'success')
+            else:
+                flash('Operación cancelada', 'info')
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error al cambiar estado activo: {str(e)}")
+            flash(f'Error al modificar el horario: La columna "activo" no existe en esta versión de la base de datos. Es necesario actualizar la estructura.', 'danger')
             
         return redirect(url_for('listar_horarios'))
     
     # Para solicitudes GET, mostrar la confirmación
-    estado_actual = "activado" if horario.activo else "desactivado"
-    accion = "desactivar" if horario.activo else "activar"
+    try:
+        estado_actual = "activado" if horario.activo else "desactivado"
+        accion = "desactivar" if horario.activo else "activar"
+    except Exception as e:
+        app.logger.warning(f"Activo column not found: {str(e)}")
+        estado_actual = "activado"  # Default value
+        accion = "desactivar"
     
     return render_template('horarios/confirmar_desactivar.html', 
                           horario=horario,
@@ -551,8 +579,14 @@ def control_asistencia():
         # En Python, weekday() devuelve 0 (lunes) a 6 (domingo)
         dia_semana = hoy.weekday()
         
-        # Horarios programados para hoy - SOLO ACTIVOS
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+        # Horarios programados para hoy - try without 'activo' filter if it fails
+        try:
+            # Try first with activo filter
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+        except Exception as e:
+            # If activo column doesn't exist, ignore it
+            app.logger.warning(f"Activo column not found, fetching all horarios: {str(e)}")
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
         
         # Clases ya registradas hoy
         clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -833,14 +867,24 @@ def clases_no_registradas():
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
     
     # 1. Obtener todos los horarios activos utilizando una consulta más completa y directa
-    sql_horarios = """
-        SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, h.activo 
-        FROM horario_clase h 
-        WHERE h.activo = 1
-        ORDER BY h.nombre
-    """
-    
-    result_horarios = db.session.execute(sql_horarios)
+    try:
+        # Primero intentar la consulta con el filtro activo
+        sql_horarios = """
+            SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, h.activo 
+            FROM horario_clase h 
+            WHERE h.activo = 1
+            ORDER BY h.nombre
+        """
+        result_horarios = db.session.execute(sql_horarios)
+    except Exception as e:
+        # Si falla, es posible que la columna activo no exista, usar consulta sin el filtro
+        app.logger.warning(f"Error al consultar horarios con filtro activo: {str(e)}. Intentando sin filtro.")
+        sql_horarios = """
+            SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, 1 as activo 
+            FROM horario_clase h 
+            ORDER BY h.nombre
+        """
+        result_horarios = db.session.execute(sql_horarios)
     
     horarios_activos = []
     for row in result_horarios:

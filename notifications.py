@@ -116,10 +116,9 @@ def setup_notification_config(app):
     NOTIFICATION_PHONE_NUMBER = app.config.get('NOTIFICATION_PHONE_NUMBER', os.environ.get('NOTIFICATION_PHONE_NUMBER', None))
 
 def check_and_notify_unregistered_classes():
-    """Verificar clases no registradas y enviar notificación"""
-    from app import app, HorarioClase, ClaseRealizada, db, DIAS_SEMANA
+    """Verificar clases que no han sido registradas y enviar notificación"""
+    from app import app, DIAS_SEMANA, HorarioClase, ClaseRealizada, db
     
-    # Usar un contexto de aplicación para trabajar con la base de datos
     with app.app_context():
         try:
             logger.info("Verificando clases no registradas...")
@@ -129,9 +128,18 @@ def check_and_notify_unregistered_classes():
             dia_semana_hoy = hoy.weekday()  # 0 es lunes, 6 es domingo
             
             # Obtener todos los horarios programados para hoy
-            horarios_hoy = HorarioClase.query.filter(
-                HorarioClase.dia_semana == dia_semana_hoy
-            ).all()
+            try:
+                # Primero intentar con el filtro activo
+                horarios_hoy = HorarioClase.query.filter(
+                    HorarioClase.dia_semana == dia_semana_hoy,
+                    HorarioClase.activo == True
+                ).all()
+            except Exception as e:
+                # Si falla, probablemente la columna activo no existe
+                logger.warning(f"Error al filtrar por activo: {str(e)}. Obteniendo todos los horarios.")
+                horarios_hoy = HorarioClase.query.filter(
+                    HorarioClase.dia_semana == dia_semana_hoy
+                ).all()
             
             if not horarios_hoy:
                 # Convertir DIAS_SEMANA a un diccionario para obtener el nombre del día
@@ -152,6 +160,14 @@ def check_and_notify_unregistered_classes():
             clases_pendientes = []
             
             for horario in horarios_hoy:
+                # Ignorar horarios inactivos si la propiedad activo existe
+                try:
+                    if hasattr(horario, 'activo') and not horario.activo:
+                        continue
+                except Exception:
+                    # Si hay error al acceder a activo, asumimos que está activo
+                    pass
+                
                 # Calcular la hora de finalización de la clase
                 hora_fin = calcular_hora_fin(horario.hora_inicio, horario.duracion)
                 

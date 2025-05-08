@@ -21,7 +21,7 @@
                                 <div>
                                     <h5 class="mb-1">{{ horario.nombre }} {% if horario.clase_realizada and horario.clase_realizada.audio_file %}<span class="badge bg-info text-white ms-1"><i class="fas fa-volume-up"></i> Audio</span>{% endif %}</h5>
                                     <p class="mb-1">
-                                        <i class="fas fa-clock me-1"></i> {{ horario.hora_inicio.strftime('%H:%M') }} - {{ horario.hora_fin_str() }}
+                                        <i class="fas fa-clock me-1"></i> {{ horario.hora_inicio.strftime('%H:%M') }} - {{ horario.hora_fin_str }}
                                     </p>
                                     <small>
                                         <i class="fas fa-user me-1"></i> {{ horario.profesor.nombre }} {{ horario.profesor.apellido }}
@@ -98,8 +98,8 @@
                                     <p class="mb-1">
                                         <i class="fas fa-clock me-1"></i> {{ clase.horario.hora_inicio.strftime('%H:%M') }}
                                         {% if clase.hora_llegada_profesor %}
-                                            <span class="badge {% if clase.puntualidad() == 'Puntual' %}bg-success{% elif clase.puntualidad() == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
-                                                {{ clase.puntualidad() }} (Llegada: {{ clase.hora_llegada_profesor.strftime('%H:%M') }})
+                                            <span class="badge {% if clase.puntualidad == 'Puntual' %}bg-success{% elif clase.puntualidad == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ clase.puntualidad }} (Llegada: {{ clase.hora_llegada_profesor.strftime('%H:%M') }})
                                             </span>
                                         {% else %}
                                             <span class="badge bg-danger">SIN REGISTRO DE ASISTENCIA</span>

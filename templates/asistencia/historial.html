@@ -73,8 +73,8 @@
                             <td>
                                 {% if clase.hora_llegada_profesor %}
                                     {{ clase.hora_llegada_profesor.strftime('%H:%M') }}
-                                    <span class="badge {% if clase.puntualidad() == 'Puntual' %}bg-success{% elif clase.puntualidad() == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
-                                        {{ clase.puntualidad() }}
+                                    <span class="badge {% if clase.puntualidad == 'Puntual' %}bg-success{% elif clase.puntualidad == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ clase.puntualidad }}
                                     </span>
                                 {% else %}
                                     <span class="text-muted">No registrado</span>

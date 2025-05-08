@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-body">
                     <h5 class="text-danger">Este horario tiene clases asociadas</h5>
-                    <p>El horario "{{ horario.nombre }}" ({{ horario.nombre_dia() }} {{ horario.hora_inicio.strftime('%H:%M') }}) tiene {{ cantidad_clases }} clase(s) realizada(s) asociada(s).</p>
+                    <p>El horario "{{ horario.nombre }}" ({{ horario.nombre_dia }} {{ horario.hora_inicio.strftime('%H:%M') }}) tiene {{ cantidad_clases }} clase(s) realizada(s) asociada(s).</p>
                     
                     <div class="alert alert-info">
                         <p class="mb-0"><i class="fas fa-info-circle me-2"></i>Seleccione una opción para continuar:</p>
