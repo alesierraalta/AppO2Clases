@@ -34,14 +34,14 @@
                                 {% for horario in horarios %}
                                 <tr>
                                     <td>{{ horario.nombre }}</td>
-                                    <td>{{ horario.hora_inicio.strftime('%H:%M') }} - {{ horario.hora_fin_str() }}</td>
+                                    <td>{{ horario.hora_inicio.strftime('%H:%M') }} - {{ horario.hora_fin_str }}</td>
                                     <td>{{ horario.profesor.nombre }} {{ horario.profesor.apellido }}</td>
                                     <td>
                                         {% if horario.id in clases_registradas and clases_registradas[horario.id] %}
                                             {% set clase = clases_registradas[horario.id] %}
                                             {% if clase.hora_llegada_profesor %}
-                                                <span class="badge {% if clase.puntualidad() == 'Puntual' %}bg-success{% elif clase.puntualidad() == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
-                                                    {{ clase.puntualidad() }} ({{ clase.cantidad_alumnos }} alumnos)
+                                                <span class="badge {% if clase.puntualidad == 'Puntual' %}bg-success{% elif clase.puntualidad == 'Retraso leve' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ clase.puntualidad }} ({{ clase.cantidad_alumnos }} alumnos)
                                                 </span>
                                             {% else %}
                                                 <span class="badge bg-primary">Registrada ({{ clase.cantidad_alumnos }} alumnos)</span>
