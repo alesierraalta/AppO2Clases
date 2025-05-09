@@ -1,10 +1,36 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
+<html lang="es" data-bs-theme="light" class="no-transition">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}O2 Fitness Club - Sistema de Gestión{% endblock %}</title>
+    
+    <!-- Prevenir el flash inicial cargando el tema almacenado antes que cualquier otro contenido -->
+    <script>
+        (function() {
+            // Aplicar tema almacenado sin transiciones
+            document.documentElement.classList.add('no-transition');
+            
+            const storedTheme = localStorage.getItem('theme');
+            if (storedTheme) {
+                document.documentElement.setAttribute('data-bs-theme', storedTheme);
+            } else {
+                // Preferir modo claro por defecto
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+            
+            // Después de un breve retraso, permitir transiciones
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    document.documentElement.classList.remove('no-transition');
+                    document.documentElement.classList.add('theme-transition-ready');
+                }, 300);
+            });
+        })();
+    </script>
+    
     <!-- Debug message -->
     <script>console.log("Base template loaded successfully");</script>
     <!-- Favicon -->
@@ -20,6 +46,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- Audio Controls Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/audio-controls.css') }}">
+    <!-- Theme Transitions -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-transitions.css') }}">
     
     <!-- Global Styles -->
     <style>
@@ -43,19 +71,19 @@
         }
         
         [data-bs-theme="dark"] {
-            --o2-bg-color: #000000;
+            --o2-bg-color: #121212;
             --o2-text-color: #ffffff;
-            --o2-border-color: rgba(255,255,255,0.1);
-            --o2-card-bg: #000000;
+            --o2-border-color: rgba(255,255,255,0.15);
+            --o2-card-bg: #1e1e1e;
             --o2-card-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            --o2-navbar-bg: #000000;
+            --o2-navbar-bg: #1e1e1e;
             --o2-navbar-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            --o2-tabbar-bg: #000000;
-            --o2-hover-bg: #121212;
-            --o2-active-bg: #1a1a1a;
-            --o2-input-bg: #000000;
-            --o2-input-border: #333333;
-            --o2-table-hover-bg: rgba(255,255,255,0.05);
+            --o2-tabbar-bg: #1e1e1e;
+            --o2-hover-bg: #2c2c2c;
+            --o2-active-bg: #333333;
+            --o2-input-bg: #2c2c2c;
+            --o2-input-border: #444444;
+            --o2-table-hover-bg: rgba(255,255,255,0.08);
         }
         
         body {
@@ -417,51 +445,6 @@
                     }
                 });
             }
-            
-            // Gestión del tema claro/oscuro
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const themeText = document.getElementById('themeText');
-            const htmlElement = document.documentElement;
-            
-            // Verificar tema actual al cargar
-            function setThemeUI() {
-                const currentTheme = localStorage.getItem('theme') || 'light';
-                htmlElement.setAttribute('data-bs-theme', currentTheme);
-                
-                if (currentTheme === 'dark') {
-                    themeIcon.classList.add('fa-sun');
-                    themeIcon.classList.remove('fa-moon');
-                    themeText.textContent = 'Cambiar a modo claro';
-                } else {
-                    themeIcon.classList.add('fa-moon');
-                    themeIcon.classList.remove('fa-sun');
-                    themeText.textContent = 'Cambiar a modo oscuro';
-                }
-            }
-            
-            // Establecer UI inicial
-            setThemeUI();
-            
-            // Manejar cambio de tema
-            themeToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const currentTheme = htmlElement.getAttribute('data-bs-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                // Guardar preferencia en localStorage
-                localStorage.setItem('theme', newTheme);
-                
-                // Aplicar nuevo tema
-                htmlElement.setAttribute('data-bs-theme', newTheme);
-                
-                // Actualizar UI
-                setThemeUI();
-                
-                // Cerrar el menú
-                configSubmenu.querySelector('.dropdown-menu').classList.remove('show');
-            });
         });
     </script>
     
@@ -498,5 +481,53 @@
     
     <!-- Scripts personalizados para cada página -->
     {% block scripts %}{% endblock %}
+    
+    <!-- Script de respaldo para el tema -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Comprobar si el botón de tema ya tiene un event listener (desde script.js)
+            const themeToggle = document.getElementById('themeToggle');
+            
+            if (themeToggle && !themeToggle._hasThemeHandler) {
+                console.log('Aplicando manejador de respaldo para el cambio de tema');
+                
+                themeToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    // Guardar preferencia
+                    localStorage.setItem('theme', newTheme);
+                    
+                    // Aplicar nuevo tema
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    
+                    // Actualizar UI
+                    const themeIcon = document.getElementById('themeIcon');
+                    const themeText = document.getElementById('themeText');
+                    
+                    if (themeIcon && themeText) {
+                        if (newTheme === 'dark') {
+                            themeIcon.className = 'fas fa-sun';
+                            themeText.textContent = 'Cambiar a modo claro';
+                        } else {
+                            themeIcon.className = 'fas fa-moon';
+                            themeText.textContent = 'Cambiar a modo oscuro';
+                        }
+                    }
+                    
+                    // Cerrar el menú desplegable
+                    const dropdown = document.querySelector('.config-submenu .dropdown-menu');
+                    if (dropdown && dropdown.classList.contains('show')) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+                
+                // Marcar que ya tiene un handler
+                themeToggle._hasThemeHandler = true;
+            }
+        });
+    </script>
 </body>
 </html>

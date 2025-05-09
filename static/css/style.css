@@ -201,3 +201,27 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   border-radius: 10px;
 }
+
+/* Dark Mode Overrides */
+[data-bs-theme="dark"] .ios-card,
+[data-bs-theme="dark"] .ios-table {
+  background-color: #1e1e1e; 
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-bs-theme="dark"] .navbar.ios-navbar,
+[data-bs-theme="dark"] .ios-tab-bar {
+  background-color: #1e1e1e;
+}
+
+[data-bs-theme="dark"] .ios-table th {
+  background-color: #2c2c2c;
+}
+
+[data-bs-theme="dark"] .ios-tab-item.active {
+  color: #3a9fff; /* Brighter blue for better visibility in dark mode */
+}
+
+[data-bs-theme="dark"] body {
+  background-color: #121212;
+}

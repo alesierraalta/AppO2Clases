@@ -1,0 +1,28 @@
+/* Controla las transiciones entre temas */
+html {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+html, body {
+  transition-property: color, background-color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+.navbar, .ios-tab-bar, .ios-card, .card, .dropdown-menu, 
+.btn, .form-control, .input-group-text, .ios-table th,
+.ios-table {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* Evita la animación inicial al cargar la página */
+.no-transition, .no-transition * {
+  transition: none !important;
+}
+
+/* Añade esta clase al html al cargar la página y quítala después */
+html.theme-transition-ready {
+  transition: color 0.2s ease, background-color 0.2s ease;
+} 
