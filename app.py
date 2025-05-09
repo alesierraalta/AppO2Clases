@@ -4869,3 +4869,93 @@ def convertir_hora_con_microsegundos(valor_hora):
     # Si todas las conversiones fallan
     print(f"ERROR: No se pudo convertir {valor_hora} a objeto time")
     return None
+
+@app.route('/informes/profesor/<int:profesor_id>/metricas')
+def metricas_profesor(profesor_id):
+    """Mostrar métricas detalladas de un profesor específico"""
+    try:
+        # Obtener datos del profesor
+        profesor = Profesor.query.get_or_404(profesor_id)
+        
+        # Obtener todas las clases impartidas por el profesor
+        clases = ClaseRealizada.query.filter_by(profesor_id=profesor_id).order_by(ClaseRealizada.fecha).all()
+        
+        # Inicializar variables para métricas
+        total_clases = len(clases)
+        total_alumnos = sum(clase.cantidad_alumnos for clase in clases if clase.cantidad_alumnos is not None)
+        total_retrasos = 0
+        puntualidad = {'puntual': 0, 'retraso_leve': 0, 'retraso_significativo': 0}
+        datos_por_tipo = {tipo: {'total_clases': 0, 'total_alumnos': 0, 'total_retrasos': 0} for tipo in ['MOVE', 'RIDE', 'BOX', 'OTRO']}
+        
+        # Calcular métricas de puntualidad
+        for clase in clases:
+            if clase.puntualidad == "Retraso leve" or clase.puntualidad == "Retraso significativo":
+                total_retrasos += 1
+                
+            # Contar por tipo de puntualidad
+            if clase.puntualidad == "Puntual":
+                puntualidad['puntual'] += 1
+            elif clase.puntualidad == "Retraso leve":
+                puntualidad['retraso_leve'] += 1
+            elif clase.puntualidad == "Retraso significativo":
+                puntualidad['retraso_significativo'] += 1
+                
+            # Contar por tipo de clase
+            tipo_clase = clase.horario.tipo_clase if clase.horario and clase.horario.tipo_clase else 'OTRO'
+            datos_por_tipo[tipo_clase]['total_clases'] += 1
+            if clase.cantidad_alumnos is not None:
+                datos_por_tipo[tipo_clase]['total_alumnos'] += clase.cantidad_alumnos
+            if clase.puntualidad == "Retraso leve" or clase.puntualidad == "Retraso significativo":
+                datos_por_tipo[tipo_clase]['total_retrasos'] += 1
+        
+        # Obtener datos comparativos (todos los profesores)
+        todos_profesores = Profesor.query.all()
+        ranking_profesores = []
+        
+        for prof in todos_profesores:
+            prof_clases = ClaseRealizada.query.filter_by(profesor_id=prof.id).all()
+            if not prof_clases:
+                continue
+                
+            prof_total_clases = len(prof_clases)
+            prof_total_alumnos = sum(c.cantidad_alumnos for c in prof_clases if c.cantidad_alumnos is not None)
+            prof_retrasos = sum(1 for c in prof_clases if c.puntualidad in ["Retraso leve", "Retraso significativo"])
+            
+            # Calcular puntualidad como porcentaje
+            prof_puntualidad = 0
+            if prof_total_clases > 0:
+                prof_puntualidad = round(((prof_total_clases - prof_retrasos) / prof_total_clases) * 100, 1)
+                
+            # Calcular promedio de alumnos
+            prof_promedio_alumnos = 0
+            if prof_total_clases > 0:
+                prof_promedio_alumnos = prof_total_alumnos / prof_total_clases
+                
+            ranking_profesores.append({
+                'id': prof.id,
+                'nombre': prof.nombre,
+                'apellido': prof.apellido,
+                'total_clases': prof_total_clases,
+                'promedio_alumnos': prof_promedio_alumnos,
+                'puntualidad': prof_puntualidad
+            })
+        
+        # Ordenar ranking por puntualidad (descendente)
+        ranking_profesores.sort(key=lambda x: x['puntualidad'], reverse=True)
+        
+        # Construir objeto de métricas
+        metricas = {
+            'total_clases': total_clases,
+            'total_alumnos': total_alumnos,
+            'total_retrasos': total_retrasos,
+            'puntualidad': puntualidad,
+            'datos_por_tipo': datos_por_tipo,
+            'clases': clases,
+            'ranking_profesores': ranking_profesores
+        }
+        
+        return render_template('informes/metricas_profesor.html', profesor=profesor, metricas=metricas)
+    except Exception as e:
+        app.logger.error(f"Error en metricas_profesor: {str(e)}")
+        flash(f"Error al cargar métricas del profesor: {str(e)}", "danger")
+        return redirect(url_for('informe_mensual'))

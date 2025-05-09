@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+
+{% block title %}Métricas de Profesor - {{ profesor.nombre }} {{ profesor.apellido }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabecera con información del profesor -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-chart-line me-2"></i> Métricas de Profesor
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="avatar rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; background-color: rgba(54, 162, 235, 0.2); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user text-primary" style="font-size: 60px;"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h2 class="h3 mb-3">{{ profesor.nombre }} {{ profesor.apellido }}</h2>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <i class="fas fa-phone text-primary me-2"></i> 
+                                        <strong>Teléfono:</strong> 
+                                        {% if profesor.telefono %}
+                                            {{ profesor.telefono }}
+                                        {% else %}
+                                            <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-2">
+                                        <i class="fas fa-envelope text-primary me-2"></i> 
+                                        <strong>Email:</strong> 
+                                        {% if profesor.email %}
+                                            {{ profesor.email }}
+                                        {% else %}
+                                            <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-2">
+                                        <i class="fas fa-money-bill-wave text-primary me-2"></i> 
+                                        <strong>Tarifa por clase:</strong> 
+                                        ${{ profesor.tarifa_por_clase|round(2) }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <i class="fas fa-calendar-check text-primary me-2"></i> 
+                                        <strong>Total de clases:</strong> 
+                                        {{ metricas.total_clases }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <i class="fas fa-users text-primary me-2"></i> 
+                                        <strong>Promedio alumnos/clase:</strong> 
+                                        {% if metricas.total_clases > 0 %}
+                                            {{ (metricas.total_alumnos / metricas.total_clases)|round(1) }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-2">
+                                        <i class="fas fa-stopwatch text-primary me-2"></i> 
+                                        <strong>Puntualidad:</strong> 
+                                        {% if metricas.total_clases > 0 %}
+                                            {{ ((metricas.total_clases - metricas.total_retrasos) / metricas.total_clases * 100)|round(1) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white p-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="metricas-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="asistencia-tab" data-bs-toggle="tab" data-bs-target="#asistencia" type="button" role="tab" aria-controls="asistencia" aria-selected="true">
+                                <i class="fas fa-clock me-1"></i> Asistencia y Puntualidad
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="clases-tab" data-bs-toggle="tab" data-bs-target="#clases" type="button" role="tab" aria-controls="clases" aria-selected="false">
+                                <i class="fas fa-dumbbell me-1"></i> Rendimiento por Tipo de Clase
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="evolucion-tab" data-bs-toggle="tab" data-bs-target="#evolucion" type="button" role="tab" aria-controls="evolucion" aria-selected="false">
+                                <i class="fas fa-chart-bar me-1"></i> Evolución Temporal
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="comparativa-tab" data-bs-toggle="tab" data-bs-target="#comparativa" type="button" role="tab" aria-controls="comparativa" aria-selected="false">
+                                <i class="fas fa-balance-scale me-1"></i> Comparativa
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="metricas-tabContent">
+                        <!-- Pestaña de Asistencia y Puntualidad -->
+                        <div class="tab-pane fade show active" id="asistencia" role="tabpanel" aria-labelledby="asistencia-tab">
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Puntualidad</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="puntualidad-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Tiempo de llegada vs. Horario</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="tiempos-llegada-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-list me-2"></i> Detalle de Asistencia</h5>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Clase</th>
+                                                            <th>Horario Programado</th>
+                                                            <th>Hora de Llegada</th>
+                                                            <th>Estado</th>
+                                                            <th>Diferencia</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for clase in metricas.clases %}
+                                                        <tr>
+                                                            <td>{{ clase.fecha.strftime('%d/%m/%Y') }}</td>
+                                                            <td>{{ clase.horario.nombre }}</td>
+                                                            <td>{{ clase.horario.hora_inicio.strftime('%H:%M') }}</td>
+                                                            <td>
+                                                                {% if clase.hora_llegada_profesor %}
+                                                                    {{ clase.hora_llegada_profesor.strftime('%H:%M') }}
+                                                                {% else %}
+                                                                    <span class="text-danger">Sin registro</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                {% if clase.puntualidad == "Puntual" %}
+                                                                    <span class="badge bg-success">Puntual</span>
+                                                                {% elif clase.puntualidad == "Retraso leve" %}
+                                                                    <span class="badge bg-warning text-dark">Retraso leve</span>
+                                                                {% elif clase.puntualidad == "Retraso significativo" %}
+                                                                    <span class="badge bg-danger">Retraso significativo</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">N/A</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                {% if clase.hora_llegada_profesor %}
+                                                                    {% set diff = ((clase.hora_llegada_profesor.hour * 60 + clase.hora_llegada_profesor.minute) - (clase.horario.hora_inicio.hour * 60 + clase.horario.hora_inicio.minute)) %}
+                                                                    {% if diff <= 0 %}
+                                                                        <span class="text-success">A tiempo</span>
+                                                                    {% else %}
+                                                                        <span class="text-{{ 'warning' if diff <= 10 else 'danger' }}">
+                                                                            {{ diff }} minutos
+                                                                        </span>
+                                                                    {% endif %}
+                                                                {% else %}
+                                                                    <span class="text-muted">-</span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pestaña de Rendimiento por Tipo de Clase -->
+                        <div class="tab-pane fade" id="clases" role="tabpanel" aria-labelledby="clases-tab">
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Clases por Tipo</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="tipos-clase-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-users me-2"></i> Promedio de Alumnos por Tipo</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="alumnos-tipo-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-table me-2"></i> Resumen por Tipo de Clase</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Tipo de Clase</th>
+                                                            <th class="text-center">Total Clases</th>
+                                                            <th class="text-center">Promedio Alumnos</th>
+                                                            <th class="text-center">% Puntualidad</th>
+                                                            <th class="text-center">% del Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for tipo, datos in metricas.datos_por_tipo.items() %}
+                                                        <tr class="clase-{{ tipo.lower() }}-bg">
+                                                            <td>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="badge bg-{{ 'success' if tipo == 'MOVE' else 'primary' if tipo == 'RIDE' else 'danger' if tipo == 'BOX' else 'secondary' }} me-2">
+                                                                        <i class="fas fa-{{ 'running' if tipo == 'MOVE' else 'bicycle' if tipo == 'RIDE' else 'dumbbell' if tipo == 'BOX' else 'ellipsis-h' }}"></i>
+                                                                    </span>
+                                                                    {{ tipo }}
+                                                                </div>
+                                                            </td>
+                                                            <td class="text-center">{{ datos.total_clases }}</td>
+                                                            <td class="text-center">
+                                                                {% if datos.total_clases > 0 %}
+                                                                    {{ (datos.total_alumnos / datos.total_clases)|round(1) }}
+                                                                {% else %}
+                                                                    0
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-center">
+                                                                {% if datos.total_clases > 0 %}
+                                                                    {{ ((datos.total_clases - datos.total_retrasos) / datos.total_clases * 100)|round(1) }}%
+                                                                {% else %}
+                                                                    N/A
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-center">
+                                                                {% if metricas.total_clases > 0 %}
+                                                                    {{ (datos.total_clases / metricas.total_clases * 100)|round(1) }}%
+                                                                {% else %}
+                                                                    0%
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pestaña de Evolución Temporal -->
+                        <div class="tab-pane fade" id="evolucion" role="tabpanel" aria-labelledby="evolucion-tab">
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Evolución Mensual</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="evolucion-chart" style="width: 100%; height: 350px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-calendar-week me-2"></i> Rendimiento por Día de Semana</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="dias-semana-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Rendimiento por Hora del Día</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="horas-dia-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pestaña de Comparativa -->
+                        <div class="tab-pane fade" id="comparativa" role="tabpanel" aria-labelledby="comparativa-tab">
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> 
+                                        Esta sección muestra una comparativa del rendimiento de {{ profesor.nombre }} {{ profesor.apellido }} con respecto al promedio de todos los profesores.
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i> Puntualidad vs. Promedio</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="comparativa-puntualidad-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-users me-2"></i> Alumnos por Clase vs. Promedio</h5>
+                                        </div>
+                                        <div class="card-body d-flex align-items-center justify-content-center">
+                                            <div id="comparativa-alumnos-chart" style="width: 100%; height: 300px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i> Ranking de Profesores</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center">Posición</th>
+                                                            <th>Profesor</th>
+                                                            <th class="text-center">Total Clases</th>
+                                                            <th class="text-center">Puntualidad</th>
+                                                            <th class="text-center">Promedio Alumnos</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for prof in metricas.ranking_profesores %}
+                                                        <tr class="{{ 'table-info' if prof.id == profesor.id }}">
+                                                            <td class="text-center">{{ loop.index }}</td>
+                                                            <td>
+                                                                <div class="d-flex align-items-center">
+                                                                    {% if loop.index <= 3 %}
+                                                                    <span class="badge rounded-pill bg-{{ 'warning' if loop.index == 1 else 'secondary' if loop.index == 2 else 'danger' }} me-2">
+                                                                        {{ loop.index }}
+                                                                    </span>
+                                                                    {% else %}
+                                                                    <span class="badge rounded-pill bg-light text-dark me-2">
+                                                                        {{ loop.index }}
+                                                                    </span>
+                                                                    {% endif %}
+                                                                    {{ prof.nombre }} {{ prof.apellido }}
+                                                                    {% if prof.id == profesor.id %}
+                                                                    <span class="badge bg-primary ms-2">Tú</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </td>
+                                                            <td class="text-center">{{ prof.total_clases }}</td>
+                                                            <td class="text-center">
+                                                                {{ prof.puntualidad }}%
+                                                                <div class="progress mt-1" style="height: 5px;">
+                                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                                         style="width: {{ prof.puntualidad }}%;" 
+                                                                         aria-valuenow="{{ prof.puntualidad }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                </div>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                {{ prof.promedio_alumnos|round(1) }}
+                                                                <div class="progress mt-1" style="height: 5px;">
+                                                                    <div class="progress-bar bg-info" role="progressbar" 
+                                                                         style="width: {{ (prof.promedio_alumnos / 20 * 100)|round }}%;" 
+                                                                         aria-valuenow="{{ (prof.promedio_alumnos / 20 * 100)|round }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos para los gráficos (estos se llenarán desde el backend)
+    const puntualidadData = {
+        labels: ['Puntual', 'Retraso leve', 'Retraso significativo'],
+        datasets: [{
+            data: [
+                {{ metricas.puntualidad.puntual }}, 
+                {{ metricas.puntualidad.retraso_leve }}, 
+                {{ metricas.puntualidad.retraso_significativo }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    };
+
+    const tiposClaseData = {
+        labels: [{% for tipo in metricas.datos_por_tipo %}'{{ tipo }}',{% endfor %}],
+        datasets: [{
+            data: [{% for tipo, datos in metricas.datos_por_tipo.items() %}{{ datos.total_clases }},{% endfor %}],
+            backgroundColor: ['#28a745', '#007bff', '#dc3545', '#6c757d']
+        }]
+    };
+
+    // Inicializar gráficos
+    if (document.getElementById('puntualidad-chart')) {
+        new Chart(document.getElementById('puntualidad-chart'), {
+            type: 'pie',
+            data: puntualidadData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribución de Puntualidad'
+                    }
+                }
+            }
+        });
+    }
+
+    if (document.getElementById('tipos-clase-chart')) {
+        new Chart(document.getElementById('tipos-clase-chart'), {
+            type: 'bar',
+            data: {
+                labels: [{% for tipo in metricas.datos_por_tipo %}'{{ tipo }}',{% endfor %}],
+                datasets: [{
+                    label: 'Número de clases',
+                    data: [{% for tipo, datos in metricas.datos_por_tipo.items() %}{{ datos.total_clases }},{% endfor %}],
+                    backgroundColor: ['#28a745', '#007bff', '#dc3545', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Clases por tipo'
+                    }
+                }
+            }
+        });
+    }
+
+    // Más gráficos se inicializarían aquí si hay datos
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -479,6 +479,7 @@
                                         <th scope="col" class="text-center">Clases con Retraso</th>
                                         <th scope="col" class="text-center">Tarifa por Clase</th>
                                         <th scope="col" class="text-center">Pago Total</th>
+                                        <th scope="col" class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -532,9 +533,14 @@
                                         <td class="text-center align-middle">
                                             <span class="badge rounded-pill bg-danger fs-6">${{ datos.pago_total|round(2) }}</span>
                                         </td>
+                                        <td class="text-center align-middle">
+                                            <a href="{{ url_for('metricas_profesor', profesor_id=profesor_id) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-chart-line me-1"></i> Métricas
+                                            </a>
+                                        </td>
                                     </tr>
                                     <tr class="clases-detalle" id="clases-profesor-{{ profesor_id }}" style="display: none;">
-                                        <td colspan="7" class="p-0">
+                                        <td colspan="8" class="p-0">
                                             <div class="bg-light p-3 shadow-sm border-top detalles-container">
                                                 <h6 class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-center">
                                                     <span>
