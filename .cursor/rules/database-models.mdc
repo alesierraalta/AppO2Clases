@@ -1,0 +1,45 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Database Models
+
+## Core Models
+The application's data model is defined in [models.py](mdc:models.py) with these primary entities:
+
+### Profesor
+- Represents a teacher in the system
+- Fields include name, contact information
+- Referenced by Horario and ClaseRealizada models
+
+### Horario
+- Represents a scheduled class
+- Contains information about time, day, location
+- Associated with a Profesor
+- Can be active or inactive
+- Referenced by ClaseRealizada
+
+### ClaseRealizada
+- Represents an actual class that took place
+- Records attendance, lateness, and other metrics
+- Associated with a Horario and Profesor
+- May include audio recordings via audio_file field
+
+## Relationships
+- A Profesor can have multiple Horarios and ClaseRealizadas
+- A Horario can have multiple ClaseRealizadas
+- Each ClaseRealizada is linked to one Horario and one Profesor
+
+## Database Operations
+- Database creation: [create_tables.py](mdc:create_tables.py) and [create_db.py](mdc:create_db.py)
+- Database updates: [update_db.py](mdc:update_db.py)
+- Database maintenance: routes in [app.py](mdc:app.py) under `/mantenimiento/`
+
+## Database Schema
+The application uses SQLite with SQLAlchemy ORM, with the primary database file being `gimnasio.db`.
+
+## Backup & Recovery
+- Export database: `/configuracion/exportar_db` route
+- Import database: `/configuracion/importar_db` route
+- Backup directories in `backups/`

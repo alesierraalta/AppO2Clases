@@ -81,6 +81,209 @@
     tr.table-warning:hover {
         --bs-table-hover-bg: rgba(255, 193, 7, 0.25);
     }
+    
+    /* Estilos para los filtros de profesor */
+    .filter-tipo-clase {
+        transition: all 0.2s ease;
+        border-width: 1px;
+        font-weight: 500;
+    }
+    .filter-tipo-clase:hover {
+        transform: translateY(-2px);
+    }
+    .filter-tipo-clase.active {
+        border-width: 2px;
+        transform: translateY(-2px);
+        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15) !important;
+    }
+    #search-profesor:focus {
+        box-shadow: none;
+        border-color: var(--o2-input-border);
+    }
+    #search-profesor::placeholder {
+        color: #adb5bd;
+        font-style: italic;
+    }
+    .input-group-lg .form-control {
+        font-size: 0.95rem;
+    }
+    #no-results-message {
+        color: var(--o2-text-color);
+        background-color: rgba(var(--bs-secondary-rgb), 0.05);
+    }
+    #clear-search {
+        cursor: pointer;
+        color: var(--o2-text-color);
+    }
+    #clear-search:hover {
+        color: #dc3545;
+    }
+    /* Animaciones para filtrado */
+    .profesor-row {
+        transition: all 0.3s ease;
+    }
+    .table-hover tbody tr.profesor-row:hover {
+        background-color: rgba(13, 110, 253, 0.08);
+    }
+    .fadeIn {
+        animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Animaciones para despliegue de detalles */
+    .slide-down {
+        animation: slideDown 0.25s ease-out forwards;
+        transform-origin: top;
+        overflow: hidden;
+    }
+    .slide-up {
+        animation: slideUp 0.2s ease-in forwards;
+        transform-origin: top;
+        overflow: hidden;
+    }
+    @keyframes slideDown {
+        from { 
+            opacity: 0.8;
+            max-height: 0;
+            transform: scaleY(0.97);
+        }
+        to { 
+            opacity: 1;
+            max-height: 2000px;
+            transform: scaleY(1);
+        }
+    }
+    @keyframes slideUp {
+        from { 
+            opacity: 1;
+            max-height: 2000px;
+            transform: scaleY(1);
+        }
+        to { 
+            opacity: 0.8;
+            max-height: 0;
+            transform: scaleY(0.97);
+        }
+    }
+
+    .toggle-clases {
+        transition: transform 0.15s ease, background-color 0.15s;
+    }
+    .toggle-clases:hover {
+        transform: scale(1.12);
+        background-color: #f8f9fa;
+    }
+    .toggle-clases:active {
+        transform: scale(0.95);
+    }
+    .toggle-clases i {
+        transition: transform 0.2s ease;
+    }
+    .toggle-clases i.fa-minus {
+        transform: rotate(180deg) scale(0.8);
+    }
+
+    /* Contenedor de detalles */
+    .detalles-container {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-top: 1px solid rgba(0,0,0,0.06);
+        transition: all 0.25s ease;
+    }
+
+    /* Tarjetas y tablas */
+    .card {
+        background-color: var(--o2-card-bg);
+        border-color: var(--o2-border-color);
+    }
+    .card-header {
+        background-color: var(--o2-card-bg);
+        border-color: var(--o2-border-color);
+    }
+    .table {
+        color: var(--o2-text-color);
+        border-color: var(--o2-border-color);
+    }
+    .table-light {
+        --bs-table-bg: rgba(var(--bs-light-rgb), 0.1);
+    }
+    .table-hover tbody tr:hover {
+        background-color: var(--o2-table-hover-bg);
+    }
+    .badge {
+        border: none !important;
+    }
+</style>
+
+<!-- Dark mode specific styles -->
+<style>
+    /* Dark mode specific overrides */
+    [data-bs-theme="dark"] .bg-light {
+        background-color: #000000 !important;
+    }
+    [data-bs-theme="dark"] .bg-white {
+        background-color: #000000 !important;
+    }
+    [data-bs-theme="dark"] .border-top {
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+    [data-bs-theme="dark"] .text-dark {
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .text-muted {
+        color: rgba(255,255,255,0.7) !important;
+    }
+    [data-bs-theme="dark"] .input-group-text {
+        background-color: #000000;
+        border-color: #333333;
+    }
+    [data-bs-theme="dark"] .card-header.bg-white {
+        background-color: #000000 !important;
+    }
+    [data-bs-theme="dark"] .table-light {
+        --bs-table-bg: rgba(255,255,255,0.05);
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .btn-outline-secondary {
+        color: #ffffff;
+        border-color: #555555;
+    }
+    [data-bs-theme="dark"] .btn-light {
+        background-color: #121212;
+        border-color: #333333;
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .detalles-container {
+        background-color: #000000 !important;
+        border-color: #333333 !important;
+    }
+    [data-bs-theme="dark"] .bg-dark {
+        background-color: #000000 !important;
+    }
+    [data-bs-theme="dark"] .table-primary {
+        --bs-table-bg: rgba(13, 110, 253, 0.2);
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .table-warning {
+        --bs-table-bg: rgba(255, 193, 7, 0.2);
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .toggle-clases:hover {
+        background-color: #121212;
+    }
+    [data-bs-theme="dark"] .card-footer.bg-white {
+        background-color: #000000 !important;
+    }
+    [data-bs-theme="dark"] .alert-info {
+        background-color: rgba(13, 202, 240, 0.15);
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .alert-warning {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #ffffff;
+    }
 </style>
 {% endblock %}
 
@@ -220,6 +423,49 @@
                         <i class="fas fa-angle-up"></i>
                     </button>
                 </div>
+                <!-- Filtros para profesores -->
+                <div class="card-body pb-0">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group input-group-lg shadow-sm">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="fas fa-search text-primary"></i>
+                                </span>
+                                <input type="text" id="search-profesor" class="form-control border-start-0 py-2" 
+                                    placeholder="Buscar profesor..." aria-label="Buscar profesor">
+                                <button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="clear-search" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                                <button class="btn btn-outline-secondary filter-tipo-clase shadow-sm" data-tipo="TODOS">
+                                    <i class="fas fa-globe-americas me-1"></i> Todos
+                                </button>
+                                <button class="btn btn-outline-success filter-tipo-clase shadow-sm" data-tipo="MOVE">
+                                    <i class="fas fa-running me-1"></i> MOVE
+                                </button>
+                                <button class="btn btn-outline-primary filter-tipo-clase shadow-sm" data-tipo="RIDE">
+                                    <i class="fas fa-bicycle me-1"></i> RIDE
+                                </button>
+                                <button class="btn btn-outline-danger filter-tipo-clase shadow-sm" data-tipo="BOX">
+                                    <i class="fas fa-dumbbell me-1"></i> BOX
+                                </button>
+                                <button class="btn btn-outline-dark filter-tipo-clase shadow-sm" data-tipo="OTRO">
+                                    <i class="fas fa-ellipsis-h me-1"></i> OTRO
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Contador de resultados -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
+                        <div id="filter-results-count">Mostrando todos los profesores</div>
+                        <div>
+                            <i class="fas fa-info-circle me-1"></i> Selecciona un filtro o busca por nombre
+                        </div>
+                    </div>
+                </div>
                 <div class="collapse show" id="resumenProfesores">
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -237,7 +483,12 @@
                                 </thead>
                                 <tbody>
                                     {% for profesor_id, datos in resumen_profesores.items() %}
-                                    <tr class="profesor-row">
+                                    <tr class="profesor-row" 
+                                        data-profesor-nombre="{{ datos.profesor.nombre|lower }} {{ datos.profesor.apellido|lower }}"
+                                        data-move="{{ datos.clases_por_tipo.MOVE }}"
+                                        data-ride="{{ datos.clases_por_tipo.RIDE }}"
+                                        data-box="{{ datos.clases_por_tipo.BOX }}"
+                                        data-otro="{{ datos.clases_por_tipo.OTRO }}">
                                         <td class="text-center align-middle">
                                             <button class="btn btn-sm btn-outline-secondary toggle-clases" data-profesor-id="{{ profesor_id }}">
                                                 <i class="fas fa-plus"></i>
@@ -284,18 +535,24 @@
                                     </tr>
                                     <tr class="clases-detalle" id="clases-profesor-{{ profesor_id }}" style="display: none;">
                                         <td colspan="7" class="p-0">
-                                            <div class="bg-light p-3">
-                                                <h6 class="mb-3 border-bottom pb-2">Clases de {{ datos.profesor.nombre }} {{ datos.profesor.apellido }}</h6>
+                                            <div class="bg-light p-3 shadow-sm border-top detalles-container">
+                                                <h6 class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-center">
+                                                    <span>
+                                                        <i class="fas fa-list-ul me-2 text-primary"></i> 
+                                                        Clases de {{ datos.profesor.nombre }} {{ datos.profesor.apellido }}
+                                                    </span>
+                                                    <span class="badge bg-secondary">{{ clases_realizadas|selectattr('profesor.id', 'equalto', datos.profesor.id)|list|length }} clases</span>
+                                                </h6>
                                                 {% set clases_profesor = [] %}
                                                 {% for clase in clases_realizadas if clase.profesor.id == datos.profesor.id %}
                                                     {% set _ = clases_profesor.append(clase) %}
                                                 {% endfor %}
                                                 
                                                 {% if clases_profesor %}
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-hover mb-0">
+                                                <div class="table-responsive rounded" style="transition: all 0.3s ease">
+                                                    <table class="table table-sm table-hover mb-0 border">
                                                         <thead>
-                                                            <tr class="table-secondary">
+                                                            <tr class="table-primary">
                                                                 <th>Fecha</th>
                                                                 <th>Clase</th>
                                                                 <th>Horario</th>
@@ -819,6 +1076,117 @@
     tr.table-warning:hover {
         --bs-table-hover-bg: rgba(255, 193, 7, 0.25);
     }
+    
+    /* Estilos para los filtros de profesor */
+    .filter-tipo-clase {
+        transition: all 0.2s ease;
+        border-width: 1px;
+        font-weight: 500;
+    }
+    .filter-tipo-clase:hover {
+        transform: translateY(-2px);
+    }
+    .filter-tipo-clase.active {
+        border-width: 2px;
+        transform: translateY(-2px);
+        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15) !important;
+    }
+    #search-profesor:focus {
+        box-shadow: none;
+        border-color: var(--o2-input-border);
+    }
+    #search-profesor::placeholder {
+        color: #adb5bd;
+        font-style: italic;
+    }
+    .input-group-lg .form-control {
+        font-size: 0.95rem;
+    }
+    #no-results-message {
+        color: var(--o2-text-color);
+        background-color: rgba(var(--bs-secondary-rgb), 0.05);
+    }
+    #clear-search {
+        cursor: pointer;
+        color: var(--o2-text-color);
+    }
+    #clear-search:hover {
+        color: #dc3545;
+    }
+    /* Animaciones para filtrado */
+    .profesor-row {
+        transition: all 0.3s ease;
+    }
+    .table-hover tbody tr.profesor-row:hover {
+        background-color: rgba(13, 110, 253, 0.08);
+    }
+    .fadeIn {
+        animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Animaciones para despliegue de detalles */
+    .slide-down {
+        animation: slideDown 0.25s ease-out forwards;
+        transform-origin: top;
+        overflow: hidden;
+    }
+    .slide-up {
+        animation: slideUp 0.2s ease-in forwards;
+        transform-origin: top;
+        overflow: hidden;
+    }
+    @keyframes slideDown {
+        from { 
+            opacity: 0.8;
+            max-height: 0;
+            transform: scaleY(0.97);
+        }
+        to { 
+            opacity: 1;
+            max-height: 2000px;
+            transform: scaleY(1);
+        }
+    }
+    @keyframes slideUp {
+        from { 
+            opacity: 1;
+            max-height: 2000px;
+            transform: scaleY(1);
+        }
+        to { 
+            opacity: 0.8;
+            max-height: 0;
+            transform: scaleY(0.97);
+        }
+    }
+
+    .toggle-clases {
+        transition: transform 0.15s ease, background-color 0.15s;
+    }
+    .toggle-clases:hover {
+        transform: scale(1.12);
+        background-color: #f8f9fa;
+    }
+    .toggle-clases:active {
+        transform: scale(0.95);
+    }
+    .toggle-clases i {
+        transition: transform 0.2s ease;
+    }
+    .toggle-clases i.fa-minus {
+        transform: rotate(180deg) scale(0.8);
+    }
+
+    /* Contenedor de detalles */
+    .detalles-container {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-top: 1px solid rgba(0,0,0,0.06);
+        transition: all 0.25s ease;
+    }
 </style>
 {% endblock %}
 
@@ -847,422 +1215,252 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-    // Ejecutar cuando el DOM esté completamente cargado
     document.addEventListener('DOMContentLoaded', function() {
-        // Función para inicializar todos los componentes de la página
-        function initializeComponents() {
-            console.log('Inicializando componentes...');
+        // Variables for filtering
+        let searchInput = document.getElementById('search-profesor');
+        let filterButtons = document.querySelectorAll('.filter-tipo-clase');
+        let currentFilter = 'TODOS';
+        
+        // Set active class for initial "Todos" button
+        document.querySelector('.filter-tipo-clase[data-tipo="TODOS"]').classList.add('active');
+        
+        // Search functionality for professors
+        if (searchInput) {
+            searchInput.addEventListener('input', filterProfessors);
+        }
+        
+        // Function that applies both search and class type filters
+        function filterProfessors() {
+            let searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            let rows = document.querySelectorAll('.profesor-row');
+            let tableParent = document.querySelector('#resumenProfesores tbody');
+            let resultsCount = document.getElementById('filter-results-count');
+            let clearSearchBtn = document.getElementById('clear-search');
             
-            // Verificar que bootstrap esté disponible antes de continuar
-            if (typeof bootstrap === 'undefined') {
-                console.log('Bootstrap aún no está disponible, esperando...');
-                // Si Bootstrap no está disponible, esperar por el evento personalizado
-                document.addEventListener('bootstrap:loaded', initializeComponents, { once: true });
-                return;
+            // Show/hide clear button based on search term
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
             }
             
-            // Inicializar popovers
-            try {
-                const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-                const popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                    return new bootstrap.Popover(popoverTriggerEl, {
-                        trigger: 'hover',
-                        placement: 'top'
-                    });
-                });
-                console.log('Popovers inicializados');
-            } catch (error) {
-                console.error('Error al inicializar popovers:', error);
-            }
+            let visibleCount = 0;
             
-            // Inicializar los botones para mostrar/ocultar detalle de clases por profesor
-            try {
-                console.log('Configurando botones de expansión...');
-                document.querySelectorAll('.toggle-clases').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        console.log('Botón clickeado, profesor ID:', this.dataset.profesorId);
-                        const profesorId = this.dataset.profesorId;
-                        const detalleRow = document.getElementById(`clases-profesor-${profesorId}`);
-                        const icono = this.querySelector('i');
+            rows.forEach(row => {
+                let professorName = row.getAttribute('data-profesor-nombre');
+                let nameMatches = professorName.includes(searchTerm);
+                
+                // Check if class type matches current filter
+                let typeMatches = currentFilter === 'TODOS';
+                
+                if (!typeMatches) {
+                    let classCount = parseInt(row.getAttribute('data-' + currentFilter.toLowerCase())) || 0;
+                    typeMatches = classCount > 0;
+                }
+                
+                // Show row only if both conditions match
+                if (nameMatches && typeMatches) {
+                    row.style.display = '';
+                    // Remove existing animation class if any
+                    row.classList.remove('fadeIn');
+                    // Force DOM reflow to restart animation
+                    void row.offsetWidth;
+                    // Add animation class
+                    row.classList.add('fadeIn');
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                    row.classList.remove('fadeIn');
+                }
+                
+                // Handle the expanded detail row
+                let professorId = row.querySelector('.toggle-clases').getAttribute('data-profesor-id');
+                let detailRow = document.getElementById(`clases-profesor-${professorId}`);
+                
+                if (detailRow) {
+                    if (nameMatches && typeMatches) {
+                        // Solo mostrar si el ícono del botón tiene la clase fa-minus (detalles expandidos)
+                        let isExpanded = row.querySelector('.toggle-clases i').classList.contains('fa-minus');
                         
-                        if (detalleRow) {
-                            if (detalleRow.style.display === 'none' || !detalleRow.style.display) {
-                                console.log('Mostrando detalles');
-                                detalleRow.style.display = 'table-row';
-                                icono.classList.remove('fa-plus');
-                                icono.classList.add('fa-minus');
-                            } else {
-                                console.log('Ocultando detalles');
-                                detalleRow.style.display = 'none';
-                                icono.classList.remove('fa-minus');
-                                icono.classList.add('fa-plus');
+                        if (isExpanded) {
+                            // Si ya estaba expandido, mantenerlo expandido con la animación
+                            detailRow.style.display = 'table-row';
+                            // Si no tiene la clase slide-down, añadirla para animar
+                            if (!detailRow.classList.contains('slide-down')) {
+                                detailRow.classList.remove('slide-up');
+                                void detailRow.offsetWidth; // Forzar reflow
+                                detailRow.classList.add('slide-down');
                             }
                         } else {
-                            console.error('No se encontró la fila de detalles:', `clases-profesor-${profesorId}`);
+                            detailRow.style.display = 'none';
                         }
-                    });
-                });
-                console.log('Botones de expansión configurados');
-            } catch (error) {
-                console.error('Error al configurar botones de expansión:', error);
-            }
-            
-            // Filtrado de tablas
-            document.getElementById('searchInput')?.addEventListener('keyup', function() {
-                const searchText = this.value.toLowerCase();
-                filterTable('tableclases', searchText);
-            });
-            
-            document.getElementById('searchNoRegistradas')?.addEventListener('keyup', function() {
-                const searchText = this.value.toLowerCase();
-                filterTable('tablaNoRegistradas', searchText);
-            });
-            
-            const navPills = document.querySelector('.report-nav-pills');
-            if (navPills) {
-                const clasesFaltantesItem = document.createElement('li');
-                clasesFaltantesItem.className = 'nav-item';
-                
-                const clasesFaltantesLink = document.createElement('a');
-                clasesFaltantesLink.className = 'nav-link';
-                clasesFaltantesLink.href = '#clases-no-registradas';
-                clasesFaltantesLink.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Clases no registradas';
-                
-                clasesFaltantesItem.appendChild(clasesFaltantesLink);
-                navPills.appendChild(clasesFaltantesItem);
-            }
-            
-            // Manejo de checkboxes para clases no registradas
-            const checkTodas = document.getElementById('checkTodas');
-            const checkboxesClase = document.querySelectorAll('.checkbox-clase');
-            const btnRegistrarSeleccionadas = document.getElementById('btnRegistrarSeleccionadas');
-            const btnSeleccionarTodasNoRegistradas = document.getElementById('btnSeleccionarTodasNoRegistradas');
-            const contadorSeleccionadas = document.getElementById('contadorSeleccionadas');
-            const numClasesARegistrar = document.getElementById('numClasesARegistrar');
-            const formRegistroMasivo = document.getElementById('formRegistroMasivo');
-            const btnConfirmarRegistro = document.getElementById('btnConfirmarRegistro');
-            
-            // Inicializar el modal usando bootstrap
-            const modalEl = document.getElementById('modalConfirmacionRegistro');
-            let modalConfirmacionRegistro = null;
-            if (modalEl && bootstrap) {
-                modalConfirmacionRegistro = new bootstrap.Modal(modalEl);
-            }
-            
-            // Función para actualizar el contador y la visibilidad del botón
-            function actualizarContadorSeleccionadas() {
-                if (!checkboxesClase || checkboxesClase.length === 0) return;
-                
-                const seleccionadas = Array.from(checkboxesClase).filter(cb => cb.checked).length;
-                if (contadorSeleccionadas) contadorSeleccionadas.textContent = seleccionadas;
-                if (numClasesARegistrar) numClasesARegistrar.textContent = seleccionadas;
-                
-                if (btnRegistrarSeleccionadas) {
-                    if (seleccionadas > 0) {
-                        btnRegistrarSeleccionadas.style.display = 'inline-block';
                     } else {
-                        btnRegistrarSeleccionadas.style.display = 'none';
+                        // Si no coincide con el filtro, ocultar sin animación
+                        detailRow.style.display = 'none';
+                        detailRow.classList.remove('slide-down', 'slide-up');
                     }
                 }
-                
-                // Actualizar estado del checkbox principal
-                if (checkTodas) {
-                    if (seleccionadas === 0) {
-                        checkTodas.checked = false;
-                        checkTodas.indeterminate = false;
-                    } else if (seleccionadas === checkboxesClase.length) {
-                        checkTodas.checked = true;
-                        checkTodas.indeterminate = false;
-                    } else {
-                        checkTodas.checked = false;
-                        checkTodas.indeterminate = true;
+            });
+            
+            // Update results count text
+            if (resultsCount) {
+                if (visibleCount === 0) {
+                    resultsCount.textContent = 'No se encontraron profesores';
+                } else if (searchTerm || currentFilter !== 'TODOS') {
+                    if (currentFilter !== 'TODOS' && searchTerm) {
+                        resultsCount.textContent = `Mostrando ${visibleCount} profesor(es) de tipo ${currentFilter} que coinciden con "${searchTerm}"`;
+                    } else if (currentFilter !== 'TODOS') {
+                        resultsCount.textContent = `Mostrando ${visibleCount} profesor(es) de tipo ${currentFilter}`;
+                    } else if (searchTerm) {
+                        resultsCount.textContent = `Mostrando ${visibleCount} profesor(es) que coinciden con "${searchTerm}"`;
                     }
+                } else {
+                    resultsCount.textContent = 'Mostrando todos los profesores';
                 }
             }
             
-            // Event listener para el checkbox "seleccionar todas"
-            if (checkTodas) {
-                checkTodas.addEventListener('change', function() {
-                    checkboxesClase.forEach(cb => {
-                        cb.checked = checkTodas.checked;
-                    });
-                    actualizarContadorSeleccionadas();
-                });
+            // Show message if no results
+            let noResultsMsg = document.getElementById('no-results-message');
+            if (!noResultsMsg && tableParent) {
+                noResultsMsg = document.createElement('tr');
+                noResultsMsg.id = 'no-results-message';
+                noResultsMsg.innerHTML = '<td colspan="7" class="text-center py-4"><i class="fas fa-exclamation-circle text-muted me-2"></i>No se encontraron profesores que coincidan con los filtros</td>';
+                tableParent.appendChild(noResultsMsg);
             }
             
-            // Event listener para el botón "Seleccionar todas"
-            if (btnSeleccionarTodasNoRegistradas) {
-                btnSeleccionarTodasNoRegistradas.addEventListener('click', function() {
-                    const isAllChecked = Array.from(checkboxesClase).every(cb => cb.checked);
-                    checkboxesClase.forEach(cb => {
-                        cb.checked = !isAllChecked;
-                    });
-                    actualizarContadorSeleccionadas();
-                });
-            }
-            
-            // Event listeners para cada checkbox individual
-            checkboxesClase.forEach(cb => {
-                cb.addEventListener('change', actualizarContadorSeleccionadas);
-            });
-            
-            // Event listener para el botón de registrar seleccionadas
-            if (btnRegistrarSeleccionadas) {
-                btnRegistrarSeleccionadas.addEventListener('click', function() {
-                    if (modalConfirmacionRegistro) {
-                        modalConfirmacionRegistro.show();
-                    }
-                });
-            }
-            
-            // Event listener para confirmar el registro masivo
-            if (btnConfirmarRegistro) {
-                btnConfirmarRegistro.addEventListener('click', function() {
-                    if (formRegistroMasivo) {
-                        formRegistroMasivo.submit();
-                    }
-                });
-            }
-            
-            // Inicializar contador
-            actualizarContadorSeleccionadas();
-            
-            // Inicializar gráficos
-            const ctxClasses = document.getElementById('classTypeChart')?.getContext('2d');
-            const ctxStudents = document.getElementById('studentTypeChart')?.getContext('2d');
-            
-            if (ctxClasses) {
-                new Chart(ctxClasses, {
-                    type: 'pie',
-                    data: {
-                        labels: ['MOVE', 'RIDE', 'BOX', 'OTRO'],
-                        datasets: [{
-                            data: [
-                                {% if conteo_tipos is defined %}{{ conteo_tipos['MOVE'] }}{% else %}0{% endif %},
-                                {% if conteo_tipos is defined %}{{ conteo_tipos['RIDE'] }}{% else %}0{% endif %},
-                                {% if conteo_tipos is defined %}{{ conteo_tipos['BOX'] }}{% else %}0{% endif %},
-                                {% if conteo_tipos is defined %}{{ conteo_tipos['OTRO'] }}{% else %}0{% endif %}
-                            ],
-                            backgroundColor: [
-                                'rgba(40, 167, 69, 0.7)',  // MOVE - green
-                                'rgba(0, 123, 255, 0.7)',  // RIDE - blue
-                                'rgba(220, 53, 69, 0.7)',  // BOX - red
-                                'rgba(108, 117, 125, 0.7)' // OTRO - gray
-                            ],
-                            borderColor: [
-                                'rgba(40, 167, 69, 1)',
-                                'rgba(0, 123, 255, 1)',
-                                'rgba(220, 53, 69, 1)',
-                                'rgba(108, 117, 125, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Distribución de clases por tipo'
-                            }
-                        }
-                    }
-                });
-            }
-            
-            if (ctxStudents) {
-                new Chart(ctxStudents, {
-                    type: 'pie',
-                    data: {
-                        labels: ['MOVE', 'RIDE', 'BOX', 'OTRO'],
-                        datasets: [{
-                            data: [
-                                {% if alumnos_tipos is defined %}{{ alumnos_tipos['MOVE'] }}{% else %}0{% endif %},
-                                {% if alumnos_tipos is defined %}{{ alumnos_tipos['RIDE'] }}{% else %}0{% endif %},
-                                {% if alumnos_tipos is defined %}{{ alumnos_tipos['BOX'] }}{% else %}0{% endif %},
-                                {% if alumnos_tipos is defined %}{{ alumnos_tipos['OTRO'] }}{% else %}0{% endif %}
-                            ],
-                            backgroundColor: [
-                                'rgba(40, 167, 69, 0.7)',  // MOVE - green
-                                'rgba(0, 123, 255, 0.7)',  // RIDE - blue
-                                'rgba(220, 53, 69, 0.7)',  // BOX - red
-                                'rgba(108, 117, 125, 0.7)' // OTRO - gray
-                            ],
-                            borderColor: [
-                                'rgba(40, 167, 69, 1)',
-                                'rgba(0, 123, 255, 1)',
-                                'rgba(220, 53, 69, 1)',
-                                'rgba(108, 117, 125, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Distribución de alumnos por tipo de clase'
-                            }
-                        }
-                    }
-                });
+            // Show or hide no results message
+            if (noResultsMsg) {
+                noResultsMsg.style.display = visibleCount === 0 ? '' : 'none';
             }
         }
         
-        // Inicializar componentes
-        initializeComponents();
-    });
-    
-    function filterTable(tableId, searchText) {
-        const table = document.getElementById(tableId);
-        if (!table) return;
+        // Class type filter functionality
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    
+                    // Reset button styles to outline version
+                    if (btn.getAttribute('data-tipo') === 'MOVE') {
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    } else if (btn.getAttribute('data-tipo') === 'RIDE') {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-primary');
+                    } else if (btn.getAttribute('data-tipo') === 'BOX') {
+                        btn.classList.remove('btn-danger');
+                        btn.classList.add('btn-outline-danger');
+                    } else if (btn.getAttribute('data-tipo') === 'OTRO') {
+                        btn.classList.remove('btn-dark');
+                        btn.classList.add('btn-outline-dark');
+                    } else { // TODOS
+                        btn.classList.remove('btn-secondary');
+                        btn.classList.add('btn-outline-secondary');
+                    }
+                });
+                
+                // Add active class to clicked button and change color based on type
+                button.classList.add('active');
+                let tipo = button.getAttribute('data-tipo');
+                currentFilter = tipo;
+                
+                // Add appropriate color class based on class type
+                if (tipo === 'MOVE') {
+                    button.classList.remove('btn-outline-success');
+                    button.classList.add('btn-success');
+                } else if (tipo === 'RIDE') {
+                    button.classList.remove('btn-outline-primary');
+                    button.classList.add('btn-primary');
+                } else if (tipo === 'BOX') {
+                    button.classList.remove('btn-outline-danger');
+                    button.classList.add('btn-danger');
+                } else if (tipo === 'OTRO') {
+                    button.classList.remove('btn-outline-dark');
+                    button.classList.add('btn-dark');
+                } else { // TODOS
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-secondary');
+                }
+                
+                // Apply filters
+                filterProfessors();
+            });
+        });
         
-        const rows = table.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            if (text.includes(searchText)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+        // Add clear search button functionality
+        document.getElementById('clear-search')?.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                filterProfessors();
+                searchInput.focus();
             }
         });
-    }
-    
-    // Botón de volver arriba
-    const mybutton = document.getElementById("btn-back-to-top");
-    
-    window.onscroll = function () {
-        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-            mybutton.style.display = "block";
-        } else {
-            mybutton.style.display = "none";
+        
+        // Toggle buttons implementation for expandable professor rows
+        document.querySelectorAll('.toggle-clases').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto
+                
+                const profesorId = this.getAttribute('data-profesor-id');
+                const detailRow = document.getElementById(`clases-profesor-${profesorId}`);
+                const icon = this.querySelector('i');
+                
+                if (detailRow) {
+                    // Limpiar clases de animación previas
+                    detailRow.classList.remove('slide-down', 'slide-up');
+                    
+                    if (detailRow.style.display === 'none' || detailRow.style.display === '') {
+                        // Cambiar estilo de display antes de animar
+                        detailRow.style.display = 'table-row';
+                        
+                        // Forzar un reflow del DOM para asegurar que la animación se inicie correctamente
+                        void detailRow.offsetWidth;
+                        
+                        // Aplicar animación de despliegue
+                        detailRow.classList.add('slide-down');
+                        
+                        // Cambiar el icono
+                        icon.classList.remove('fa-plus');
+                        icon.classList.add('fa-minus');
+                    } else {
+                        // Animar cierre y luego ocultar
+                        detailRow.classList.add('slide-up');
+                        
+                        // Cambiar el icono inmediatamente
+                        icon.classList.remove('fa-minus');
+                        icon.classList.add('fa-plus');
+                        
+                        // Esperar a que termine la animación para ocultar la fila
+                        setTimeout(() => {
+                            detailRow.style.display = 'none';
+                        }, 180); // Ligeramente menor que la duración de la animación (0.2s)
+                    }
+                } else {
+                    console.error('No se encontró la fila de detalles:', `clases-profesor-${profesorId}`);
+                }
+            });
+        });
+        
+        // Back to top button logic
+        const btnBackToTop = document.getElementById('btn-back-to-top');
+        if (btnBackToTop) {
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    btnBackToTop.style.display = 'block';
+                } else {
+                    btnBackToTop.style.display = 'none';
+                }
+            });
+            
+            btnBackToTop.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
         }
-    };
-    
-    mybutton?.addEventListener("click", backToTop);
-    
-    function backToTop() {
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-    }
-
-    // Exportar a Excel
-    function exportToExcel() {
-        // Configuración de la hoja de cálculo
-        const wb = XLSX.utils.book_new();
-        wb.Props = {
-            Title: "Informe Mensual",
-            Subject: "Clases y Asistencia",
-            Author: "Sistema de Gestión de Clases",
-            CreatedDate: new Date()
-        };
-        
-        // Valores por defecto en caso de que no haya datos
-        const clases = "{{ total_clases.value|default('0') }}";
-        const alumnos = "{{ total_alumnos.value|default('0') }}";
-        const retrasos = "{{ total_retrasos.value|default('0') }}";
-        const pagos = "{{ total_pagos.value|default('0') }}";
-        
-        // Hoja principal con resumen
-        const resumenData = [
-            ["INFORME MENSUAL - {{ nombre_mes }} {{ anio }}"],
-            [],
-            ["RESUMEN GENERAL"],
-            ["Total Clases", clases],
-            ["Total Alumnos", alumnos],
-            ["Clases con Retraso", retrasos],
-            ["Total a Pagar", "$" + pagos],
-            []
-        ];
-        
-        // Solo agregar información sobre clases no registradas si está definida la variable
-        {% if conteo_no_registradas is defined %}
-        resumenData.push(["CLASES NO REGISTRADAS", "{{ conteo_no_registradas.total }}"]);
-        resumenData.push(["MOVE", "{{ conteo_no_registradas.MOVE }}"]);
-        resumenData.push(["RIDE", "{{ conteo_no_registradas.RIDE }}"]);
-        resumenData.push(["BOX", "{{ conteo_no_registradas.BOX }}"]);
-        resumenData.push(["OTRO", "{{ conteo_no_registradas.OTRO }}"]);
-        {% else %}
-        resumenData.push(["CLASES NO REGISTRADAS", "0"]);
-        resumenData.push(["MOVE", "0"]);
-        resumenData.push(["RIDE", "0"]);
-        resumenData.push(["BOX", "0"]);
-        resumenData.push(["OTRO", "0"]);
-        {% endif %}
-        
-        const resumenWS = XLSX.utils.aoa_to_sheet(resumenData);
-        XLSX.utils.book_append_sheet(wb, resumenWS, "Resumen");
-        
-        // Hoja de clases
-        const clasesHeaders = ["Fecha", "Clase", "Horario", "Profesor", "Estado", "Hora Llegada", "Puntualidad", "Alumnos", "Observaciones"];
-        const clasesData = [clasesHeaders];
-        
-        {% if clases_realizadas is defined and clases_realizadas %}
-        {% for clase in clases_realizadas %}
-        clasesData.push(getClaseData(clase));
-        {% endfor %}
-        {% else %}
-        clasesData.push(["Sin datos", "", "", "", "", "", "", "", ""]);
-        {% endif %}
-        
-        const clasesWS = XLSX.utils.aoa_to_sheet(clasesData);
-        XLSX.utils.book_append_sheet(wb, clasesWS, "Clases Realizadas");
-        
-        // Hoja de clases no registradas
-        const noRegistradasHeaders = ["Fecha", "Clase", "Tipo", "Horario", "Profesor"];
-        const noRegistradasData = [noRegistradasHeaders];
-        
-        {% if clases_no_registradas is defined and clases_no_registradas %}
-        {% for clase in clases_no_registradas %}
-        noRegistradasData.push([
-            "{{ clase.fecha.strftime('%d/%m/%Y') }}",
-            "{{ clase.horario.nombre }}",
-            "{{ clase.tipo_clase }}",
-            {% if clase.horario.hora_inicio %}
-                {% if clase.horario.hora_inicio is string %}
-                    "{{ clase.horario.hora_inicio }} - {{ clase.horario.hora_fin_str }}"
-                {% else %}
-                    "{{ clase.horario.hora_inicio.strftime('%H:%M') }} - {{ clase.horario.hora_fin_str }}"
-                {% endif %}
-            {% else %}
-                "--:-- - --:--"
-            {% endif %},
-            "{{ clase.profesor.nombre }} {{ clase.profesor.apellido }}"
-        ]);
-        {% endfor %}
-        {% else %}
-        noRegistradasData.push(["Sin datos", "", "", "", ""]);
-        {% endif %}
-        
-        const noRegistradasWS = XLSX.utils.aoa_to_sheet(noRegistradasData);
-        XLSX.utils.book_append_sheet(wb, noRegistradasWS, "Clases No Registradas");
-        
-        // Guardar archivo
-        XLSX.writeFile(wb, "Informe_Mensual_{{ nombre_mes }}_{{ anio }}.xlsx");
-    }
-
-    /* Función para generar datos de clase para Excel */
-    function getClaseData(clase) {
-        return [
-            // Use the safer format with a fallback
-            typeof clase.fecha === 'string' ? clase.fecha : (clase.fecha && clase.fecha.strftime ? clase.fecha.strftime('%d/%m/%Y') : ""),
-            clase.horario.nombre,
-            clase.horario.hora_inicio_str ? clase.horario.hora_inicio_str + " - " + clase.horario.hora_fin_str : "--:-- - --:--",
-            clase.profesor.nombre + " " + clase.profesor.apellido,
-            clase.profesor_suplente ? "Suplente" : (clase.ausencia_profesor ? "Cancelada" : "Normal"),
-            clase.hora_llegada_str ? clase.hora_llegada_str : "No registrada",
-            clase.puntualidad,
-            clase.cantidad_alumnos,
-            clase.observaciones || ""
-        ];
-    }
+    });
 </script>
+
+<!-- Add SheetJS for Excel export -->
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 {% endblock %} 

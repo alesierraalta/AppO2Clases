@@ -1,0 +1,90 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# O2 Fitness Club Theming System Guide
+
+## CSS Variables for Theming
+
+The application uses CSS variables for theming, defined in [templates/base.html](mdc:templates/base.html). This allows for consistent styling across the application and easy theme switching between light and dark modes.
+
+### Color Scheme Variables
+
+The main color scheme variables are defined in the `:root` selector for light mode and `[data-bs-theme="dark"]` selector for dark mode:
+
+```css
+:root {
+    /* Light mode variables */
+    --o2-bg-color: #ffffff;
+    --o2-text-color: #212529;
+    --o2-card-bg: #ffffff;
+    /* ... other variables ... */
+}
+
+[data-bs-theme="dark"] {
+    /* Dark mode variables */
+    --o2-bg-color: #000000; /* Pure black background */
+    --o2-text-color: #ffffff;
+    --o2-card-bg: #000000;
+    /* ... other variables ... */
+}
+```
+
+## Theme Switching
+
+Theme switching is handled by JavaScript in the base template. The current theme preference is stored in `localStorage` to persist across sessions:
+
+```javascript
+// Theme toggle in the configuration menu
+const themeToggle = document.getElementById('themeToggle');
+const htmlElement = document.documentElement;
+
+// Load theme from localStorage
+const currentTheme = localStorage.getItem('theme') || 'light';
+htmlElement.setAttribute('data-bs-theme', currentTheme);
+```
+
+## Page-Specific Theme Enhancements
+
+Some pages like [templates/informes/mensual_resultado.html](mdc:templates/informes/mensual_resultado.html) have page-specific dark mode overrides to ensure proper styling of unique elements:
+
+```css
+/* Dark mode specific overrides for reports */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #000000 !important;
+}
+[data-bs-theme="dark"] .card-header.bg-white {
+    background-color: #000000 !important;
+}
+```
+
+## Class Types Color Coding
+
+The application uses consistent color coding for different class types:
+
+- MOVE classes: Green (#28a745)
+- RIDE classes: Blue (#007bff)
+- BOX classes: Red (#dc3545)
+- OTHER classes: Gray (#6c757d)
+
+These colors are used for badges, backgrounds, and borders throughout the application to visually differentiate class types.
+
+## Component Theming
+
+UI components like cards, tables, forms, and navigation elements all respect the theme variables:
+
+```css
+.card {
+    background-color: var(--o2-card-bg);
+    border-color: var(--o2-border-color);
+}
+.table {
+    color: var(--o2-text-color);
+    border-color: var(--o2-border-color);
+}
+```
+
+## Adding Theme Support to New Components
+
+When creating new components, ensure they use the CSS variables rather than hardcoded colors to maintain theme compatibility. Additionally, add specific dark mode overrides for complex components that may need special handling.

@@ -1,0 +1,153 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# O2 Fitness Club UI Component Guide
+
+## Core UI Components
+
+The application uses a custom iOS-inspired UI system built on top of Bootstrap 5. The main components are defined in [templates/base.html](mdc:templates/base.html) and extended in specific templates.
+
+### iOS-inspired Navigation
+
+The application features iOS-style navigation with:
+
+1. **Top Navbar** - Fixed header with logo and back button
+2. **Tab Bar** - Bottom navigation with icons and labels
+3. **Configuration Submenu** - Popup menu from the Config tab
+
+```html
+<!-- iOS Navigation Bar -->
+<nav class="navbar navbar-light ios-navbar fixed-top">
+    <!-- Back button and logo -->
+</nav>
+
+<!-- iOS Tab Bar Navigation -->
+<nav class="ios-tab-bar fixed-bottom">
+    <!-- Tab items -->
+</nav>
+```
+
+### Card Design
+
+Cards are used extensively throughout the application for content organization:
+
+```html
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h2 class="h5 mb-0"><i class="fas fa-icon me-2"></i> Title</h2>
+    </div>
+    <div class="card-body">
+        <!-- Card content -->
+    </div>
+</div>
+```
+
+## Interactive Components
+
+### Toggle Buttons
+
+Used for expanding/collapsing content sections:
+
+```html
+<button class="btn btn-sm btn-outline-secondary toggle-clases" data-profesor-id="{{ profesor_id }}">
+    <i class="fas fa-plus"></i>
+</button>
+```
+
+With associated JavaScript for toggling:
+
+```javascript
+document.querySelectorAll('.toggle-clases').forEach(button => {
+    button.addEventListener('click', function(e) {
+        // Toggle logic
+    });
+});
+```
+
+### Search & Filter Components
+
+Standard pattern for search inputs:
+
+```html
+<div class="input-group">
+    <span class="input-group-text"><i class="fas fa-search"></i></span>
+    <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+</div>
+```
+
+### Badge System
+
+Color-coded badges are used for status indicators and type information:
+
+```html
+<span class="badge bg-success">Puntual</span>
+<span class="badge bg-warning text-dark">Retraso leve</span>
+<span class="badge bg-danger">Ausente</span>
+```
+
+## Animation Effects
+
+The application uses subtle animations for user interactions:
+
+1. **Slide Down/Up** - For expanding content
+2. **Fade In** - For filtered elements
+3. **Scale** - For button interactions
+
+```css
+.slide-down {
+    animation: slideDown 0.25s ease-out forwards;
+    transform-origin: top;
+    overflow: hidden;
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0.8;
+        max-height: 0;
+        transform: scaleY(0.97);
+    }
+    to { 
+        opacity: 1;
+        max-height: 2000px;
+        transform: scaleY(1);
+    }
+}
+```
+
+## Class Type Color System
+
+The application uses a consistent color system for class types:
+
+```css
+/* Tipos de clase */
+.bg-move {
+    background-color: #28a745 !important;
+}
+.bg-ride {
+    background-color: #007bff !important;
+}
+.bg-box {
+    background-color: #dc3545 !important;
+}
+```
+
+## Responsive Design
+
+All UI components are designed to be responsive, with special considerations for:
+
+1. **Table Responsiveness** - `.table-responsive` class
+2. **Card Layout** - Stacked on mobile, side-by-side on larger screens
+3. **Input Sizing** - Larger touch targets on mobile devices
+
+## Adding New UI Components
+
+When creating new UI components, follow these guidelines:
+
+1. Use Bootstrap 5 base components where possible
+2. Apply the iOS-inspired styling for consistency
+3. Ensure responsive behavior across device sizes
+4. Implement proper theme compatibility using CSS variables
+5. Add subtle animations for interactive elements
+6. Follow the established color coding system

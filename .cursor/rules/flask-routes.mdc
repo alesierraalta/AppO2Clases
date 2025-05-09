@@ -1,0 +1,61 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Flask Routes Organization
+
+## Main Routes
+- [app.py](mdc:app.py) Main route `/` serves the index page
+- [app.py](mdc:app.py) Route `/simple` serves a simplified index
+
+## Teacher Routes
+All teacher management routes in [app.py](mdc:app.py):
+- `/profesores` - List all teachers
+- `/profesores/nuevo` - Add a new teacher
+- `/profesores/editar/<id>` - Edit a teacher
+- `/profesores/eliminar/<id>` - Delete a teacher
+
+## Schedule Routes
+Schedule management routes in [app.py](mdc:app.py):
+- `/horarios` - List all schedules
+- `/horarios/nuevo` - Add a new schedule
+- `/horarios/editar/<id>` - Edit a schedule
+- `/horarios/eliminar/<id>` - Delete a schedule
+- `/horarios/desactivar/<id>` - Deactivate a schedule
+
+## Attendance Routes
+Attendance tracking routes in [app.py](mdc:app.py):
+- `/asistencia` - Control panel for today's attendance
+- `/asistencia/registrar/<horario_id>` - Record attendance for a specific schedule
+- `/asistencia/editar/<id>` - Edit an attendance record
+- `/asistencia/eliminar/<id>` - Delete an attendance record
+- `/asistencia/historial` - View attendance history
+- `/asistencia/clases-no-registradas` - View unrecorded classes
+
+## Report Routes
+Reporting routes in [app.py](mdc:app.py):
+- `/informes` - Main reports page
+- `/informes/mensual` - Monthly reports
+- `/reporte_mensual/<mes>/<anio>` - Specific month reports
+
+## Audio Routes
+Audio-related routes in [app.py](mdc:app.py) and [audio_routes.py](mdc:audio_routes.py):
+- `/asistencia/audio/upload/<horario_id>` - Upload an audio recording
+- `/asistencia/audio/get/<horario_id>` - Get an audio recording
+- `/asistencia/audio/check/<horario_id>` - Check if an audio exists
+- `/asistencia/audio/diagnostico` - Audio diagnostic tools
+
+## Import/Export Routes
+Data import/export routes in [app.py](mdc:app.py):
+- `/importar` - Main import page
+- `/importar/asistencia` - Import attendance data
+- `/configuracion/exportar` - Export data
+- `/configuracion/exportar_db` - Export database
+- `/configuracion/importar_db` - Import database
+
+## Configuration Routes
+Configuration and system routes in [app.py](mdc:app.py):
+- `/configuracion/notificaciones` - Notification settings
+- `/mantenimiento/depurar-base-datos` - Database maintenance
+- `/diagnostico/eliminar_clase/<id>` - Diagnostic tools

@@ -1,0 +1,91 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# O2 Fitness Club Reporting System
+
+## Monthly Reports
+
+The monthly report is a comprehensive view of all classes and instructors for a specific month. The main template is [templates/informes/mensual_resultado.html](mdc:templates/informes/mensual_resultado.html).
+
+### Report Structure
+
+The monthly report is divided into several key sections:
+
+1. **Header** - Month/year selection and export options
+2. **Navigation Pills** - Quick links to different report sections
+3. **Summary Cards** - Overall statistics for the month
+4. **Instructor Summary** - Detailed breakdown by instructor
+5. **Class Details** - Comprehensive list of all classes
+6. **Unregistered Classes** - Classes scheduled but not recorded
+7. **Charts** - Visual analysis of the data
+
+### Instructor Summary Section
+
+This section includes:
+- Filtering by instructor name and class type
+- Expandable rows to show each instructor's classes
+- Animation effects for expanding/collapsing details
+- Statistics including total classes, student averages, and payments
+
+```html
+<!-- Filtering UI for instructors -->
+<div class="input-group input-group-lg shadow-sm">
+    <span class="input-group-text bg-white border-end-0">
+        <i class="fas fa-search text-primary"></i>
+    </span>
+    <input type="text" id="search-profesor" class="form-control" 
+        placeholder="Buscar profesor...">
+</div>
+
+<!-- Class type filters -->
+<button class="btn btn-outline-success filter-tipo-clase" data-tipo="MOVE">
+    <i class="fas fa-running me-1"></i> MOVE
+</button>
+```
+
+### JavaScript Functionality
+
+The report uses several JavaScript functions for interactivity:
+
+1. **Filtering** - Real-time filtering of instructors by name or class type
+2. **Row Expansion** - Toggle details with animation effects
+3. **Export to Excel** - Export the report data to spreadsheet format
+4. **Print Formatting** - Special styling for printed reports
+
+```javascript
+// Toggle details row with animation
+document.querySelectorAll('.toggle-clases').forEach(button => {
+    button.addEventListener('click', function(e) {
+        const profesorId = this.getAttribute('data-profesor-id');
+        const detailRow = document.getElementById(`clases-profesor-${profesorId}`);
+        // Animation logic...
+    });
+});
+```
+
+### Theme Compatibility
+
+The report template includes specific dark mode overrides to ensure proper rendering in both light and dark themes:
+
+```css
+/* Dark mode specific overrides */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #000000 !important;
+}
+[data-bs-theme="dark"] .alert-info {
+    background-color: rgba(13, 202, 240, 0.15);
+    color: #ffffff;
+}
+```
+
+## Adding New Report Features
+
+When adding new features to reports:
+
+1. Maintain consistent styling with the rest of the application
+2. Ensure dark mode compatibility by using CSS variables
+3. Implement responsive design for mobile devices
+4. Add appropriate animations for interactive elements
+5. Include proper data export functionality

@@ -1,0 +1,49 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Notification System
+
+## Core Components
+The application includes a notification system for attendance alerts:
+
+## Notification Files
+- [notifications.py](mdc:notifications.py) - Main notification system implementation
+- [check_notifications.py](mdc:check_notifications.py) - Verification tools
+- [repair_notifications.py](mdc:repair_notifications.py) - Fix notification issues
+- [force_configure_notifications.py](mdc:force_configure_notifications.py) - Configure notifications
+
+## Configuration
+Notifications are configured through:
+- `/configuracion/notificaciones` route in [app.py](mdc:app.py)
+- Configuration is stored in the database
+- Options for WhatsApp integration
+
+## Notification Types
+The system can send notifications for:
+- Missed classes
+- Upcoming classes
+- Attendance reports
+- System alerts
+
+## WhatsApp Integration
+- Can send WhatsApp messages via PyWhatKit
+- Scheduled delivery for automated notifications
+- Manual sending via [send_whatsapp_manual.py](mdc:send_whatsapp_manual.py)
+
+## Scheduling
+- Uses APScheduler for scheduled notifications
+- Can be triggered by system events
+- Background processing to avoid blocking main application
+
+## Testing
+The notification system can be tested with:
+- [test_notification.py](mdc:test_notification.py) - Basic tests
+- [test_real_notification.py](mdc:test_real_notification.py) - End-to-end tests
+- [run_notification_tests.bat](mdc:run_notification_tests.bat) - Test runner
+
+## Logging
+- Notification events are logged to `notifications.log`
+- Errors are captured and reported
+- Debug information for troubleshooting

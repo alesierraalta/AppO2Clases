@@ -1,0 +1,47 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Application Features
+
+## Attendance Management
+The core functionality of this application is attendance tracking:
+- [app.py](mdc:app.py) has routes under `/asistencia/` for managing attendance records
+- Audio recordings can be attached to attendance records
+- Attendance can be viewed, edited, and exported to Excel
+
+## Teacher Management
+Teachers can be added, edited, and removed through routes under `/profesores/`:
+- [app.py](mdc:app.py) contains routes for CRUD operations on teachers
+- Teacher data is used in attendance records and reports
+
+## Schedule Management
+Schedules (horarios) define when classes take place:
+- Schedule management routes are under `/horarios/`
+- Schedules can be activated/deactivated
+- Schedules are linked to attendance records
+
+## Reporting
+The application generates various reports:
+- Monthly reports with attendance statistics
+- Excel exports of attendance data
+- Custom reports by date range or teacher
+
+## Audio Recording
+Audio recordings can be attached to attendance records:
+- Storage and retrieval functions in [audio_functions.py](mdc:audio_functions.py)
+- Audio files are stored in a structured directory hierarchy
+- Waveform visualization support
+
+## Notifications
+The app includes a notification system:
+- Configuration in [notifications.py](mdc:notifications.py)
+- WhatsApp integration for sending messages
+- Scheduled notifications based on attendance records
+
+## Data Import/Export
+Data can be imported from and exported to Excel:
+- [export_to_excel.py](mdc:export_to_excel.py) handles data exports
+- Import functionality in app.py under routes `/importar/`
+- Database backup and restore features

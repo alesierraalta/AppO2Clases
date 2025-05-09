@@ -1,0 +1,45 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Flask Project Structure
+
+## Main Application
+The main entry point for the application is [app.py](mdc:app.py), which contains most routes and Flask configuration.
+
+## Models and Database
+Database models are defined in [models.py](mdc:models.py).
+
+## Audio Processing
+Audio-related functions are handled in:
+- [audio_functions.py](mdc:audio_functions.py) - Core audio processing
+- [audio_routes.py](mdc:audio_routes.py) - API routes for audio
+- [audio_utils.py](mdc:audio_utils.py) - Utility functions
+
+## Templates
+The application uses Jinja2 templates organized in the `templates` directory:
+- `asistencia/` - Attendance-related templates
+- `clases/` - Class management templates
+- `horarios/` - Schedule templates
+- `profesores/` - Teacher management templates
+- `informes/` - Reports templates
+
+## Static Assets
+Static files are stored in the `static` directory:
+- `audio/` - Audio files
+- `css/` - Stylesheets
+- `js/` - JavaScript files
+- `img/` - Images and icons
+- `uploads/` - User uploaded files
+
+## Scripts
+Helper scripts are divided by platform:
+- `scripts/mac/` - macOS scripts
+- `scripts/windows/` - Windows scripts
+
+## Utilities
+Various utility functions and scripts:
+- [notifications.py](mdc:notifications.py) - Notification system
+- [check_notifications.py](mdc:check_notifications.py) - Notification verification
+- [export_to_excel.py](mdc:export_to_excel.py) - Excel export functionality

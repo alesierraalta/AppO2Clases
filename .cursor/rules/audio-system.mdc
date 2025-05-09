@@ -1,0 +1,42 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Audio Recording System
+
+## Core Functionality
+The application has an integrated audio recording system for attendance records:
+
+## Audio File Structure
+- Audio files are stored in `static/uploads/audios/permanent/horario_X/` directories
+- Each schedule (horario) has its own directory for audio files
+- Backups are stored in `backups/audios_backup_*/permanent/horario_X/`
+
+## Audio Processing Files
+- [audio_functions.py](mdc:audio_functions.py) - Core audio processing functions
+- [audio_routes.py](mdc:audio_routes.py) - API routes for audio handling
+- [audio_utils.py](mdc:audio_utils.py) - Utilities for audio file management
+
+## Audio Routes
+Key routes for audio handling in [app.py](mdc:app.py):
+- `/asistencia/audio/upload/<horario_id>` - Upload audio recordings
+- `/asistencia/audio/get/<horario_id>` - Retrieve audio recordings
+- `/asistencia/audio/check/<horario_id>` - Check if audio exists
+- `/asistencia/audio/diagnostico` - Diagnostic tools for audio system
+
+## Audio Storage
+- The function `get_audio_storage_path()` in [app.py](mdc:app.py) determines storage locations
+- `ensure_upload_dirs()` ensures directories exist for audio storage
+- Audio files are associated with ClaseRealizada records via the audio_file field
+
+## Audio Features
+- Waveform visualization
+- Audio playback in web interface
+- Audio recording directly from browser
+- Automatic file organization by schedule
+
+## Legacy Audio System
+The app includes backward compatibility routes for an older audio system:
+- `/asistencia/upload_audio/<horario_id>` (legacy endpoint)
+- `/asistencia/get_audio/<horario_id>` (legacy endpoint)
