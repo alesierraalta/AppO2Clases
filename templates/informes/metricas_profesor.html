@@ -2,76 +2,164 @@
 
 {% block title %}Métricas de Profesor - {{ profesor.nombre }} {{ profesor.apellido }}{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    /* Estilos generales */
+    .metrics-card {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .metrics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .chart-container {
+        position: relative;
+        margin: 0 auto;
+        height: 300px;
+        width: 100%;
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .metric-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .professor-card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .avatar-container {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f0f4f8;
+    }
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+        .metric-value {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <!-- Cabecera con información del profesor -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h1 class="h3 mb-0">
-                        <i class="fas fa-chart-line me-2"></i> Métricas de Profesor
-                    </h1>
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <div class="card professor-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="avatar-container mb-3">
+                        <i class="fas fa-user-circle fa-4x text-primary"></i>
+                    </div>
+                    <h4 class="mb-1">{{ profesor.nombre }} {{ profesor.apellido }}</h4>
+                    {% if profesor.especialidad %}
+                    <p class="text-muted mb-3"><i class="fas fa-dumbbell me-1"></i> {{ profesor.especialidad }}</p>
+                    {% endif %}
+                    <div class="d-flex justify-content-center mb-3">
+                        <span class="badge bg-primary rounded-pill px-3 py-2">
+                            <i class="fas fa-calendar-check me-1"></i> {{ metricas.total_clases }} clases
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="text-start">
+                        {% if profesor.email %}
+                        <div class="mb-2">
+                            <i class="fas fa-envelope text-muted me-2"></i> {{ profesor.email }}
+                        </div>
+                        {% endif %}
+                        {% if profesor.telefono %}
+                        <div class="mb-2">
+                            <i class="fas fa-phone text-muted me-2"></i> {{ profesor.telefono }}
+                        </div>
+                        {% endif %}
+                        {% if profesor.fecha_inicio %}
+                        <div class="mb-2">
+                            <i class="fas fa-calendar-alt text-muted me-2"></i> Desde: {{ profesor.fecha_inicio.strftime('%d/%m/%Y') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Resumen de Rendimiento</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 text-center">
-                            <div class="avatar rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; background-color: rgba(54, 162, 235, 0.2); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-user text-primary" style="font-size: 60px;"></i>
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-3">
+                                    <p class="metric-title">Clases Impartidas</p>
+                                    <h2 class="metric-value text-primary mb-0">{{ metricas.total_clases }}</h2>
+                                </div>
+                                <div class="card-footer bg-primary text-white p-1 text-center">
+                                    <small><i class="fas fa-calendar-alt me-1"></i>Total</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-9">
-                            <h2 class="h3 mb-3">{{ profesor.nombre }} {{ profesor.apellido }}</h2>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p class="mb-2">
-                                        <i class="fas fa-phone text-primary me-2"></i> 
-                                        <strong>Teléfono:</strong> 
-                                        {% if profesor.telefono %}
-                                            {{ profesor.telefono }}
-                                        {% else %}
-                                            <span class="text-muted">No disponible</span>
-                                        {% endif %}
-                                    </p>
-                                    <p class="mb-2">
-                                        <i class="fas fa-envelope text-primary me-2"></i> 
-                                        <strong>Email:</strong> 
-                                        {% if profesor.email %}
-                                            {{ profesor.email }}
-                                        {% else %}
-                                            <span class="text-muted">No disponible</span>
-                                        {% endif %}
-                                    </p>
-                                    <p class="mb-2">
-                                        <i class="fas fa-money-bill-wave text-primary me-2"></i> 
-                                        <strong>Tarifa por clase:</strong> 
-                                        ${{ profesor.tarifa_por_clase|round(2) }}
-                                    </p>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-3">
+                                    <p class="metric-title">Alumnos Totales</p>
+                                    <h2 class="metric-value text-success mb-0">{{ metricas.total_alumnos }}</h2>
                                 </div>
-                                <div class="col-md-6">
-                                    <p class="mb-2">
-                                        <i class="fas fa-calendar-check text-primary me-2"></i> 
-                                        <strong>Total de clases:</strong> 
-                                        {{ metricas.total_clases }}
-                                    </p>
-                                    <p class="mb-2">
-                                        <i class="fas fa-users text-primary me-2"></i> 
-                                        <strong>Promedio alumnos/clase:</strong> 
-                                        {% if metricas.total_clases > 0 %}
-                                            {{ (metricas.total_alumnos / metricas.total_clases)|round(1) }}
-                                        {% else %}
-                                            0
-                                        {% endif %}
-                                    </p>
-                                    <p class="mb-2">
-                                        <i class="fas fa-stopwatch text-primary me-2"></i> 
-                                        <strong>Puntualidad:</strong> 
-                                        {% if metricas.total_clases > 0 %}
-                                            {{ ((metricas.total_clases - metricas.total_retrasos) / metricas.total_clases * 100)|round(1) }}%
+                                <div class="card-footer bg-success text-white p-1 text-center">
+                                    <small><i class="fas fa-users me-1"></i>Participantes</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-3">
+                                    <p class="metric-title">Puntualidad</p>
+                                    <h2 class="metric-value text-info mb-0">
+                                        {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+                                            {{ (metricas.puntualidad.tasa)|round(1) }}%
                                         {% else %}
                                             N/A
                                         {% endif %}
-                                    </p>
+                                    </h2>
+                                </div>
+                                <div class="card-footer bg-info text-white p-1 text-center">
+                                    <small><i class="fas fa-clock me-1"></i>A tiempo</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-3">
+                                    <p class="metric-title">Variedad de Clases</p>
+                                    <h2 class="metric-value text-warning mb-0">
+                                        {% if metricas.variedad_clases is defined %}
+                                            {{ metricas.variedad_clases|round(1) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h2>
+                                </div>
+                                <div class="card-footer bg-warning text-white p-1 text-center">
+                                    <small><i class="fas fa-random me-1"></i>Diversidad</small>
                                 </div>
                             </div>
                         </div>
@@ -80,421 +168,627 @@
             </div>
         </div>
     </div>
-
-    <!-- Navegación por pestañas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white p-0">
-                    <ul class="nav nav-tabs card-header-tabs" id="metricas-tabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="asistencia-tab" data-bs-toggle="tab" data-bs-target="#asistencia" type="button" role="tab" aria-controls="asistencia" aria-selected="true">
-                                <i class="fas fa-clock me-1"></i> Asistencia y Puntualidad
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="clases-tab" data-bs-toggle="tab" data-bs-target="#clases" type="button" role="tab" aria-controls="clases" aria-selected="false">
-                                <i class="fas fa-dumbbell me-1"></i> Rendimiento por Tipo de Clase
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="evolucion-tab" data-bs-toggle="tab" data-bs-target="#evolucion" type="button" role="tab" aria-controls="evolucion" aria-selected="false">
-                                <i class="fas fa-chart-bar me-1"></i> Evolución Temporal
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="comparativa-tab" data-bs-toggle="tab" data-bs-target="#comparativa" type="button" role="tab" aria-controls="comparativa" aria-selected="false">
-                                <i class="fas fa-balance-scale me-1"></i> Comparativa
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content" id="metricas-tabContent">
-                        <!-- Pestaña de Asistencia y Puntualidad -->
-                        <div class="tab-pane fade show active" id="asistencia" role="tabpanel" aria-labelledby="asistencia-tab">
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Puntualidad</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="puntualidad-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Tiempo de llegada vs. Horario</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="tiempos-llegada-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-list me-2"></i> Detalle de Asistencia</h5>
-                                        </div>
-                                        <div class="card-body p-0">
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Fecha</th>
-                                                            <th>Clase</th>
-                                                            <th>Horario Programado</th>
-                                                            <th>Hora de Llegada</th>
-                                                            <th>Estado</th>
-                                                            <th>Diferencia</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for clase in metricas.clases %}
-                                                        <tr>
-                                                            <td>{{ clase.fecha.strftime('%d/%m/%Y') }}</td>
-                                                            <td>{{ clase.horario.nombre }}</td>
-                                                            <td>{{ clase.horario.hora_inicio.strftime('%H:%M') }}</td>
-                                                            <td>
-                                                                {% if clase.hora_llegada_profesor %}
-                                                                    {{ clase.hora_llegada_profesor.strftime('%H:%M') }}
-                                                                {% else %}
-                                                                    <span class="text-danger">Sin registro</span>
-                                                                {% endif %}
-                                                            </td>
-                                                            <td>
-                                                                {% if clase.puntualidad == "Puntual" %}
-                                                                    <span class="badge bg-success">Puntual</span>
-                                                                {% elif clase.puntualidad == "Retraso leve" %}
-                                                                    <span class="badge bg-warning text-dark">Retraso leve</span>
-                                                                {% elif clase.puntualidad == "Retraso significativo" %}
-                                                                    <span class="badge bg-danger">Retraso significativo</span>
-                                                                {% else %}
-                                                                    <span class="badge bg-secondary">N/A</span>
-                                                                {% endif %}
-                                                            </td>
-                                                            <td>
-                                                                {% if clase.hora_llegada_profesor %}
-                                                                    {% set diff = ((clase.hora_llegada_profesor.hour * 60 + clase.hora_llegada_profesor.minute) - (clase.horario.hora_inicio.hour * 60 + clase.horario.hora_inicio.minute)) %}
-                                                                    {% if diff <= 0 %}
-                                                                        <span class="text-success">A tiempo</span>
-                                                                    {% else %}
-                                                                        <span class="text-{{ 'warning' if diff <= 10 else 'danger' }}">
-                                                                            {{ diff }} minutos
-                                                                        </span>
-                                                                    {% endif %}
-                                                                {% else %}
-                                                                    <span class="text-muted">-</span>
-                                                                {% endif %}
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Pestaña de Rendimiento por Tipo de Clase -->
-                        <div class="tab-pane fade" id="clases" role="tabpanel" aria-labelledby="clases-tab">
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Clases por Tipo</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="tipos-clase-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-users me-2"></i> Promedio de Alumnos por Tipo</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="alumnos-tipo-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-table me-2"></i> Resumen por Tipo de Clase</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Tipo de Clase</th>
-                                                            <th class="text-center">Total Clases</th>
-                                                            <th class="text-center">Promedio Alumnos</th>
-                                                            <th class="text-center">% Puntualidad</th>
-                                                            <th class="text-center">% del Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for tipo, datos in metricas.datos_por_tipo.items() %}
-                                                        <tr class="clase-{{ tipo.lower() }}-bg">
-                                                            <td>
-                                                                <div class="d-flex align-items-center">
-                                                                    <span class="badge bg-{{ 'success' if tipo == 'MOVE' else 'primary' if tipo == 'RIDE' else 'danger' if tipo == 'BOX' else 'secondary' }} me-2">
-                                                                        <i class="fas fa-{{ 'running' if tipo == 'MOVE' else 'bicycle' if tipo == 'RIDE' else 'dumbbell' if tipo == 'BOX' else 'ellipsis-h' }}"></i>
-                                                                    </span>
-                                                                    {{ tipo }}
-                                                                </div>
-                                                            </td>
-                                                            <td class="text-center">{{ datos.total_clases }}</td>
-                                                            <td class="text-center">
-                                                                {% if datos.total_clases > 0 %}
-                                                                    {{ (datos.total_alumnos / datos.total_clases)|round(1) }}
-                                                                {% else %}
-                                                                    0
-                                                                {% endif %}
-                                                            </td>
-                                                            <td class="text-center">
-                                                                {% if datos.total_clases > 0 %}
-                                                                    {{ ((datos.total_clases - datos.total_retrasos) / datos.total_clases * 100)|round(1) }}%
-                                                                {% else %}
-                                                                    N/A
-                                                                {% endif %}
-                                                            </td>
-                                                            <td class="text-center">
-                                                                {% if metricas.total_clases > 0 %}
-                                                                    {{ (datos.total_clases / metricas.total_clases * 100)|round(1) }}%
-                                                                {% else %}
-                                                                    0%
-                                                                {% endif %}
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Pestaña de Evolución Temporal -->
-                        <div class="tab-pane fade" id="evolucion" role="tabpanel" aria-labelledby="evolucion-tab">
-                            <div class="row">
-                                <div class="col-12 mb-4">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Evolución Mensual</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="evolucion-chart" style="width: 100%; height: 350px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-calendar-week me-2"></i> Rendimiento por Día de Semana</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="dias-semana-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Rendimiento por Hora del Día</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="horas-dia-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Pestaña de Comparativa -->
-                        <div class="tab-pane fade" id="comparativa" role="tabpanel" aria-labelledby="comparativa-tab">
-                            <div class="row">
-                                <div class="col-12 mb-4">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i> 
-                                        Esta sección muestra una comparativa del rendimiento de {{ profesor.nombre }} {{ profesor.apellido }} con respecto al promedio de todos los profesores.
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i> Puntualidad vs. Promedio</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="comparativa-puntualidad-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-users me-2"></i> Alumnos por Clase vs. Promedio</h5>
-                                        </div>
-                                        <div class="card-body d-flex align-items-center justify-content-center">
-                                            <div id="comparativa-alumnos-chart" style="width: 100%; height: 300px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i> Ranking de Profesores</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class="text-center">Posición</th>
-                                                            <th>Profesor</th>
-                                                            <th class="text-center">Total Clases</th>
-                                                            <th class="text-center">Puntualidad</th>
-                                                            <th class="text-center">Promedio Alumnos</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for prof in metricas.ranking_profesores %}
-                                                        <tr class="{{ 'table-info' if prof.id == profesor.id }}">
-                                                            <td class="text-center">{{ loop.index }}</td>
-                                                            <td>
-                                                                <div class="d-flex align-items-center">
-                                                                    {% if loop.index <= 3 %}
-                                                                    <span class="badge rounded-pill bg-{{ 'warning' if loop.index == 1 else 'secondary' if loop.index == 2 else 'danger' }} me-2">
-                                                                        {{ loop.index }}
-                                                                    </span>
-                                                                    {% else %}
-                                                                    <span class="badge rounded-pill bg-light text-dark me-2">
-                                                                        {{ loop.index }}
-                                                                    </span>
-                                                                    {% endif %}
-                                                                    {{ prof.nombre }} {{ prof.apellido }}
-                                                                    {% if prof.id == profesor.id %}
-                                                                    <span class="badge bg-primary ms-2">Tú</span>
-                                                                    {% endif %}
-                                                                </div>
-                                                            </td>
-                                                            <td class="text-center">{{ prof.total_clases }}</td>
-                                                            <td class="text-center">
-                                                                {{ prof.puntualidad }}%
-                                                                <div class="progress mt-1" style="height: 5px;">
-                                                                    <div class="progress-bar bg-success" role="progressbar" 
-                                                                         style="width: {{ prof.puntualidad }}%;" 
-                                                                         aria-valuenow="{{ prof.puntualidad }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                                                </div>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                {{ prof.promedio_alumnos|round(1) }}
-                                                                <div class="progress mt-1" style="height: 5px;">
-                                                                    <div class="progress-bar bg-info" role="progressbar" 
-                                                                         style="width: {{ (prof.promedio_alumnos / 20 * 100)|round }}%;" 
-                                                                         aria-valuenow="{{ (prof.promedio_alumnos / 20 * 100)|round }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+    
+    {% if debug_mode %}
+    <!-- Panel de depuración -->
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-bug me-2"></i>
+                Depuración de Métricas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionDebug">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            Métricas Generales
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas|tojson(indent=2) }}</pre>
                         </div>
                     </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Puntualidad
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.puntualidad|tojson(indent=2) if metricas.puntualidad is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            Distribución
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.distribucion|tojson(indent=2) if metricas.distribucion is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                            Tendencias
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.tendencias|tojson(indent=2) if metricas.tendencias is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFive">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                            Datos por Tipo
+                        </button>
+                    </h2>
+                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.datos_por_tipo|tojson(indent=2) if metricas.datos_por_tipo is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de gráficos principales -->
+    <div class="row mb-4">
+        <!-- Distribución por tipo de clase -->
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Distribución por Tipo de Clase</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.distribucion and metricas.distribucion.tipos %}
+                        <div class="chart-container">
+                            <canvas id="tipoClaseChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar la distribución por tipo de clase.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Evolución Mensual -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-line me-2 text-primary"></i>Evolución Mensual</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
+                        <div class="chart-container">
+                            <canvas id="evolucionMensualChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar la evolución mensual.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles por tipo de clase -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-th-list me-2 text-primary"></i>Análisis por Tipo de Clase</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.datos_por_tipo and metricas.datos_por_tipo|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="fw-semibold">Tipo</th>
+                                        <th class="fw-semibold">Total Clases</th>
+                                        <th class="fw-semibold">Promedio Alumnos</th>
+                                        <th class="fw-semibold">Puntualidad</th>
+                                        <th class="fw-semibold">Tendencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tipo, datos in metricas.datos_por_tipo.items() %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary px-3 py-2 fw-normal">{{ tipo }}</span>
+                                        </td>
+                                        <td>{{ datos.total_clases }}</td>
+                                        <td>{{ datos.promedio_alumnos|round(1) }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-info" role="progressbar" 
+                                                    style="width: {{ datos.tasa_puntualidad }}%;" 
+                                                    aria-valuenow="{{ datos.tasa_puntualidad|round(1) }}" 
+                                                    aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <small class="mt-1 d-block text-end">{{ datos.tasa_puntualidad|round(1) }}%</small>
+                                        </td>
+                                        <td>
+                                            {% if datos.tendencia > 0 %}
+                                                <span class="text-success"><i class="fas fa-arrow-up"></i> {{ datos.tendencia|round(1) }}%</span>
+                                            {% elif datos.tendencia < 0 %}
+                                                <span class="text-danger"><i class="fas fa-arrow-down"></i> {{ datos.tendencia|round(1) }}%</span>
+                                            {% else %}
+                                                <span class="text-muted"><i class="fas fa-equals"></i> 0%</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar el análisis por tipo de clase.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tendencias y análisis de puntualidad -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Análisis de Puntualidad</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div class="chart-container" style="height: 220px;">
+                                    <canvas id="puntualidadChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="text-center mb-3 fw-semibold">Detalle de Puntualidad</h6>
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-check-circle text-success me-2"></i>Clases puntuales</span>
+                                                <span class="badge bg-success rounded-pill">{{ metricas.puntualidad.puntual }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-exclamation-circle text-warning me-2"></i>Retrasos leves</span>
+                                                <span class="badge bg-warning rounded-pill">{{ metricas.puntualidad.retraso_leve }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-times-circle text-danger me-2"></i>Retrasos significativos</span>
+                                                <span class="badge bg-danger rounded-pill">{{ metricas.puntualidad.retraso_significativo }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span class="fw-semibold"><i class="fas fa-clipboard-list text-primary me-2"></i>Total</span>
+                                                <span class="badge bg-primary rounded-pill">{{ metricas.puntualidad.total }}</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar el análisis de puntualidad.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Tendencias Globales</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.tendencias %}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-chart-line text-primary me-2"></i>
+                                            <span class="fw-semibold">Tendencia general</span>
+                                        </div>
+                                        <span class="badge bg-primary px-3 py-2">
+                                            {% if metricas.tendencia_global is defined %}
+                                                {% if metricas.tendencia_global > 0 %}
+                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencia_global|round(1) }}%
+                                                {% elif metricas.tendencia_global < 0 %}
+                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencia_global|round(1) }}%
+                                                {% else %}
+                                                    <i class="fas fa-equals me-1"></i> 0%
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-users text-success me-2"></i>
+                                            <span class="fw-semibold">Tendencia alumnos</span>
+                                        </div>
+                                        <span class="badge bg-success px-3 py-2">
+                                            {% if metricas.tendencias.alumnos is defined %}
+                                                {% if metricas.tendencias.alumnos > 0 %}
+                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.alumnos|round(1) }}%
+                                                {% elif metricas.tendencias.alumnos < 0 %}
+                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.alumnos|round(1) }}%
+                                                {% else %}
+                                                    <i class="fas fa-equals me-1"></i> 0%
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-clock text-info me-2"></i>
+                                            <span class="fw-semibold">Tendencia puntualidad</span>
+                                        </div>
+                                        <span class="badge bg-info px-3 py-2">
+                                            {% if metricas.tendencias.puntualidad is defined %}
+                                                {% if metricas.tendencias.puntualidad > 0 %}
+                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.puntualidad|round(1) }}%
+                                                {% elif metricas.tendencias.puntualidad < 0 %}
+                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.puntualidad|round(1) }}%
+                                                {% else %}
+                                                    <i class="fas fa-equals me-1"></i> 0%
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-calendar-alt text-warning me-2"></i>
+                                            <span class="fw-semibold">Tendencia clases mensuales</span>
+                                        </div>
+                                        <span class="badge bg-warning px-3 py-2">
+                                            {% if metricas.tendencias.clases_por_mes is defined %}
+                                                {% if metricas.tendencias.clases_por_mes > 0 %}
+                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.clases_por_mes|round(1) }}%
+                                                {% elif metricas.tendencias.clases_por_mes < 0 %}
+                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.clases_por_mes|round(1) }}%
+                                                {% else %}
+                                                    <i class="fas fa-equals me-1"></i> 0%
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar tendencias globales.</div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Incluir Chart.js directamente en el body -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Scripts específicos para gráficos -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Datos para los gráficos (estos se llenarán desde el backend)
-    const puntualidadData = {
-        labels: ['Puntual', 'Retraso leve', 'Retraso significativo'],
-        datasets: [{
-            data: [
-                {{ metricas.puntualidad.puntual }}, 
-                {{ metricas.puntualidad.retraso_leve }}, 
-                {{ metricas.puntualidad.retraso_significativo }}
-            ],
-            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
-        }]
+    // Definir colores para los gráficos
+    const colors = {
+        primary: {
+            main: 'rgba(25, 118, 210, 1)',
+            light: 'rgba(25, 118, 210, 0.7)'
+        },
+        success: {
+            main: 'rgba(56, 142, 60, 1)',
+            light: 'rgba(56, 142, 60, 0.7)'
+        },
+        warning: {
+            main: 'rgba(245, 124, 0, 1)',
+            light: 'rgba(245, 124, 0, 0.7)'
+        },
+        danger: {
+            main: 'rgba(229, 57, 53, 1)',
+            light: 'rgba(229, 57, 53, 0.7)'
+        },
+        info: {
+            main: 'rgba(2, 136, 209, 1)',
+            light: 'rgba(2, 136, 209, 0.7)'
+        }
     };
 
-    const tiposClaseData = {
-        labels: [{% for tipo in metricas.datos_por_tipo %}'{{ tipo }}',{% endfor %}],
-        datasets: [{
-            data: [{% for tipo, datos in metricas.datos_por_tipo.items() %}{{ datos.total_clases }},{% endfor %}],
-            backgroundColor: ['#28a745', '#007bff', '#dc3545', '#6c757d']
-        }]
-    };
-
-    // Inicializar gráficos
-    if (document.getElementById('puntualidad-chart')) {
-        new Chart(document.getElementById('puntualidad-chart'), {
-            type: 'pie',
-            data: puntualidadData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Distribución de Puntualidad'
-                    }
-                }
-            }
+    // Verificar si Chart.js está disponible
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está disponible. Asegúrate de incluir la biblioteca.');
+        
+        // Mostrar mensaje de error en los contenedores de gráficos
+        const errorMessage = '<div class="alert alert-danger">No se pueden cargar los gráficos: Chart.js no está disponible.</div>';
+        document.querySelectorAll('.chart-container').forEach(container => {
+            container.style.display = 'none';
+            container.insertAdjacentHTML('afterend', errorMessage);
         });
+        return;
     }
 
-    if (document.getElementById('tipos-clase-chart')) {
-        new Chart(document.getElementById('tipos-clase-chart'), {
-            type: 'bar',
+    // Configuración global de Chart.js
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(33, 37, 41, 0.9)';
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 4;
+    Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+    
+    {% if metricas.distribucion and metricas.distribucion.tipos %}
+    try {
+        // Gráfico de tipos de clase
+        const tiposClases = {{ metricas.distribucion.tipos|tojson }};
+        const porcentajesTipos = {{ metricas.distribucion.porcentajes|tojson }};
+        
+        // Preparar colores para cada tipo de clase
+        const backgroundColors = [
+            colors.primary.light,
+            colors.success.light,
+            colors.warning.light,
+            colors.danger.light,
+            colors.info.light
+        ];
+        
+        const ctxTipos = document.getElementById('tipoClaseChart').getContext('2d');
+        new Chart(ctxTipos, {
+            type: 'doughnut',
             data: {
-                labels: [{% for tipo in metricas.datos_por_tipo %}'{{ tipo }}',{% endfor %}],
+                labels: Object.keys(tiposClases),
                 datasets: [{
-                    label: 'Número de clases',
-                    data: [{% for tipo, datos in metricas.datos_por_tipo.items() %}{{ datos.total_clases }},{% endfor %}],
-                    backgroundColor: ['#28a745', '#007bff', '#dc3545', '#6c757d']
+                    data: Object.values(tiposClases),
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    borderRadius: 3
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
                 plugins: {
                     legend: {
-                        display: false
+                        position: 'right',
+                        align: 'center',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
-                    title: {
-                        display: true,
-                        text: 'Clases por tipo'
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const percentage = porcentajesTipos[label] || 0;
+                                return `${label}: ${value} clases (${percentage.toFixed(1)}%)`;
+                            }
+                        }
                     }
                 }
             }
         });
+    } catch (error) {
+        console.error('Error al generar gráfico de tipos de clase:', error);
+        document.getElementById('tipoClaseChart').closest('.chart-container').insertAdjacentHTML('afterend', 
+            `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
     }
+    {% endif %}
 
-    // Más gráficos se inicializarían aquí si hay datos
+    {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
+    try {
+        // Gráfico de evolución mensual
+        const datosMensuales = {{ metricas.datos_mensuales|tojson }};
+        const ctxEvolucion = document.getElementById('evolucionMensualChart').getContext('2d');
+        const etiquetasMeses = datosMensuales.map(d => d.etiqueta);
+        const datosAlumnos = datosMensuales.map(d => d.promedio_alumnos);
+        const datosPuntualidad = datosMensuales.map(d => d.puntualidad);
+
+        // Función para crear un degradado
+        function createGradient(ctx, color) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, color.replace('1)', '0.3)'));
+            gradient.addColorStop(1, color.replace('1)', '0.0)'));
+            return gradient;
+        }
+
+        new Chart(ctxEvolucion, {
+            type: 'line',
+            data: {
+                labels: etiquetasMeses,
+                datasets: [
+                    {
+                        label: 'Promedio Alumnos',
+                        data: datosAlumnos,
+                        borderColor: colors.primary.main,
+                        backgroundColor: createGradient(ctxEvolucion, colors.primary.main),
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'white',
+                        pointBorderColor: colors.primary.main,
+                        pointBorderWidth: 2
+                    },
+                    {
+                        label: 'Puntualidad (%)',
+                        data: datosPuntualidad,
+                        borderColor: colors.success.main,
+                        backgroundColor: createGradient(ctxEvolucion, colors.success.main),
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y1',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'white',
+                        pointBorderColor: colors.success.main,
+                        pointBorderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 12,
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Promedio Alumnos'
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Puntualidad (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error al generar gráfico de evolución mensual:', error);
+        document.getElementById('evolucionMensualChart').closest('.chart-container').insertAdjacentHTML('afterend', 
+            `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
+    }
+    {% endif %}
+
+    {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+    try {
+        // Gráfico de puntualidad
+        const puntualidadData = {
+            labels: ['Puntual', 'Retraso Leve', 'Retraso Significativo'],
+            data: [
+                {{ metricas.puntualidad.puntual }},
+                {{ metricas.puntualidad.retraso_leve }},
+                {{ metricas.puntualidad.retraso_significativo }}
+            ]
+        };
+        
+        const ctxPuntualidad = document.getElementById('puntualidadChart').getContext('2d');
+        new Chart(ctxPuntualidad, {
+            type: 'pie',
+            data: {
+                labels: puntualidadData.labels,
+                datasets: [{
+                    data: puntualidadData.data,
+                    backgroundColor: [
+                        colors.success.light,
+                        colors.warning.light,
+                        colors.danger.light
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error al generar gráfico de puntualidad:', error);
+        document.getElementById('puntualidadChart').closest('.chart-container').insertAdjacentHTML('afterend', 
+            `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}
-{% endblock %} 

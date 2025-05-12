@@ -748,6 +748,10 @@ def registrar_asistencia(horario_id):
             db.session.add(nueva_clase)
             db.session.commit()
             
+            # Limpiar caché de métricas para este profesor
+            from models import clear_metrics_cache
+            clear_metrics_cache(profesor_id)
+            
             # Mostrar mensaje de éxito con la fecha
             fecha_str = fecha_registro.strftime('%d/%m/%Y')
             flash(f'Registro de asistencia para el {fecha_str} guardado correctamente', 'success')
@@ -815,6 +819,11 @@ def editar_asistencia(id):
         clase_realizada.profesor_id = int(profesor_id) if profesor_id else clase_realizada.profesor_id
         
         db.session.commit()
+        
+        # Limpiar caché de métricas para este profesor
+        from models import clear_metrics_cache
+        clear_metrics_cache(clase_realizada.profesor_id)
+        
         flash('Registro de asistencia actualizado con éxito', 'success')
         
         # Redireccionar según la fecha de la clase actualizada
@@ -839,12 +848,15 @@ def eliminar_asistencia(id):
         # First try to get the class ID without attaching it to a session
         clase_id = id
         
-        # Get audio file path before deletion to delete the file after db operation
+        # Get audio file path and profesor_id before deletion
         audio_path = None
+        profesor_id = None
         try:
             clase = ClaseRealizada.query.filter_by(id=clase_id).first()
-            if clase and clase.audio_file:
-                audio_path = clase.audio_file
+            if clase:
+                if clase.audio_file:
+                    audio_path = clase.audio_file
+                profesor_id = clase.profesor_id
         except Exception as e:
             app.logger.warning(f"Error retrieving audio file before deletion: {str(e)}")
         
@@ -861,6 +873,15 @@ def eliminar_asistencia(id):
                     app.logger.info(f"Deleted audio file: {full_path}")
             except Exception as e:
                 app.logger.error(f"Error deleting audio file: {str(e)}")
+        
+        # Limpiar caché de métricas para este profesor si tenemos su ID
+        if profesor_id:
+            try:
+                from models import clear_metrics_cache
+                clear_metrics_cache(profesor_id)
+                app.logger.info(f"Cleared metrics cache for profesor_id: {profesor_id}")
+            except Exception as e:
+                app.logger.error(f"Error clearing metrics cache: {str(e)}")
         
         flash('Registro de asistencia eliminado con éxito', 'success')
     except Exception as e:
@@ -3494,6 +3515,14 @@ def registrar_asistencia_fecha(fecha, horario_id):
             db.session.add(nueva_clase)
             db.session.commit()
             
+            # Limpiar caché de métricas para este profesor
+            try:
+                from models import clear_metrics_cache
+                clear_metrics_cache(profesor_id)
+                print(f"INFO: Limpiada caché de métricas para profesor_id={profesor_id}")
+            except Exception as e:
+                print(f"ERROR: No se pudo limpiar caché de métricas - {str(e)}")
+            
             db.session.refresh(nueva_clase)
             
             print(f"ÉXITO: Clase registrada con ID={nueva_clase.id}")
@@ -4877,84 +4906,48 @@ def metricas_profesor(profesor_id):
         # Obtener datos del profesor
         profesor = Profesor.query.get_or_404(profesor_id)
         
-        # Obtener todas las clases impartidas por el profesor
-        clases = ClaseRealizada.query.filter_by(profesor_id=profesor_id).order_by(ClaseRealizada.fecha).all()
+        # Obtener parámetros de filtro opcional
+        periodo_meses = request.args.get('periodo', type=int, default=12)
+        tipo_clase = request.args.get('tipo_clase', default=None)
         
-        # Inicializar variables para métricas
-        total_clases = len(clases)
-        total_alumnos = sum(clase.cantidad_alumnos for clase in clases if clase.cantidad_alumnos is not None)
-        total_retrasos = 0
-        puntualidad = {'puntual': 0, 'retraso_leve': 0, 'retraso_significativo': 0}
-        datos_por_tipo = {tipo: {'total_clases': 0, 'total_alumnos': 0, 'total_retrasos': 0} for tipo in ['MOVE', 'RIDE', 'BOX', 'OTRO']}
+        # Verificar valor de periodo_meses
+        if periodo_meses <= 0:
+            periodo_meses = 12
         
-        # Calcular métricas de puntualidad
-        for clase in clases:
-            if clase.puntualidad == "Retraso leve" or clase.puntualidad == "Retraso significativo":
-                total_retrasos += 1
-                
-            # Contar por tipo de puntualidad
-            if clase.puntualidad == "Puntual":
-                puntualidad['puntual'] += 1
-            elif clase.puntualidad == "Retraso leve":
-                puntualidad['retraso_leve'] += 1
-            elif clase.puntualidad == "Retraso significativo":
-                puntualidad['retraso_significativo'] += 1
-                
-            # Contar por tipo de clase
-            tipo_clase = clase.horario.tipo_clase if clase.horario and clase.horario.tipo_clase else 'OTRO'
-            datos_por_tipo[tipo_clase]['total_clases'] += 1
-            if clase.cantidad_alumnos is not None:
-                datos_por_tipo[tipo_clase]['total_alumnos'] += clase.cantidad_alumnos
-            if clase.puntualidad == "Retraso leve" or clase.puntualidad == "Retraso significativo":
-                datos_por_tipo[tipo_clase]['total_retrasos'] += 1
+        # Obtener fecha fin del análisis (hoy por defecto)
+        fecha_fin_str = request.args.get('fecha_fin', default=None)
+        fecha_fin = None
+        if fecha_fin_str:
+            try:
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_fin = None
         
-        # Obtener datos comparativos (todos los profesores)
-        todos_profesores = Profesor.query.all()
-        ranking_profesores = []
+        # Verificar si se debe forzar el recálculo (ignorar caché)
+        force_recalculate = request.args.get('force_recalculate', type=bool, default=False)
         
-        for prof in todos_profesores:
-            prof_clases = ClaseRealizada.query.filter_by(profesor_id=prof.id).all()
-            if not prof_clases:
-                continue
-                
-            prof_total_clases = len(prof_clases)
-            prof_total_alumnos = sum(c.cantidad_alumnos for c in prof_clases if c.cantidad_alumnos is not None)
-            prof_retrasos = sum(1 for c in prof_clases if c.puntualidad in ["Retraso leve", "Retraso significativo"])
-            
-            # Calcular puntualidad como porcentaje
-            prof_puntualidad = 0
-            if prof_total_clases > 0:
-                prof_puntualidad = round(((prof_total_clases - prof_retrasos) / prof_total_clases) * 100, 1)
-                
-            # Calcular promedio de alumnos
-            prof_promedio_alumnos = 0
-            if prof_total_clases > 0:
-                prof_promedio_alumnos = prof_total_alumnos / prof_total_clases
-                
-            ranking_profesores.append({
-                'id': prof.id,
-                'nombre': prof.nombre,
-                'apellido': prof.apellido,
-                'total_clases': prof_total_clases,
-                'promedio_alumnos': prof_promedio_alumnos,
-                'puntualidad': prof_puntualidad
-            })
+        # Calcular métricas utilizando el método del modelo
+        metricas = profesor.calcular_metricas(
+            periodo_meses=periodo_meses,
+            fecha_fin=fecha_fin,
+            force_recalculate=force_recalculate
+        )
         
-        # Ordenar ranking por puntualidad (descendente)
-        ranking_profesores.sort(key=lambda x: x['puntualidad'], reverse=True)
+        # Obtener tipos de clase para filtros en la UI
+        tipos_clase = HorarioClase.obtener_tipos_clase()
         
-        # Construir objeto de métricas
-        metricas = {
-            'total_clases': total_clases,
-            'total_alumnos': total_alumnos,
-            'total_retrasos': total_retrasos,
-            'puntualidad': puntualidad,
-            'datos_por_tipo': datos_por_tipo,
-            'clases': clases,
-            'ranking_profesores': ranking_profesores
-        }
+        # Obtener ranking de profesores para comparativas
+        if 'ranking_profesores' not in metricas or not metricas['ranking_profesores']:
+            metricas['ranking_profesores'] = Profesor.obtener_ranking_profesores()
         
-        return render_template('informes/metricas_profesor.html', profesor=profesor, metricas=metricas)
+        return render_template(
+            'informes/metricas_profesor.html', 
+            profesor=profesor, 
+            metricas=metricas,
+            tipos_clase=tipos_clase,
+            periodo_actual=periodo_meses,
+            tipo_clase_actual=tipo_clase or 'Todos'
+        )
     except Exception as e:
         app.logger.error(f"Error en metricas_profesor: {str(e)}")
         flash(f"Error al cargar métricas del profesor: {str(e)}", "danger")
