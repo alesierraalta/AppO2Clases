@@ -416,8 +416,12 @@ def calcular_metricas_profesor(profesor_id, clases):
     total_tipos_posibles = 4  # MOVE, RIDE, BOX, OTRO
     variedad_clases = (tipos_distintos / total_tipos_posibles) * 100
     
-    # Calcular tendencias globales
-    tendencia_global = tendencia['tendencia']
+    # Inicializar valores de tendencia
+    tendencia_global = 0
+    tendencia_alumnos = 0
+    tendencia_puntualidad = 0
+    tendencia_clases_mes = 0
+    tendencia_otros = 0
     
     # Preparar tendencias individuales
     if len(tendencia['datos_mensuales']) >= 2:
@@ -436,17 +440,43 @@ def calcular_metricas_profesor(profesor_id, clases):
             prom_clases_mes_antiguo = np.mean([d['total_clases'] for d in datos_antiguos])
             
             # Calcular tendencias porcentuales
-            tendencia_alumnos = ((prom_alumnos_reciente / prom_alumnos_antiguo) - 1) * 100 if prom_alumnos_antiguo > 0 else 0
-            tendencia_puntualidad = ((prom_puntualidad_reciente / prom_puntualidad_antiguo) - 1) * 100 if prom_puntualidad_antiguo > 0 else 0
-            tendencia_clases_mes = ((prom_clases_mes_reciente / prom_clases_mes_antiguo) - 1) * 100 if prom_clases_mes_antiguo > 0 else 0
+            tendencia_alumnos_raw = ((prom_alumnos_reciente / prom_alumnos_antiguo) - 1) * 100 if prom_alumnos_antiguo > 0 else 0
+            tendencia_puntualidad_raw = ((prom_puntualidad_reciente / prom_puntualidad_antiguo) - 1) * 100 if prom_puntualidad_antiguo > 0 else 0
+            tendencia_clases_mes_raw = ((prom_clases_mes_reciente / prom_clases_mes_antiguo) - 1) * 100 if prom_clases_mes_antiguo > 0 else 0
+            tendencia_otros_raw = 0  # Por defecto, no hay otros factores considerados
+            
+            # Usar los valores calculados para las tendencias mostradas
+            tendencia_alumnos = tendencia_alumnos_raw
+            tendencia_puntualidad = tendencia_puntualidad_raw
+            tendencia_clases_mes = tendencia_clases_mes_raw
+            tendencia_otros = tendencia_otros_raw
+            
+            # Calcular tendencia global como promedio ponderado de las tendencias individuales
+            # Usar los pesos definidos en la plantilla: 40% alumnos, 30% puntualidad, 20% clases, 10% otros
+            tendencia_global = (
+                0.4 * tendencia_alumnos_raw +
+                0.3 * tendencia_puntualidad_raw + 
+                0.2 * tendencia_clases_mes_raw +
+                0.1 * tendencia_otros_raw
+            )
         else:
+            tendencia_alumnos_raw = 0
+            tendencia_puntualidad_raw = 0
+            tendencia_clases_mes_raw = 0
+            tendencia_otros_raw = 0
             tendencia_alumnos = 0
             tendencia_puntualidad = 0
             tendencia_clases_mes = 0
+            tendencia_otros = 0
     else:
+        tendencia_alumnos_raw = 0
+        tendencia_puntualidad_raw = 0
+        tendencia_clases_mes_raw = 0
+        tendencia_otros_raw = 0
         tendencia_alumnos = 0
         tendencia_puntualidad = 0
         tendencia_clases_mes = 0
+        tendencia_otros = 0
     
     # Añadir datos para comparativa (simulados - en producción vendrían de la BD)
     promedio_profesores = {
@@ -543,7 +573,11 @@ def calcular_metricas_profesor(profesor_id, clases):
         'tendencias': {
             'alumnos': tendencia_alumnos,
             'puntualidad': tendencia_puntualidad,
-            'clases_por_mes': tendencia_clases_mes
+            'clases_por_mes': tendencia_clases_mes,
+            'alumnos_raw': tendencia_alumnos_raw if 'tendencia_alumnos_raw' in locals() else tendencia_alumnos,
+            'puntualidad_raw': tendencia_puntualidad_raw if 'tendencia_puntualidad_raw' in locals() else tendencia_puntualidad,
+            'clases_por_mes_raw': tendencia_clases_mes_raw if 'tendencia_clases_mes_raw' in locals() else tendencia_clases_mes,
+            'otros_factores': tendencia_otros if 'tendencia_otros' in locals() else 0
         },
         'promedio_profesores': promedio_profesores,
         'ranking_profesores': ranking_profesores

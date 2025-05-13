@@ -248,7 +248,7 @@
     <!-- Sección de gráficos principales -->
     <div class="row mb-4">
         <!-- Distribución por tipo de clase -->
-        <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="col-lg-4 mb-4 mb-lg-0">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3">
                     <h5 class="m-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Distribución por Tipo de Clase</h5>
@@ -269,14 +269,14 @@
         </div>
         
         <!-- Evolución Mensual -->
-        <div class="col-lg-6">
+        <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3">
                     <h5 class="m-0"><i class="fas fa-chart-line me-2 text-primary"></i>Evolución Mensual</h5>
                 </div>
                 <div class="card-body">
                     {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
-                        <div class="chart-container">
+                        <div class="chart-container" style="height: 350px;">
                             <canvas id="evolucionMensualChart"></canvas>
                         </div>
                     {% else %}
@@ -353,7 +353,7 @@
         </div>
     </div>
 
-    <!-- Tendencias y análisis de puntualidad -->
+    <!-- Análisis de puntualidad -->
     <div class="row mb-4">
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="card border-0 shadow-sm h-100">
@@ -403,114 +403,19 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="m-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Tendencias Globales</h5>
-                </div>
-                <div class="card-body">
-                    {% if metricas.tendencias %}
-                        <div class="row">
-                            <div class="col-md-12">
-                                <ul class="list-group">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-chart-line text-primary me-2"></i>
-                                            <span class="fw-semibold">Tendencia general</span>
-                                        </div>
-                                        <span class="badge bg-primary px-3 py-2">
-                                            {% if metricas.tendencia_global is defined %}
-                                                {% if metricas.tendencia_global > 0 %}
-                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencia_global|round(1) }}%
-                                                {% elif metricas.tendencia_global < 0 %}
-                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencia_global|round(1) }}%
-                                                {% else %}
-                                                    <i class="fas fa-equals me-1"></i> 0%
-                                                {% endif %}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-users text-success me-2"></i>
-                                            <span class="fw-semibold">Tendencia alumnos</span>
-                                        </div>
-                                        <span class="badge bg-success px-3 py-2">
-                                            {% if metricas.tendencias.alumnos is defined %}
-                                                {% if metricas.tendencias.alumnos > 0 %}
-                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.alumnos|round(1) }}%
-                                                {% elif metricas.tendencias.alumnos < 0 %}
-                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.alumnos|round(1) }}%
-                                                {% else %}
-                                                    <i class="fas fa-equals me-1"></i> 0%
-                                                {% endif %}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-clock text-info me-2"></i>
-                                            <span class="fw-semibold">Tendencia puntualidad</span>
-                                        </div>
-                                        <span class="badge bg-info px-3 py-2">
-                                            {% if metricas.tendencias.puntualidad is defined %}
-                                                {% if metricas.tendencias.puntualidad > 0 %}
-                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.puntualidad|round(1) }}%
-                                                {% elif metricas.tendencias.puntualidad < 0 %}
-                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.puntualidad|round(1) }}%
-                                                {% else %}
-                                                    <i class="fas fa-equals me-1"></i> 0%
-                                                {% endif %}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-calendar-alt text-warning me-2"></i>
-                                            <span class="fw-semibold">Tendencia clases mensuales</span>
-                                        </div>
-                                        <span class="badge bg-warning px-3 py-2">
-                                            {% if metricas.tendencias.clases_por_mes is defined %}
-                                                {% if metricas.tendencias.clases_por_mes > 0 %}
-                                                    <i class="fas fa-arrow-up me-1"></i> {{ metricas.tendencias.clases_por_mes|round(1) }}%
-                                                {% elif metricas.tendencias.clases_por_mes < 0 %}
-                                                    <i class="fas fa-arrow-down me-1"></i> {{ metricas.tendencias.clases_por_mes|round(1) }}%
-                                                {% else %}
-                                                    <i class="fas fa-equals me-1"></i> 0%
-                                                {% endif %}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info d-flex align-items-center">
-                            <i class="fas fa-info-circle me-2 fs-4"></i>
-                            <div>No hay datos suficientes para mostrar tendencias globales.</div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Incluir Chart.js directamente en el body -->
+<!-- Incluir Chart.js y plugin datalabels -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <!-- Scripts específicos para gráficos -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Registrar el plugin datalabels globalmente
+    Chart.register(ChartDataLabels);
+    
     // Definir colores para los gráficos
     const colors = {
         primary: {
@@ -573,10 +478,16 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         const ctxTipos = document.getElementById('tipoClaseChart').getContext('2d');
+        // Preparar etiquetas con porcentajes
+        const labelsWithPercentages = Object.keys(tiposClases).map(tipo => {
+            const percentage = porcentajesTipos[tipo] || 0;
+            return `${tipo}: ${percentage.toFixed(1)}%`;
+        });
+
         new Chart(ctxTipos, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(tiposClases),
+                labels: labelsWithPercentages,
                 datasets: [{
                     data: Object.values(tiposClases),
                     backgroundColor: backgroundColors,
@@ -602,12 +513,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const label = context.label || '';
                                 const value = context.raw || 0;
-                                const percentage = porcentajesTipos[label] || 0;
-                                return `${label}: ${value} clases (${percentage.toFixed(1)}%)`;
+                                const index = context.dataIndex;
+                                const originalLabel = Object.keys(tiposClases)[index];
+                                const percentage = porcentajesTipos[originalLabel] || 0;
+                                return `${value} clases (${percentage.toFixed(1)}%)`;
                             }
                         }
+                    },
+                    // Plugin personalizado para mostrar los porcentajes en el gráfico
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value, context) {
+                            const index = context.dataIndex;
+                            const originalLabel = Object.keys(tiposClases)[index];
+                            const percentage = porcentajesTipos[originalLabel] || 0;
+                            return `${percentage.toFixed(1)}%`;
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0
                     }
                 }
             }
@@ -653,7 +582,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         pointRadius: 3,
                         pointBackgroundColor: 'white',
                         pointBorderColor: colors.primary.main,
-                        pointBorderWidth: 2
+                        pointBorderWidth: 2,
+                        datalabels: {
+                            align: 'end',
+                            anchor: 'end',
+                            backgroundColor: colors.primary.main,
+                            borderRadius: 4,
+                            color: 'white',
+                            padding: 4,
+                            formatter: function(value) {
+                                return value.toFixed(1);
+                            }
+                        }
                     },
                     {
                         label: 'Puntualidad (%)',
@@ -667,7 +607,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         pointRadius: 3,
                         pointBackgroundColor: 'white',
                         pointBorderColor: colors.success.main,
-                        pointBorderWidth: 2
+                        pointBorderWidth: 2,
+                        datalabels: {
+                            align: 'start',
+                            anchor: 'start',
+                            backgroundColor: colors.success.main,
+                            borderRadius: 4,
+                            color: 'white',
+                            padding: 4,
+                            formatter: function(value) {
+                                return value.toFixed(1) + '%';
+                            }
+                        }
                     }
                 ]
             },
@@ -691,6 +642,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltip: {
                         mode: 'index',
                         intersect: false
+                    },
+                    // Configuración global para datalabels en el gráfico de línea
+                    datalabels: {
+                        display: function(context) {
+                            // Solo mostrar etiquetas en puntos específicos para evitar sobrecarga
+                            return context.dataIndex % 2 === 0;
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        color: '#fff',
+                        textStrokeColor: 'rgba(0, 0, 0, 0.5)',
+                        textStrokeWidth: 1,
+                        offset: 8,
+                        padding: {
+                            top: 4,
+                            bottom: 4,
+                            left: 6,
+                            right: 6
+                        },
+                        borderRadius: 4
                     }
                 },
                 scales: {
@@ -751,11 +724,22 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
         
+        // Calcular porcentajes para puntualidad
+        const totalPuntualidad = puntualidadData.data.reduce((acc, val) => acc + val, 0);
+        const porcentajesPuntualidad = puntualidadData.data.map(val => 
+            totalPuntualidad > 0 ? (val / totalPuntualidad * 100).toFixed(1) : 0
+        );
+        
+        // Preparar etiquetas con porcentajes
+        const puntualidadLabelsWithPercentages = puntualidadData.labels.map((label, i) => 
+            `${label}: ${porcentajesPuntualidad[i]}%`
+        );
+        
         const ctxPuntualidad = document.getElementById('puntualidadChart').getContext('2d');
         new Chart(ctxPuntualidad, {
             type: 'pie',
             data: {
-                labels: puntualidadData.labels,
+                labels: puntualidadLabelsWithPercentages,
                 datasets: [{
                     data: puntualidadData.data,
                     backgroundColor: [
@@ -779,6 +763,29 @@ document.addEventListener('DOMContentLoaded', function() {
                             usePointStyle: true,
                             pointStyle: 'circle'
                         }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                const percentage = porcentajesPuntualidad[context.dataIndex];
+                                return `${value} clases (${percentage}%)`;
+                            }
+                        }
+                    },
+                    // Plugin para mostrar los porcentajes en el gráfico
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value, context) {
+                            return porcentajesPuntualidad[context.dataIndex] + '%';
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0
                     }
                 }
             }
@@ -789,6 +796,48 @@ document.addEventListener('DOMContentLoaded', function() {
             `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
     }
     {% endif %}
+
+    // Active los tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Código de manejo de cálculo de tendencias eliminado
+    
+    // Si estamos en modo debug, expandir automáticamente los paneles de depuración
+    {% if debug_mode %}
+    // Expandir el primer panel del acordeón de depuración
+    const firstAccordionButton = document.querySelector('#accordionDebug .accordion-button');
+    const firstAccordionCollapse = document.querySelector('#accordionDebug .accordion-collapse');
+    if (firstAccordionButton && firstAccordionCollapse) {
+        firstAccordionButton.classList.remove('collapsed');
+        firstAccordionButton.setAttribute('aria-expanded', 'true');
+        firstAccordionCollapse.classList.add('show');
+    }
+    {% endif %}
+    
+    // Añadir botón de modo depuración en la esquina superior derecha
+    const addDebugToggle = () => {
+        const container = document.querySelector('.container');
+        if (!container) return;
+        
+        const currentUrl = new URL(window.location.href);
+        const hasDebug = currentUrl.searchParams.has('debug');
+        
+        const debugButton = document.createElement('div');
+        debugButton.className = 'position-fixed top-0 end-0 m-3';
+        debugButton.innerHTML = `
+            <a href="${hasDebug ? currentUrl.pathname : currentUrl.pathname + '?debug=true'}" 
+               class="btn btn-sm ${hasDebug ? 'btn-danger' : 'btn-secondary'} shadow-sm">
+                <i class="fas fa-bug me-1"></i>${hasDebug ? 'Desactivar Depuración' : 'Modo Depuración'}
+            </a>
+        `;
+        
+        container.appendChild(debugButton);
+    };
+    
+    addDebugToggle();
 });
 </script>
 {% endblock %}

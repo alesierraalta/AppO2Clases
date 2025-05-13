@@ -4910,6 +4910,9 @@ def metricas_profesor(profesor_id):
         periodo_meses = request.args.get('periodo', type=int, default=12)
         tipo_clase = request.args.get('tipo_clase', default=None)
         
+        # Verificar si se debe mostrar el modo de depuración
+        debug_mode = request.args.get('debug', type=bool, default=False)
+        
         # Verificar valor de periodo_meses
         if periodo_meses <= 0:
             periodo_meses = 12
@@ -4946,7 +4949,8 @@ def metricas_profesor(profesor_id):
             metricas=metricas,
             tipos_clase=tipos_clase,
             periodo_actual=periodo_meses,
-            tipo_clase_actual=tipo_clase or 'Todos'
+            tipo_clase_actual=tipo_clase or 'Todos',
+            debug_mode=debug_mode
         )
     except Exception as e:
         app.logger.error(f"Error en metricas_profesor: {str(e)}")
