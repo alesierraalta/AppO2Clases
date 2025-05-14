@@ -185,54 +185,50 @@
                         </thead>
                         <tbody>
                             {% for horario in horarios %}
-                            {% set is_active = horario.activo if horario is defined and horario.activo is defined else True %}
-                            <tr class="clase-{{ horario.tipo_clase|lower }} {% if not is_active %}table-secondary{% endif %}" data-tipo="{{ horario.tipo_clase }}" data-dia="{{ horario.dia_semana }}" data-activo="{{ is_active|int }}">
-                                <td class="checkbox-column">
-                                    <div class="form-check">
-                                        <input class="form-check-input checkbox-horario" type="checkbox" name="horarios_ids[]" value="{{ horario.id }}">
-                                    </div>
-                                </td>
-                                <td class="d-none d-md-table-cell">{{ horario.id }}</td>
-                                <td>{{ horario.nombre }}</td>
+                            {% set is_active = horario.activo is defined and horario.activo %}
+                            <tr>
                                 <td>
-                                    {% if horario.tipo_clase == 'MOVE' %}
-                                    <span class="badge bg-move">MOVE</span>
-                                    {% elif horario.tipo_clase == 'RIDE' %}
-                                    <span class="badge bg-ride">RIDE</span>
-                                    {% elif horario.tipo_clase == 'BOX' %}
-                                    <span class="badge bg-box">BOX</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">OTRO</span>
-                                    {% endif %}
+                                    <a href="{{ url_for('editar_horario', id=horario.id) }}" class="fw-bold text-decoration-none">
+                                        {{ horario.nombre }}
+                                    </a>
                                 </td>
                                 <td>{{ horario.nombre_dia }}</td>
                                 <td>{{ horario.hora_inicio.strftime('%H:%M') }}</td>
-                                <td class="d-none d-md-table-cell">{{ horario.duracion }} min</td>
-                                <td class="d-none d-lg-table-cell">{{ horario.capacidad_maxima }}</td>
-                                <td class="d-none d-md-table-cell">{{ horario.profesor.nombre }} {{ horario.profesor.apellido }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ horario.tipo_clase }}</span>
+                                </td>
+                                <td>
+                                    {% if horario.profesor %}
+                                    {{ horario.profesor.nombre_completo }}
+                                    {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if is_active %}
                                     <span class="badge bg-success">Activo</span>
+                                    {% if horario.ultimo_evento %}
+                                    <br><small class="text-muted">Desde {{ horario.ultimo_evento.fecha.strftime('%d/%m/%Y') }}</small>
+                                    {% endif %}
                                     {% else %}
                                     <span class="badge bg-secondary">Inactivo</span>
+                                    {% if horario.fecha_desactivacion %}
+                                    <br><small class="text-muted">Desde {{ horario.fecha_desactivacion.strftime('%d/%m/%Y') }}</small>
+                                    {% elif horario.ultimo_evento %}
+                                    <br><small class="text-muted">Desde {{ horario.ultimo_evento.fecha.strftime('%d/%m/%Y') }}</small>
+                                    {% endif %}
                                     {% endif %}
                                 </td>
-                                <td class="actions-column">
-                                    <div class="btn-group action-buttons" role="group">
-                                        <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-warning">
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        {% if is_active %}
-                                        <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-secondary" title="Desactivar horario">
-                                            <i class="fas fa-power-off"></i>
+                                        <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-{% if is_active %}warning{% else %}success{% endif %}">
+                                            <i class="fas fa-{% if is_active %}power-off{% else %}check-circle{% endif %}"></i>
                                         </a>
-                                        {% else %}
-                                        <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-success" title="Activar horario">
-                                            <i class="fas fa-check-circle"></i>
-                                        </a>
-                                        {% endif %}
-                                        <a href="{{ url_for('eliminar_horario', id=horario.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro que desea eliminar este horario? ADVERTENCIA: Si elimina este horario también se eliminarán todas las clases asociadas a él. Esta acción no se puede deshacer.')">
-                                            <i class="fas fa-trash-alt"></i>
+                                        <a href="{{ url_for('confirmar_eliminar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
                                 </td>

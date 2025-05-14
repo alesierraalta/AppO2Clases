@@ -103,9 +103,7 @@
                             <td class="d-none d-md-table-cell">{{ horario.duracion }} min</td>
                             <td class="d-none d-lg-table-cell">{{ horario.capacidad_maxima }}</td>
                             <td class="d-none d-md-table-cell">{{ horario.profesor.nombre }} {{ horario.profesor.apellido }}</td>
-                            <td>
-                                <span class="badge bg-secondary">Inactivo</span>
-                            </td>
+                                                                                    <td>                                <span class="badge bg-secondary">Inactivo</span>                                {% if horario.fecha_desactivacion %}                                <br><small class="text-muted">Desde {{ horario.fecha_desactivacion.strftime('%d/%m/%Y') }}</small>                                {% endif %}                            </td>
                             <td class="actions-column">
                                 <div class="btn-group action-buttons" role="group">
                                     <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-warning">

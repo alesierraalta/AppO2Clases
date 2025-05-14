@@ -80,6 +80,8 @@ def update_database():
     """
     Actualiza el esquema de la base de datos para incorporar nuevas características.
     - Agrega campo 'activo' a la tabla horario_clase si no existe
+    - Agrega campo 'fecha_desactivacion' a la tabla horario_clase si no existe
+    - Crea tabla 'evento_horario' si no existe
     - Crea índices para optimizar consultas
     """
     print("="*50)
@@ -94,77 +96,116 @@ def update_database():
         print("Error: No se encontró la base de datos. Asegúrate de que el archivo existe.")
         return False
     
-    # Conectar directamente con sqlite3 para operaciones de bajo nivel
+    # Conectar directamente con sqlite3 para operaciones de esquema
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # 1. Verificar si existe la columna 'activo' en horario_clase
+        # Verificar si existe la columna 'activo' en horario_clase
         cursor.execute("PRAGMA table_info(horario_clase)")
-        columnas = cursor.fetchall()
+        columns = cursor.fetchall()
+        column_names = [column[1] for column in columns]
         
-        tiene_activo = any(col[1] == 'activo' for col in columnas)
-        
-        if not tiene_activo:
+        # Agregar columna 'activo' si no existe
+        if 'activo' not in column_names:
             print("Agregando columna 'activo' a la tabla horario_clase...")
-            try:
-                cursor.execute("ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1")
-                conn.commit()
-                print("✅ Columna 'activo' agregada con éxito")
-            except sqlite3.Error as e:
-                print(f"❌ Error al agregar columna 'activo': {str(e)}")
-                conn.rollback()
-        else:
-            print("✅ La columna 'activo' ya existe en la tabla horario_clase")
-        
-        # 2. Crear índice para mejorar rendimiento
-        try:
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_horario_activo ON horario_clase (activo)")
+            cursor.execute("ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1")
             conn.commit()
-            print("✅ Índice idx_horario_activo creado o verificado")
-        except sqlite3.Error as e:
-            print(f"❌ Error al crear índice en 'activo': {str(e)}")
-            conn.rollback()
+            print("Columna 'activo' agregada exitosamente.")
+        else:
+            print("La columna 'activo' ya existe en la tabla horario_clase.")
         
-        # 3. Asegurarse de que todos los horarios tengan un valor para 'activo'
-        if tiene_activo:
-            try:
-                cursor.execute("UPDATE horario_clase SET activo = 1 WHERE activo IS NULL")
-                conn.commit()
-                filas_actualizadas = cursor.rowcount
-                if filas_actualizadas > 0:
-                    print(f"✅ Se actualizaron {filas_actualizadas} horarios sin valor en 'activo'")
-                else:
-                    print("✅ Todos los horarios tienen valor en 'activo'")
-            except sqlite3.Error as e:
-                print(f"❌ Error al actualizar valores nulos en 'activo': {str(e)}")
-                conn.rollback()
+        # Agregar columna 'fecha_desactivacion' si no existe
+        if 'fecha_desactivacion' not in column_names:
+            print("Agregando columna 'fecha_desactivacion' a la tabla horario_clase...")
+            cursor.execute("ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE")
+            conn.commit()
+            print("Columna 'fecha_desactivacion' agregada exitosamente.")
+        else:
+            print("La columna 'fecha_desactivacion' ya existe en la tabla horario_clase.")
         
-        # 4. Mostrar estadísticas
-        cursor.execute("SELECT COUNT(*) FROM horario_clase")
-        total_horarios = cursor.fetchone()[0]
+        # Verificar si existe la tabla evento_horario
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='evento_horario'")
+        table_exists = cursor.fetchone()
         
-        cursor.execute("SELECT COUNT(*) FROM horario_clase WHERE activo = 1")
-        horarios_activos = cursor.fetchone()[0]
+        # Crear tabla evento_horario si no existe
+        if not table_exists:
+            print("Creando tabla 'evento_horario'...")
+            cursor.execute('''
+            CREATE TABLE evento_horario (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                horario_id INTEGER NOT NULL,
+                tipo VARCHAR(20) NOT NULL,
+                fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                fecha_aplicacion DATE,
+                motivo VARCHAR(255),
+                datos_adicionales TEXT,
+                FOREIGN KEY (horario_id) REFERENCES horario_clase (id)
+            )
+            ''')
+            
+            # Crear índices para la tabla evento_horario
+            cursor.execute("CREATE INDEX idx_evento_horario_id ON evento_horario (horario_id)")
+            cursor.execute("CREATE INDEX idx_evento_tipo ON evento_horario (tipo)")
+            cursor.execute("CREATE INDEX idx_evento_fecha ON evento_horario (fecha)")
+            conn.commit()
+            print("Tabla 'evento_horario' y sus índices creados exitosamente.")
+            
+            # Migrar datos existentes: crear eventos iniciales basados en estado actual de horarios
+            print("Migrando datos existentes a eventos...")
+            cursor.execute("SELECT id, activo, fecha_desactivacion FROM horario_clase")
+            horarios = cursor.fetchall()
+            
+            for horario in horarios:
+                horario_id, activo, fecha_desactivacion = horario
+                # Crear evento de creación para todos los horarios
+                cursor.execute('''
+                INSERT INTO evento_horario (horario_id, tipo, fecha, fecha_aplicacion, motivo)
+                VALUES (?, 'creacion', datetime('now', '-1 year'), datetime('now', '-1 year'), 'Migración inicial')
+                ''', (horario_id,))
+                
+                # Si está inactivo, crear un evento de desactivación
+                if not activo:
+                    fecha = fecha_desactivacion if fecha_desactivacion else 'datetime("now", "-1 month")'
+                    cursor.execute(f'''
+                    INSERT INTO evento_horario (horario_id, tipo, fecha, fecha_aplicacion, motivo)
+                    VALUES (?, 'desactivacion', {fecha}, {fecha}, 'Migración inicial')
+                    ''', (horario_id,))
+            
+            conn.commit()
+            print(f"Migrados datos de {len(horarios)} horarios a eventos iniciales.")
+        else:
+            print("La tabla 'evento_horario' ya existe.")
         
-        cursor.execute("SELECT COUNT(*) FROM horario_clase WHERE activo = 0")
-        horarios_inactivos = cursor.fetchone()[0]
+        # Crear índices para optimizar consultas si no existen
+        print("Verificando índices...")
         
-        print("\nEstadísticas de la base de datos:")
-        print(f"Total de horarios: {total_horarios}")
-        print(f"Horarios activos: {horarios_activos}")
-        print(f"Horarios inactivos: {horarios_inactivos}")
+        # Índice para optimizar consultas por horario activo
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_horario_activo'")
+        if not cursor.fetchone():
+            print("Creando índice para horarios activos...")
+            cursor.execute("CREATE INDEX idx_horario_activo ON horario_clase (activo)")
+            conn.commit()
+            print("Índice 'idx_horario_activo' creado exitosamente.")
         
-        cursor.close()
+        # Índice para optimizar consultas por fecha de desactivación
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_fecha_desactivacion'")
+        if not cursor.fetchone():
+            print("Creando índice para fecha de desactivación...")
+            cursor.execute("CREATE INDEX idx_fecha_desactivacion ON horario_clase (fecha_desactivacion)")
+            conn.commit()
+            print("Índice 'idx_fecha_desactivacion' creado exitosamente.")
+        
         conn.close()
-        
-        print("\n✅ Actualización de base de datos completada con éxito")
+        print("="*50)
+        print("Actualización de base de datos completada con éxito.")
         print("="*50)
         return True
         
     except Exception as e:
-        print(f"❌ Error al actualizar la base de datos: {str(e)}")
-        print("="*50)
+        print(f"Error al actualizar la base de datos: {str(e)}")
+        if 'conn' in locals() and conn:
+            conn.close()
         return False
 
 if __name__ == "__main__":

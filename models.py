@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 import functools
 from collections import defaultdict
 import calendar
+import enum
 
 # Inicializamos SQLAlchemy sin la aplicación, para hacerlo más modular.
 db = SQLAlchemy()
@@ -224,6 +225,32 @@ class Profesor(db.Model):
             print(f"Error al obtener ranking: {str(e)}")
             return []
 
+class TipoEventoHorario(enum.Enum):
+    CREACION = "creacion"
+    ACTIVACION = "activacion"
+    DESACTIVACION = "desactivacion"
+    MODIFICACION = "modificacion"
+
+class EventoHorario(db.Model):
+    """
+    Registra eventos relacionados con cambios de estado en horarios.
+    Implementa el patrón Event Sourcing para mantener un historial completo de cambios.
+    """
+    __tablename__ = 'evento_horario'
+    id = db.Column(db.Integer, primary_key=True)
+    horario_id = db.Column(db.Integer, db.ForeignKey('horario_clase.id'), nullable=False)
+    tipo = db.Column(db.Enum(TipoEventoHorario), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha_aplicacion = db.Column(db.Date, nullable=True)  # Fecha desde la que aplica el cambio
+    motivo = db.Column(db.String(255), nullable=True)
+    datos_adicionales = db.Column(db.JSON, nullable=True)  # Para almacenar información adicional
+    
+    # Relación con el horario
+    horario = db.relationship('HorarioClase', backref='eventos')
+    
+    def __repr__(self):
+        return f'<EventoHorario {self.id}: {self.tipo.value} para horario {self.horario_id}>'
+
 class HorarioClase(db.Model):
     __tablename__ = 'horario_clase'
     id = db.Column(db.Integer, primary_key=True)
@@ -236,6 +263,7 @@ class HorarioClase(db.Model):
     capacidad_maxima = db.Column(db.Integer, default=20)
     tipo_clase = db.Column(db.String(20), default='OTRO')
     activo = db.Column(db.Boolean, default=True)  # Indica si el horario está activo
+    fecha_desactivacion = db.Column(db.Date, nullable=True)  # Fecha desde la que el horario está inactivo
     clases_realizadas = db.relationship('ClaseRealizada', backref='horario', lazy=True)
     
     def __repr__(self):
@@ -255,6 +283,94 @@ class HorarioClase(db.Model):
         # Ajuste si la hora supera las 24 horas
         end_hour = end_hour % 24
         return f"{end_hour:02d}:{end_minute:02d}"
+    
+    def esta_activo_en_fecha(self, fecha):
+        """
+        Determina si un horario estaba activo en una fecha específica 
+        basándose en los eventos registrados.
+        
+        Args:
+            fecha (date): La fecha a verificar
+            
+        Returns:
+            bool: True si el horario estaba activo en esa fecha
+        """
+        if not isinstance(fecha, date):
+            try:
+                fecha = fecha.date() if hasattr(fecha, 'date') else datetime.strptime(fecha, '%Y-%m-%d').date()
+            except (ValueError, TypeError, AttributeError):
+                return False
+        
+        # Si no hay eventos, usar el comportamiento anterior
+        if not self.eventos:
+            # Si el horario está activo y no tiene fecha de desactivación, estaba activo en cualquier fecha
+            if self.activo and self.fecha_desactivacion is None:
+                return True
+                
+            # Si el horario no está activo pero no tiene fecha de desactivación, nunca ha estado activo
+            if not self.activo and self.fecha_desactivacion is None:
+                return False
+                
+            # Si el horario no está activo y tiene fecha de desactivación, verificamos si la fecha 
+            # consultada es anterior a la fecha de desactivación
+            if not self.activo and self.fecha_desactivacion is not None:
+                return fecha < self.fecha_desactivacion
+                
+            return True
+            
+        # Usar Event Sourcing para determinar el estado en la fecha dada
+        eventos_relevantes = [e for e in self.eventos if e.fecha_aplicacion is not None and e.fecha_aplicacion <= fecha]
+        
+        # Si no hay eventos relevantes hasta esa fecha, verificar si el horario fue creado antes de esa fecha
+        if not eventos_relevantes:
+            # Buscar evento de creación
+            evento_creacion = next((e for e in self.eventos if e.tipo == TipoEventoHorario.CREACION), None)
+            if evento_creacion:
+                # Si la fecha de creación es posterior a la fecha consultada, el horario no existía
+                if evento_creacion.fecha.date() > fecha:
+                    return False
+                # Si existía pero no hay eventos de activación/desactivación, se asume activo desde la creación
+                return True
+            # Si no hay evento de creación, usar el comportamiento por defecto anterior
+            return self.activo if self.fecha_desactivacion is None else fecha < self.fecha_desactivacion
+            
+        # Tomar el último evento relevante para la fecha
+        ultimo_evento = sorted(eventos_relevantes, key=lambda e: e.fecha, reverse=True)[0]
+        
+        # Determinar el estado basado en el tipo del último evento
+        if ultimo_evento.tipo == TipoEventoHorario.ACTIVACION:
+            return True
+        elif ultimo_evento.tipo == TipoEventoHorario.DESACTIVACION:
+            return False
+        # Para otros tipos de eventos, no cambia el estado
+        elif ultimo_evento.tipo == TipoEventoHorario.CREACION:
+            return True
+        else:  # MODIFICACION u otros
+            # Buscar el último evento de activación/desactivación anterior
+            eventos_estado = [e for e in eventos_relevantes 
+                            if e.tipo in (TipoEventoHorario.ACTIVACION, TipoEventoHorario.DESACTIVACION)]
+            if eventos_estado:
+                ultimo_estado = sorted(eventos_estado, key=lambda e: e.fecha, reverse=True)[0]
+                return ultimo_estado.tipo == TipoEventoHorario.ACTIVACION
+            # Si no hay eventos de estado, asumir activo (horario recién creado)
+            return True
+            
+    @property
+    def ultimo_evento(self):
+        """Obtiene el último evento registrado para este horario"""
+        if not self.eventos:
+            return None
+        return sorted(self.eventos, key=lambda e: e.fecha, reverse=True)[0]
+        
+    @property
+    def historial_estados(self):
+        """
+        Retorna un historial de cambios de estado ordenado cronológicamente
+        """
+        eventos_estado = [e for e in self.eventos 
+                         if e.tipo in (TipoEventoHorario.ACTIVACION, TipoEventoHorario.DESACTIVACION, 
+                                      TipoEventoHorario.CREACION)]
+        return sorted(eventos_estado, key=lambda e: e.fecha)
     
     @staticmethod
     def obtener_tipos_clase():
