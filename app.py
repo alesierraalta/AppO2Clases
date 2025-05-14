@@ -4929,30 +4929,115 @@ def metricas_profesor(profesor_id):
         # Verificar si se debe forzar el recálculo (ignorar caché)
         force_recalculate = request.args.get('force_recalculate', type=bool, default=False)
         
-        # Calcular métricas utilizando el método del modelo
-        metricas = profesor.calcular_metricas(
-            periodo_meses=periodo_meses,
-            fecha_fin=fecha_fin,
-            force_recalculate=force_recalculate
+        # Nuevos parámetros para comparación mensual
+        mes_actual_str = request.args.get('mes_actual', default=None)  # formato: YYYY-MM
+        mes_comparacion_str = request.args.get('mes_comparacion', default=None)  # formato: YYYY-MM
+        
+        # Convertir parámetros de mes si se proporcionan
+        mes_actual = None
+        mes_comparacion = None
+        mes_actual_nombre = None
+        mes_comparacion_nombre = None
+        
+        if mes_actual_str:
+            try:
+                anio, mes = mes_actual_str.split('-')
+                mes_actual = (int(anio), int(mes))
+                mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+            except (ValueError, TypeError):
+                flash(f"Formato de mes_actual inválido. Use YYYY-MM", "warning")
+        
+        if mes_comparacion_str:
+            try:
+                anio, mes = mes_comparacion_str.split('-')
+                mes_comparacion = (int(anio), int(mes))
+                mes_comparacion_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+            except (ValueError, TypeError):
+                flash(f"Formato de mes_comparacion inválido. Use YYYY-MM", "warning")
+        
+        # Calcular métricas directamente usando el módulo de utils
+        from utils.metricas_profesores import calcular_metricas_profesor
+        
+        # Obtener todas las clases del profesor
+        clases = profesor.obtener_todas_clases()
+        
+        # Variable para almacenar errores de validación
+        error = None
+        
+        metricas = calcular_metricas_profesor(
+            profesor_id=profesor.id,
+            clases=clases,
+            mes_actual=mes_actual,
+            mes_comparacion=mes_comparacion
         )
+        
+        # Manejar errores de validación
+        if 'error_comparacion' in metricas:
+            error = metricas['error_comparacion']
+            # Mantener las métricas base pero sin comparación
+            if 'comparacion' in metricas:
+                del metricas['comparacion']
         
         # Obtener tipos de clase para filtros en la UI
         tipos_clase = HorarioClase.obtener_tipos_clase()
         
-        # Obtener ranking de profesores para comparativas
-        if 'ranking_profesores' not in metricas or not metricas['ranking_profesores']:
-            metricas['ranking_profesores'] = Profesor.obtener_ranking_profesores()
+        # Obtener datos de meses disponibles para los selectores
+        meses_disponibles = obtener_meses_disponibles(clases)
+        
+        # Obtener ranking de profesores para comparativas si no está presente
+        if 'ranking_profesores' not in metricas.get('metricas_actual', {}) or not metricas.get('metricas_actual', {}).get('ranking_profesores'):
+            if 'metricas_actual' in metricas:
+                metricas['metricas_actual']['ranking_profesores'] = Profesor.obtener_ranking_profesores()
+            else:
+                metricas['ranking_profesores'] = Profesor.obtener_ranking_profesores()
         
         return render_template(
             'informes/metricas_profesor.html', 
             profesor=profesor, 
-            metricas=metricas,
+            metricas=metricas if 'metricas_actual' not in metricas else metricas['metricas_actual'],
+            metricas_comparacion=metricas.get('metricas_comparacion'),
+            comparacion=metricas.get('comparacion'),
             tipos_clase=tipos_clase,
             periodo_actual=periodo_meses,
             tipo_clase_actual=tipo_clase or 'Todos',
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
+            mes_actual=mes_actual,
+            mes_comparacion=mes_comparacion,
+            meses_disponibles=meses_disponibles,
+            mes_actual_nombre=mes_actual_nombre,
+            mes_comparacion_nombre=mes_comparacion_nombre,
+            error=error  # Pasar el error de validación a la plantilla
         )
     except Exception as e:
         app.logger.error(f"Error en metricas_profesor: {str(e)}")
         flash(f"Error al cargar métricas del profesor: {str(e)}", "danger")
         return redirect(url_for('informe_mensual'))
+
+
+def obtener_meses_disponibles(clases):
+    """
+    Obtiene una lista de meses disponibles para los que hay datos.
+    
+    Args:
+        clases (list): Lista de objetos ClaseRealizada
+        
+    Returns:
+        list: Lista de diccionarios con años y meses disponibles
+    """
+    if not clases:
+        return []
+    
+    # Agrupar por mes
+    meses = {}
+    for clase in clases:
+        clave = f"{clase.fecha.year}-{clase.fecha.month:02d}"
+        if clave not in meses:
+            meses[clave] = {
+                'valor': clave,
+                'etiqueta': f"{calendar.month_name[clase.fecha.month]} {clase.fecha.year}",
+                'anio': clase.fecha.year,
+                'mes': clase.fecha.month
+            }
+    
+    # Ordenar por fecha (más reciente primero)
+    return sorted(list(meses.values()), key=lambda x: f"{x['anio']}-{x['mes']:02d}", reverse=True)

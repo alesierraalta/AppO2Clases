@@ -105,6 +105,16 @@ class Profesor(db.Model):
         # Ordenar por fecha (más recientes primero)
         return query.order_by(ClaseRealizada.fecha.desc()).all()
     
+    def obtener_todas_clases(self):
+        """
+        Obtiene todas las clases realizadas por el profesor sin filtros.
+        Útil para cálculos de métricas donde se necesitan todas las clases.
+        
+        Returns:
+            list: Lista de todos los objetos ClaseRealizada del profesor
+        """
+        return ClaseRealizada.query.filter_by(profesor_id=self.id).order_by(ClaseRealizada.fecha.desc()).all()
+    
     @cache_metrics
     def calcular_metricas(self, periodo_meses=12, fecha_fin=None):
         """

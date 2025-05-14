@@ -73,9 +73,14 @@ def calcular_promedio_alumnos(clases):
     """
     if not clases:
         return 0.0
+    
+    # Filtrar clases que tienen datos válidos de alumnos    
+    clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None]
+    if not clases_con_alumnos:
+        return 0.0
         
-    total_alumnos = sum(c.cantidad_alumnos for c in clases if c.cantidad_alumnos is not None)
-    return total_alumnos / len(clases)
+    total_alumnos = sum(c.cantidad_alumnos for c in clases_con_alumnos)
+    return total_alumnos / len(clases_con_alumnos)
 
 
 def calcular_distribucion_clases(clases):
@@ -184,447 +189,492 @@ def calcular_tendencia_asistencia(clases, periodo_meses=3):
         'datos_mensuales': datos_mensuales
     }
 
+# ... existing code ...
 
-def calcular_metricas_por_tipo_clase(clases):
+def get_profesores_promedio(exclude_profesor_id=None):
     """
-    Calcula métricas detalladas por cada tipo de clase.
+    Calcula los promedios de métricas para todos los profesores.
     
     Args:
-        clases (list): Lista de objetos ClaseRealizada
+        exclude_profesor_id (int, optional): ID del profesor a excluir del cálculo
         
     Returns:
-        dict: Diccionario con métricas por tipo de clase
+        dict: Diccionario con promedios de métricas para todos los profesores
     """
-    if not clases:
-        return {}
+    from models import Profesor, ClaseRealizada
     
-    # Agrupar clases por tipo
-    clases_por_tipo = defaultdict(list)
-    for clase in clases:
-        tipo = clase.horario.tipo_clase if clase.horario and clase.horario.tipo_clase else "OTRO"
-        clases_por_tipo[tipo].append(clase)
+    # Obtener datos de todos los profesores para los últimos 3 meses
+    fecha_fin = datetime.now().date()
+    fecha_inicio = fecha_fin - timedelta(days=90)
     
-    # Asegurar que todos los tipos comunes estén presentes
-    for tipo in ['MOVE', 'RIDE', 'BOX', 'OTRO']:
-        if tipo not in clases_por_tipo:
-            clases_por_tipo[tipo] = []
+    profesores = Profesor.query.all()
+    stats_puntualidad = []
+    stats_alumnos = []
+    stats_clases = []
+    stats_variedad = []
     
-    # Calcular métricas por tipo
-    resultado = {}
-    total_clases = len(clases)
-    
-    for tipo, clases_tipo in clases_por_tipo.items():
-        total_clases_tipo = len(clases_tipo)
-        puntualidad = calcular_tasa_puntualidad(clases_tipo)
-        
-        # Calcular tendencia para este tipo de clase
-        clases_tipo_ordenadas = sorted(clases_tipo, key=lambda c: c.fecha)
-        if len(clases_tipo_ordenadas) >= 6:
-            # Dividir en dos periodos
-            mitad = len(clases_tipo_ordenadas) // 2
-            primer_periodo = clases_tipo_ordenadas[:mitad]
-            segundo_periodo = clases_tipo_ordenadas[mitad:]
+    for prof in profesores:
+        if exclude_profesor_id and prof.id == exclude_profesor_id:
+            continue  # Excluir al profesor actual para no afectar el promedio
             
-            promedio_alumnos_1 = calcular_promedio_alumnos(primer_periodo)
-            promedio_alumnos_2 = calcular_promedio_alumnos(segundo_periodo)
+        clases_prof = prof.get_clases_periodo(fecha_inicio, fecha_fin)
+        if not clases_prof:
+            continue
             
-            if promedio_alumnos_1 > 0:
-                tendencia = ((promedio_alumnos_2 / promedio_alumnos_1) - 1) * 100
-            else:
-                tendencia = 0
-        else:
-            tendencia = 0
+        # Calcular puntualidad
+        puntualidad = calcular_tasa_puntualidad(clases_prof)
+        if puntualidad['total'] > 0:
+            stats_puntualidad.append(puntualidad['tasa'])
         
-        # Guardar resultados para este tipo
-        resultado[tipo] = {
-            'total_clases': total_clases_tipo,
-            'promedio_alumnos': calcular_promedio_alumnos(clases_tipo) if clases_tipo else 0,
-            'tasa_puntualidad': puntualidad['tasa'],
-            'porcentaje_del_total': (total_clases_tipo / total_clases * 100) if total_clases > 0 else 0,
-            'tendencia': tendencia
-        }
+        # Calcular promedio de alumnos
+        prom_alumnos = calcular_promedio_alumnos(clases_prof)
+        stats_alumnos.append(prom_alumnos)
+        
+        # Calcular clases por mes
+        # Asumiendo un período de 3 meses completos
+        stats_clases.append(len(clases_prof) / 3)
+        
+        # Calcular variedad de clases
+        distribucion = calcular_distribucion_clases(clases_prof)
+        tipos_distintos = len([t for t, c in distribucion['tipos'].items() if c > 0])
+        total_tipos_posibles = 4  # MOVE, RIDE, BOX, OTRO
+        variedad = (tipos_distintos / total_tipos_posibles) * 100
+        stats_variedad.append(variedad)
+    
+    # Calcular promedios finales
+    prom_puntualidad = np.mean(stats_puntualidad) if stats_puntualidad else 0
+    prom_alumnos = np.mean(stats_alumnos) if stats_alumnos else 0
+    prom_clases = np.mean(stats_clases) if stats_clases else 0
+    prom_variedad = np.mean(stats_variedad) if stats_variedad else 0
+    
+    return {
+        'puntualidad': prom_puntualidad,
+        'alumnos': prom_alumnos,
+        'clases_por_mes': prom_clases,
+        'variedad_clases': prom_variedad
+    }
+
+def validar_datos_comparacion(clases_mes_actual, clases_mes_comparacion):
+    """
+    Valida que existan suficientes datos para realizar una comparación válida entre meses.
+    
+    Args:
+        clases_mes_actual (list): Lista de clases del mes actual
+        clases_mes_comparacion (list): Lista de clases del mes de comparación
+        
+    Returns:
+        dict: {'valido': bool, 'mensaje': str} indicando si la comparación es válida y mensaje de error
+    """
+    resultado = {'valido': True, 'mensaje': ''}
+    
+    # Verificar si hay suficientes clases en cada mes
+    if not clases_mes_actual or len(clases_mes_actual) == 0:
+        resultado['valido'] = False
+        resultado['mensaje'] = "No hay datos disponibles para el mes actual seleccionado."
+        return resultado
+    
+    if not clases_mes_comparacion or len(clases_mes_comparacion) == 0:
+        resultado['valido'] = False
+        resultado['mensaje'] = "No hay datos disponibles para el mes de comparación seleccionado."
+        return resultado
+    
+    # Verificar mínimo de clases para comparación significativa
+    if len(clases_mes_actual) < 3:
+        resultado['valido'] = False
+        resultado['mensaje'] = f"Datos insuficientes para el mes actual ({len(clases_mes_actual)} clases). Se requieren al menos 3 clases para una comparación significativa."
+        return resultado
+    
+    if len(clases_mes_comparacion) < 3:
+        resultado['valido'] = False
+        resultado['mensaje'] = f"Datos insuficientes para el mes de comparación ({len(clases_mes_comparacion)} clases). Se requieren al menos 3 clases para una comparación significativa."
+        return resultado
     
     return resultado
 
-
-def generar_datos_grafico(clases, tipo_grafico):
+def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_comparacion=None, usar_promedios=False):
     """
-    Genera datos en formato adecuado para gráficos con Chart.js.
-    
-    Args:
-        clases (list): Lista de objetos ClaseRealizada
-        tipo_grafico (str): Tipo de gráfico a generar ('puntualidad', 'alumnos', 'tipos', etc.)
-        
-    Returns:
-        dict: Datos formateados para el gráfico correspondiente
-    """
-    if not clases:
-        return {}
-    
-    if tipo_grafico == 'puntualidad':
-        puntualidad = calcular_tasa_puntualidad(clases)
-        etiquetas = ['Puntual', 'Retraso leve', 'Retraso significativo']
-        valores = [
-            puntualidad['puntual'],
-            puntualidad['retraso_leve'],
-            puntualidad['retraso_significativo']
-        ]
-        colores = [
-            'rgba(40, 167, 69, 0.7)',  # Verde para puntual
-            'rgba(255, 193, 7, 0.7)',  # Amarillo para retraso leve
-            'rgba(220, 53, 69, 0.7)'   # Rojo para retraso significativo
-        ]
-        
-        return {
-            'tipo': 'pie',
-            'etiquetas': etiquetas,
-            'valores': valores,
-            'colores': colores
-        }
-    
-    elif tipo_grafico == 'tipos_clase':
-        distribucion = calcular_distribucion_clases(clases)
-        
-        # Definir colores específicos para cada tipo
-        colores_por_tipo = {
-            'MOVE': 'rgba(40, 167, 69, 0.7)',  # Verde
-            'RIDE': 'rgba(13, 110, 253, 0.7)',  # Azul
-            'BOX': 'rgba(220, 53, 69, 0.7)',    # Rojo
-            'OTRO': 'rgba(108, 117, 125, 0.7)'  # Gris
-        }
-        
-        etiquetas = list(distribucion['tipos'].keys())
-        valores = [distribucion['tipos'][tipo] for tipo in etiquetas]
-        colores = [colores_por_tipo.get(tipo, 'rgba(0, 0, 0, 0.1)') for tipo in etiquetas]
-        
-        return {
-            'tipo': 'bar',
-            'etiquetas': etiquetas,
-            'valores': valores,
-            'colores': colores
-        }
-    
-    elif tipo_grafico == 'evolucion_mensual':
-        # Obtener datos mensuales
-        tendencia = calcular_tendencia_asistencia(clases)
-        datos_mensuales = tendencia['datos_mensuales']
-        
-        etiquetas = [dato['etiqueta'] for dato in datos_mensuales]
-        valores_alumnos = [dato['promedio_alumnos'] for dato in datos_mensuales]
-        valores_puntualidad = [dato['puntualidad'] for dato in datos_mensuales]
-        
-        datasets = [
-            {
-                'label': 'Promedio Alumnos',
-                'data': valores_alumnos,
-                'fill': False,
-                'borderColor': 'rgb(54, 162, 235)',
-                'tension': 0.1
-            },
-            {
-                'label': 'Puntualidad (%)',
-                'data': valores_puntualidad,
-                'fill': False,
-                'borderColor': 'rgb(40, 167, 69)',
-                'tension': 0.1
-            }
-        ]
-        
-        return {
-            'tipo': 'line',
-            'etiquetas': etiquetas,
-            'datasets': datasets
-        }
-    
-    return {}
-
-
-def calcular_metricas_profesor(profesor_id, clases):
-    """
-    Función principal que calcula todas las métricas para un profesor.
+    Calcula las métricas para un profesor específico.
     
     Args:
         profesor_id (int): ID del profesor
-        clases (list): Lista de objetos ClaseRealizada del profesor
+        clases (list, optional): Lista de clases realizadas. Si es None, se obtienen todas las clases del profesor.
+        mes_actual (tuple, optional): Tuple (año, mes) para filtrar el mes actual.
+        mes_comparacion (tuple, optional): Tuple (año, mes) para comparar con el mes actual.
+        usar_promedios (bool, optional): Si True, usa promedios globales en vez de datos específicos del profesor.
         
     Returns:
-        dict: Todas las métricas calculadas para el profesor
+        dict: Diccionario con las métricas calculadas
     """
-    if not clases:
-        return {
-            'total_clases': 0,
-            'total_alumnos': 0,
-            'puntualidad': calcular_tasa_puntualidad([]),
-            'distribucion': calcular_distribucion_clases([]),
-            'tendencia': calcular_tendencia_asistencia([]),
-            'datos_por_tipo': {},
-            'datos_mensuales': [],
-            'clases': [],
-            'clases_por_mes': 0,
-            'variedad_clases': 0,
-            'tendencia_global': 0,
-            'tendencias': {
-                'alumnos': 0,
-                'puntualidad': 0,
-                'clases_por_mes': 0
-            },
-            'promedio_profesores': {
-                'puntualidad': 0,
-                'alumnos': 0,
-                'clases_por_mes': 0,
-                'variedad_clases': 0
-            },
-            'ranking_profesores': []
+    # Estructura de métricas vacías
+    metricas_vacias = {
+        'total_clases': 0,
+        'total_alumnos': 0,
+        'puntualidad': calcular_tasa_puntualidad([]),
+        'distribucion': calcular_distribucion_clases([]),
+        'tendencia': calcular_tendencia_asistencia([]),
+        'datos_por_tipo': {},
+        'datos_mensuales': [],
+        'clases': [],
+        'clases_por_mes': 0,
+        'variedad_clases': 0,
+        'tendencia_global': 0,
+        'tendencias': {
+            'alumnos': 0,
+            'puntualidad': 0,
+            'clases_por_mes': 0
         }
+    }
     
-    # Ordenar clases por fecha descendente (más recientes primero)
-    clases_ordenadas = sorted(clases, key=lambda c: c.fecha, reverse=True)
+    # Inicializar la estructura de retorno
+    metricas = {
+        'metricas_actual': metricas_vacias,
+        'metricas_comparacion': None,
+        'comparacion': None,
+        'mes_actual': mes_actual,
+        'mes_comparacion': mes_comparacion
+    }
+
+    if not clases:
+        return metricas
     
-    # Calcular métricas básicas
-    total_clases = len(clases)
-    total_alumnos = sum(c.cantidad_alumnos for c in clases if c.cantidad_alumnos is not None)
-    
-    # Calcular puntualidad
-    puntualidad = calcular_tasa_puntualidad(clases)
-    
-    # Calcular distribución por tipo de clase
-    distribucion = calcular_distribucion_clases(clases)
-    
-    # Calcular tendencia de asistencia
-    tendencia = calcular_tendencia_asistencia(clases)
-    
-    # Calcular métricas por tipo de clase
-    datos_por_tipo = calcular_metricas_por_tipo_clase(clases)
-    
-    # Calcular clases por mes (promedio)
-    fechas = [c.fecha for c in clases]
-    if fechas:
-        min_fecha = min(fechas)
-        max_fecha = max(fechas)
+    # Función auxiliar para filtrar clases por mes
+    def filtrar_clases_por_mes(clases_list, anio, mes):
+        """Filtra la lista de clases por año y mes"""
+        return [c for c in clases_list if c.fecha.year == anio and c.fecha.month == mes]
         
-        # Calcular diferencia en meses
-        meses_diff = (max_fecha.year - min_fecha.year) * 12 + max_fecha.month - min_fecha.month
-        if meses_diff > 0:
-            clases_por_mes = total_clases / meses_diff
+    # Preparar variables para cuando se filtran por mes
+    clases_mes_actual = clases
+    clases_a_procesar = clases
+    
+    # Calcular tendencia general para todos los meses (evolución mensual)
+    tendencia_general = calcular_tendencia_asistencia(clases, periodo_meses=12)
+    # Asegurarnos de tener esta información en el resultado final
+    metricas['datos_mensuales'] = tendencia_general['datos_mensuales']
+    
+    # Si se solicita comparación de meses
+    if mes_actual and mes_comparacion:
+        # Filtrar clases para cada mes
+        clases_mes_actual = filtrar_clases_por_mes(clases, mes_actual[0], mes_actual[1])
+        clases_mes_comparacion = filtrar_clases_por_mes(clases, mes_comparacion[0], mes_comparacion[1])
+        
+        # Validar que existan suficientes datos para la comparación
+        validacion = validar_datos_comparacion(clases_mes_actual, clases_mes_comparacion)
+        if not validacion['valido']:
+            metricas['error_comparacion'] = validacion['mensaje']
+            # No retornamos aún, continuamos calculando métricas normales
         else:
-            clases_por_mes = total_clases
-    else:
-        clases_por_mes = 0
-    
-    # Calcular variedad de clases (porcentaje de tipos de clase diferentes)
-    tipos_distintos = len([t for t, c in distribucion['tipos'].items() if c > 0])
-    total_tipos_posibles = 4  # MOVE, RIDE, BOX, OTRO
-    variedad_clases = (tipos_distintos / total_tipos_posibles) * 100
-    
-    # Inicializar valores de tendencia
-    tendencia_global = 0
-    tendencia_alumnos = 0
-    tendencia_puntualidad = 0
-    tendencia_clases_mes = 0
-    tendencia_otros = 0
-    
-    # Preparar tendencias individuales
-    if len(tendencia['datos_mensuales']) >= 2:
-        datos_recientes = tendencia['datos_mensuales'][-3:]  # Últimos 3 meses o menos
-        datos_antiguos = tendencia['datos_mensuales'][:-3]   # Meses anteriores
-        
-        if datos_antiguos and datos_recientes:
-            # Promedios recientes
-            prom_alumnos_reciente = np.mean([d['promedio_alumnos'] for d in datos_recientes])
-            prom_puntualidad_reciente = np.mean([d['puntualidad'] for d in datos_recientes])
-            prom_clases_mes_reciente = np.mean([d['total_clases'] for d in datos_recientes])
+            # Si la comparación es válida, calcular las métricas comparativas
+            # Ordenar clases del mes de comparación (más recientes primero)
+            clases_ordenadas_comp = sorted(clases_mes_comparacion, key=lambda c: c.fecha, reverse=True)
             
-            # Promedios antiguos
-            prom_alumnos_antiguo = np.mean([d['promedio_alumnos'] for d in datos_antiguos])
-            prom_puntualidad_antiguo = np.mean([d['puntualidad'] for d in datos_antiguos])
-            prom_clases_mes_antiguo = np.mean([d['total_clases'] for d in datos_antiguos])
+            # Calcular métricas para el mes de comparación
+            total_clases_comp = len(clases_mes_comparacion)
+            total_alumnos_comp = sum(c.cantidad_alumnos for c in clases_mes_comparacion if c.cantidad_alumnos is not None)
+            puntualidad_comp = calcular_tasa_puntualidad(clases_mes_comparacion)
+            distribucion_comp = calcular_distribucion_clases(clases_mes_comparacion)
+            tendencia_comp = calcular_tendencia_asistencia(clases_mes_comparacion)
             
-            # Calcular tendencias porcentuales
-            tendencia_alumnos_raw = ((prom_alumnos_reciente / prom_alumnos_antiguo) - 1) * 100 if prom_alumnos_antiguo > 0 else 0
-            tendencia_puntualidad_raw = ((prom_puntualidad_reciente / prom_puntualidad_antiguo) - 1) * 100 if prom_puntualidad_antiguo > 0 else 0
-            tendencia_clases_mes_raw = ((prom_clases_mes_reciente / prom_clases_mes_antiguo) - 1) * 100 if prom_clases_mes_antiguo > 0 else 0
-            tendencia_otros_raw = 0  # Por defecto, no hay otros factores considerados
+            # Calcular clases por mes para mes de comparación
+            fechas_comp = [c.fecha for c in clases_mes_comparacion]
+            clases_por_mes_comp = total_clases_comp  # Valor predeterminado
             
-            # Usar los valores calculados para las tendencias mostradas
-            tendencia_alumnos = tendencia_alumnos_raw
-            tendencia_puntualidad = tendencia_puntualidad_raw
-            tendencia_clases_mes = tendencia_clases_mes_raw
-            tendencia_otros = tendencia_otros_raw
+            if fechas_comp and len(fechas_comp) >= 2:
+                min_fecha_comp = min(fechas_comp)
+                max_fecha_comp = max(fechas_comp)
+                meses_diff_comp = (max_fecha_comp.year - min_fecha_comp.year) * 12 + max_fecha_comp.month - min_fecha_comp.month
+                if meses_diff_comp > 0:
+                    clases_por_mes_comp = total_clases_comp / meses_diff_comp
             
-            # Calcular tendencia global como promedio ponderado de las tendencias individuales
-            # Usar los pesos definidos en la plantilla: 40% alumnos, 30% puntualidad, 20% clases, 10% otros
-            tendencia_global = (
-                0.4 * tendencia_alumnos_raw +
-                0.3 * tendencia_puntualidad_raw + 
-                0.2 * tendencia_clases_mes_raw +
-                0.1 * tendencia_otros_raw
+            # Calcular variedad de clases para mes de comparación
+            tipos_distintos_comp = len([t for t, c in distribucion_comp['tipos'].items() if c > 0])
+            variedad_clases_comp = (tipos_distintos_comp / 4) * 100  # MOVE, RIDE, BOX, OTRO
+            
+            # Asegurar que los datos mensuales estén disponibles para la comparación 
+            # (usamos los datos para todos los meses, no solo el mes de comparación)
+            
+            # Construir el objeto de métricas para el mes de comparación
+            metricas_comparacion = {
+                'total_clases': total_clases_comp,
+                'total_alumnos': total_alumnos_comp,
+                'promedio_alumnos': calcular_promedio_alumnos(clases_mes_comparacion),
+                'puntualidad': puntualidad_comp,
+                'distribucion': distribucion_comp,
+                'tendencia': tendencia_comp,
+                'clases': clases_ordenadas_comp,
+                'clases_por_mes': clases_por_mes_comp,
+                'variedad_clases': variedad_clases_comp,
+                'datos_mensuales': metricas.get('datos_mensuales', [])  # Incluir datos mensuales completos
+            }
+            
+            # Guardar métricas de comparación
+            metricas['metricas_comparacion'] = metricas_comparacion
+            
+            # Calcular la comparación entre ambos meses
+            comparacion = comparar_metricas_mensuales(
+                # Usamos clases_mes_actual para calcular métricas actuales
+                {
+                    'clases': clases_mes_actual, 
+                    'puntualidad': calcular_tasa_puntualidad(clases_mes_actual),
+                    'variedad_clases': (len([t for t, c in calcular_distribucion_clases(clases_mes_actual)['tipos'].items() if c > 0]) / 4) * 100
+                },
+                # Usamos clases_mes_comparacion para calcular métricas de comparación
+                {
+                    'clases': clases_mes_comparacion,
+                    'puntualidad': puntualidad_comp,
+                    'variedad_clases': variedad_clases_comp
+                }
             )
-        else:
-            tendencia_alumnos_raw = 0
-            tendencia_puntualidad_raw = 0
-            tendencia_clases_mes_raw = 0
-            tendencia_otros_raw = 0
-            tendencia_alumnos = 0
-            tendencia_puntualidad = 0
-            tendencia_clases_mes = 0
-            tendencia_otros = 0
-    else:
-        tendencia_alumnos_raw = 0
-        tendencia_puntualidad_raw = 0
-        tendencia_clases_mes_raw = 0
-        tendencia_otros_raw = 0
+            
+            # Guardar los resultados de la comparación
+            if comparacion:
+                metricas['comparacion'] = comparacion
+    # Si solo tenemos mes actual sin comparación
+    elif mes_actual:
+        # Filtrar clases solo para el mes actual
+        clases_mes_actual = filtrar_clases_por_mes(clases, mes_actual[0], mes_actual[1])
+        clases_a_procesar = clases_mes_actual
+        
+        # Mantener los datos mensuales completos para mostrar tendencia mensual
+        # aunque filtremos para las métricas actuales
+    
+    # Ahora calculamos las métricas normales con los datos que tenemos
+    if clases_a_procesar:
+        # Ordenar clases por fecha descendente (más recientes primero)
+        clases_ordenadas = sorted(clases_a_procesar, key=lambda c: c.fecha, reverse=True)
+        
+        # Calcular métricas básicas para mostrar
+        total_clases = len(clases_a_procesar)
+        distribucion = calcular_distribucion_clases(clases_a_procesar)
+        puntualidad = calcular_tasa_puntualidad(clases_a_procesar)
+        tendencia = calcular_tendencia_asistencia(clases_a_procesar)
+        
+        # Calcular total de alumnos
+        total_alumnos = sum(c.cantidad_alumnos for c in clases_a_procesar if c.cantidad_alumnos is not None)
+        
+        # Calcular promedio de alumnos por clase
+        promedio_alumnos = calcular_promedio_alumnos(clases_a_procesar)
+        
+        # Calcular clases por mes (promedio)
+        fechas = [c.fecha for c in clases_a_procesar]
+        clases_por_mes = total_clases  # Valor predeterminado si no hay suficientes datos
+        
+        if fechas and len(fechas) >= 2:
+            min_fecha = min(fechas)
+            max_fecha = max(fechas)
+            # Calcular diferencia en meses
+            meses_diff = (max_fecha.year - min_fecha.year) * 12 + max_fecha.month - min_fecha.month
+            if meses_diff > 0:
+                clases_por_mes = total_clases / meses_diff
+        
+        # Calcular variedad de clases (porcentaje de tipos diferentes)
+        tipos_distintos = len([t for t, c in distribucion['tipos'].items() if c > 0])
+        total_tipos_posibles = 4  # MOVE, RIDE, BOX, OTRO
+        variedad_clases = (tipos_distintos / total_tipos_posibles) * 100
+        
+        # Calcular tendencias
+        tendencia_global = 0
         tendencia_alumnos = 0
         tendencia_puntualidad = 0
         tendencia_clases_mes = 0
-        tendencia_otros = 0
-    
-    # Añadir datos para comparativa (simulados - en producción vendrían de la BD)
-    promedio_profesores = {
-        'puntualidad': 85.0,
-        'alumnos': 12.5,
-        'clases_por_mes': 15.0,
-        'variedad_clases': 75.0
-    }
-    
-    # Simular datos de ranking (en producción vendrían de la BD)
-    ranking_profesores = [
-        {
-            'id': 1,
-            'nombre': 'Carlos',
-            'apellido': 'García',
-            'total_clases': 150,
-            'puntualidad': 92.5,
-            'promedio_alumnos': 15.8,
-            'calificacion': 4.8
-        },
-        {
-            'id': 2,
-            'nombre': 'María',
-            'apellido': 'López',
-            'total_clases': 120,
-            'puntualidad': 88.0,
-            'promedio_alumnos': 14.2,
-            'calificacion': 4.5
-        },
-        {
-            'id': profesor_id,  # El profesor actual
-            'nombre': 'Actual',
-            'apellido': 'Profesor',
-            'total_clases': total_clases,
-            'puntualidad': puntualidad['tasa'],
-            'promedio_alumnos': calcular_promedio_alumnos(clases),
-            'calificacion': 4.0
-        },
-        {
-            'id': 3,
-            'nombre': 'Juan',
-            'apellido': 'Martínez',
-            'total_clases': 90,
-            'puntualidad': 82.5,
-            'promedio_alumnos': 11.5,
-            'calificacion': 3.7
-        },
-        {
-            'id': 4,
-            'nombre': 'Ana',
-            'apellido': 'Rodríguez',
-            'total_clases': 75,
-            'puntualidad': 78.0,
-            'promedio_alumnos': 10.3,
-            'calificacion': 3.5
-        }
-    ]
-    
-    # Preparar datos de clases para mostrar en tabla
-    clases_con_puntualidad = []
-    for clase in clases_ordenadas:
-        estado_puntualidad = "N/A"
-        if clase.hora_llegada_profesor:
-            diferencia_minutos = ((clase.hora_llegada_profesor.hour * 60 + clase.hora_llegada_profesor.minute) - 
-                                 (clase.horario.hora_inicio.hour * 60 + clase.horario.hora_inicio.minute))
-            if diferencia_minutos <= 0:
-                estado_puntualidad = "Puntual"
-            elif diferencia_minutos <= 10:
-                estado_puntualidad = "Retraso leve"
-            else:
-                estado_puntualidad = "Retraso significativo"
         
-        clases_con_puntualidad.append({
-            'fecha': clase.fecha,
-            'horario': clase.horario,
-            'hora_llegada_profesor': clase.hora_llegada_profesor,
-            'cantidad_alumnos': clase.cantidad_alumnos,
-            'puntualidad': estado_puntualidad
-        })
+        # Compilar todas las métricas
+        metricas_actuales = {
+            'total_clases': total_clases,
+            'total_alumnos': total_alumnos,
+            'promedio_alumnos': promedio_alumnos,
+            'clases': clases_ordenadas,
+            'distribucion': distribucion,
+            'puntualidad': puntualidad,
+            'tendencia': tendencia,  # Este es el cálculo para el período específico
+            'datos_mensuales': metricas.get('datos_mensuales', []),  # Estos son TODOS los datos mensuales
+            'clases_por_mes': clases_por_mes,
+            'variedad_clases': variedad_clases,
+            'tendencia_global': tendencia_global,
+            'tendencias': {
+                'alumnos': tendencia_alumnos,
+                'puntualidad': tendencia_puntualidad,
+                'clases_por_mes': tendencia_clases_mes
+            }
+        }
+        
+        # Añadir promedios de profesores para comparación cuando no estemos en modo de comparación
+        if not mes_comparacion:
+            # Obtener promedios de otros profesores para comparación
+            promedios_profesores = get_profesores_promedio(exclude_profesor_id=profesor_id)
+            metricas_actuales['promedio_profesores'] = promedios_profesores
+        
+        # Asegurarnos de que los datos mensuales estén presentes en las métricas actuales
+        metricas_actuales['datos_mensuales'] = metricas.get('datos_mensuales', [])
+        
+        # Actualizar el objeto de retorno con las métricas calculadas
+        metricas['metricas_actual'] = metricas_actuales
+        
+        # Añadir nombres de meses para mostrar en la UI
+        if mes_actual:
+            anio_actual, mes_actual_num = mes_actual
+            import calendar
+            metricas['mes_actual_nombre'] = f"{calendar.month_name[mes_actual_num]} {anio_actual}"
+        else:
+            metricas['mes_actual_nombre'] = "Todas las clases"
+            
+        if mes_comparacion:
+            anio_comp, mes_comp_num = mes_comparacion
+            import calendar
+            metricas['mes_comparacion_nombre'] = f"{calendar.month_name[mes_comp_num]} {anio_comp}"
+        else:
+            metricas['mes_comparacion_nombre'] = "Sin comparación"
     
-    # Combinar todos los resultados
-    return {
-        'total_clases': total_clases,
-        'total_alumnos': total_alumnos,
-        'puntualidad': puntualidad,
-        'distribucion': distribucion,
-        'tendencia': tendencia,
-        'datos_por_tipo': datos_por_tipo,
-        'datos_mensuales': tendencia['datos_mensuales'],
-        'clases': clases_con_puntualidad,
-        'clases_por_mes': clases_por_mes,
-        'variedad_clases': variedad_clases,
-        'tendencia_global': tendencia_global,
-        'tendencias': {
-            'alumnos': tendencia_alumnos,
-            'puntualidad': tendencia_puntualidad,
-            'clases_por_mes': tendencia_clases_mes,
-            'alumnos_raw': tendencia_alumnos_raw if 'tendencia_alumnos_raw' in locals() else tendencia_alumnos,
-            'puntualidad_raw': tendencia_puntualidad_raw if 'tendencia_puntualidad_raw' in locals() else tendencia_puntualidad,
-            'clases_por_mes_raw': tendencia_clases_mes_raw if 'tendencia_clases_mes_raw' in locals() else tendencia_clases_mes,
-            'otros_factores': tendencia_otros if 'tendencia_otros' in locals() else 0
-        },
-        'promedio_profesores': promedio_profesores,
-        'ranking_profesores': ranking_profesores
-    }
+    return metricas
 
+# ... existing code ...
 
-def generar_colores_chart(cantidad, tema_oscuro=False):
+def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
     """
-    Genera una lista de colores para gráficos según la cantidad solicitada.
+    Compara dos conjuntos de métricas y calcula las diferencias porcentuales.
     
     Args:
-        cantidad (int): Número de colores a generar
-        tema_oscuro (bool): Si se debe usar la paleta para tema oscuro
+        metricas_actual (dict): Métricas del mes actual
+        metricas_comparacion (dict): Métricas del mes de comparación
         
     Returns:
-        list: Lista de colores en formato rgba
+        dict: Diferencias porcentuales entre ambos conjuntos de métricas
     """
-    # Paletas base
-    paleta_claro = [
-        'rgba(54, 162, 235, 0.7)',   # Azul
-        'rgba(40, 167, 69, 0.7)',    # Verde
-        'rgba(220, 53, 69, 0.7)',    # Rojo
-        'rgba(255, 193, 7, 0.7)',    # Amarillo
-        'rgba(111, 66, 193, 0.7)',   # Morado
-        'rgba(23, 162, 184, 0.7)',   # Cian
-        'rgba(255, 127, 80, 0.7)',   # Coral
-        'rgba(128, 128, 128, 0.7)'   # Gris
-    ]
+    # Verificar que ambos conjuntos de datos estén presentes
+    if not metricas_actual or not metricas_comparacion:
+        return None
     
-    paleta_oscuro = [
-        'rgba(54, 162, 235, 0.8)',   # Azul
-        'rgba(40, 167, 69, 0.8)',    # Verde
-        'rgba(220, 53, 69, 0.8)',    # Rojo
-        'rgba(255, 193, 7, 0.8)',    # Amarillo
-        'rgba(111, 66, 193, 0.8)',   # Morado
-        'rgba(23, 162, 184, 0.8)',   # Cian
-        'rgba(255, 127, 80, 0.8)',   # Coral
-        'rgba(160, 160, 160, 0.8)'   # Gris
-    ]
+    # Extraer métricas de comparación si están en la estructura con metricas_actual
+    if 'metricas_actual' in metricas_comparacion:
+        metricas_comparacion = metricas_comparacion['metricas_actual']
     
-    paleta = paleta_oscuro if tema_oscuro else paleta_claro
-    
-    # Si se necesitan más colores de los disponibles en la paleta
-    if cantidad > len(paleta):
-        # Repetir la paleta tantas veces como sea necesario
-        repeticiones = (cantidad // len(paleta)) + 1
-        paleta_extendida = paleta * repeticiones
-        return paleta_extendida[:cantidad]
-    
-    return paleta[:cantidad] 
+    # Calcular diferencias en métricas clave
+    try:
+        # Promedio de alumnos
+        prom_alumnos_actual = calcular_promedio_alumnos(metricas_actual.get('clases', []))
+        prom_alumnos_comp = calcular_promedio_alumnos(metricas_comparacion.get('clases', []))
+        
+        # Valores por defecto en caso de error o datos insuficientes
+        diff_prom_alumnos = 0
+        diff_puntualidad = 0
+        diff_clases = 0
+        diff_variedad = 0
+        
+        # Calcular diferencia en promedio de alumnos con manejo de excepciones
+        try:
+            if prom_alumnos_comp > 0:
+                diff_prom_alumnos = ((prom_alumnos_actual / prom_alumnos_comp) - 1) * 100
+        except (ZeroDivisionError, TypeError):
+            pass
+            
+        # Puntualidad
+        puntualidad_actual = metricas_actual.get('puntualidad', {}).get('tasa', 0)
+        puntualidad_comp = metricas_comparacion.get('puntualidad', {}).get('tasa', 0)
+        
+        try:
+            if puntualidad_comp > 0:
+                diff_puntualidad = ((puntualidad_actual / puntualidad_comp) - 1) * 100
+        except (ZeroDivisionError, TypeError):
+            pass
+            
+        # Total de clases
+        clases_actual = len(metricas_actual.get('clases', []))
+        clases_comp = len(metricas_comparacion.get('clases', []))
+        
+        try:
+            if clases_comp > 0:
+                diff_clases = ((clases_actual / clases_comp) - 1) * 100
+        except (ZeroDivisionError, TypeError):
+            pass
+            
+        # Variedad de clases
+        variedad_actual = metricas_actual.get('variedad_clases', 0)
+        variedad_comp = metricas_comparacion.get('variedad_clases', 0)
+        
+        try:
+            if variedad_comp > 0:
+                diff_variedad = ((variedad_actual / variedad_comp) - 1) * 100
+        except (ZeroDivisionError, TypeError):
+            pass
+            
+        # Distribución por tipo
+        tipos_actual = metricas_actual.get('distribucion', {}).get('tipos', {})
+        tipos_comp = metricas_comparacion.get('distribucion', {}).get('tipos', {})
+        
+        diff_tipos = {}
+        try:
+            for tipo in set(list(tipos_actual.keys()) + list(tipos_comp.keys())):
+                actual = tipos_actual.get(tipo, 0)
+                comp = tipos_comp.get(tipo, 0)
+                
+                try:
+                    if comp > 0:
+                        diff_tipos[tipo] = ((actual / comp) - 1) * 100
+                    else:
+                        diff_tipos[tipo] = 100 if actual > 0 else 0
+                except (ZeroDivisionError, TypeError):
+                    diff_tipos[tipo] = 0
+        except Exception as e:
+            print(f"Error al calcular diferencias por tipo: {str(e)}")
+            diff_tipos = {}
+                
+        # Calcular diferencia global usando pesos recalibrados (sin variedad de clases)
+        diff_global = (
+            0.45 * diff_prom_alumnos +
+            0.30 * diff_puntualidad +
+            0.25 * diff_clases
+            # Variedad de clases eliminada del cálculo por solicitud
+        )
+        
+        # Extraer nombres de meses para mostrar en la UI
+        # Los nombres de meses ahora deben venir en los parámetros o se calculan arriba
+        mes_actual_nombre = metricas_actual.get('mes_actual_nombre', "Mes actual")
+        mes_comparacion_nombre = metricas_comparacion.get('mes_comparacion_nombre', "Mes comparación")
+        
+        # Construir y retornar el resultado
+        return {
+            'global': diff_global,
+            'promedio_alumnos': diff_prom_alumnos,
+            'puntualidad': diff_puntualidad,
+            'total_clases': diff_clases,
+            'variedad_clases': diff_variedad,
+            'distribucion_tipos': diff_tipos,
+            'mes_actual': {
+                'promedio_alumnos': prom_alumnos_actual,
+                'puntualidad': puntualidad_actual,
+                'total_clases': clases_actual,
+                'variedad_clases': variedad_actual
+            },
+            'mes_comparacion': {
+                'promedio_alumnos': prom_alumnos_comp,
+                'puntualidad': puntualidad_comp,
+                'total_clases': clases_comp,
+                'variedad_clases': variedad_comp
+            },
+            'mes_actual_nombre': mes_actual_nombre,
+            'mes_comparacion_nombre': mes_comparacion_nombre
+        }
+    except Exception as e:
+        print(f"Error en comparar_metricas_mensuales: {str(e)}")
+        return {
+            'error': f"Error al comparar métricas: {str(e)}",
+            'global': 0,
+            'promedio_alumnos': 0,
+            'puntualidad': 0,
+            'total_clases': 0,
+            'variedad_clases': 0,
+            'distribucion_tipos': {},
+            'mes_actual': {
+                'promedio_alumnos': 0,
+                'puntualidad': 0,
+                'total_clases': 0,
+                'variedad_clases': 0
+            },
+            'mes_comparacion': {
+                'promedio_alumnos': 0,
+                'puntualidad': 0,
+                'total_clases': 0,
+                'variedad_clases': 0
+            },
+            'mes_actual_nombre': "Mes actual",
+            'mes_comparacion_nombre': "Mes comparación"
+        }
