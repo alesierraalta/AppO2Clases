@@ -105,43 +105,60 @@
                 </div>
                 <div class="card-body">
                     <form id="comparacionForm" method="GET" class="row g-3 align-items-end" novalidate>
-                        <div class="col-md-5">
-                            <label for="mes_actual" class="form-label fw-semibold">Mes actual</label>
-                            <select name="mes_actual" id="mes_actual" class="form-select" required>
-                                <option value="">Seleccione un mes</option>
-                                {% if meses_disponibles %}
-                                    {% for mes in meses_disponibles %}
-                                    <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
-                                        {{ mes.etiqueta }}
-                                    </option>
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                            <div class="invalid-feedback">
-                                Por favor seleccione un mes actual
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasMes" value="mensual" {% if tipo_metricas != 'totales' %}checked{% endif %}>
+                                <label class="form-check-label" for="metricasMes">
+                                    <i class="fas fa-calendar-alt me-1 text-primary"></i> Ver métricas mensuales
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasTotales" value="totales" {% if tipo_metricas == 'totales' %}checked{% endif %}>
+                                <label class="form-check-label" for="metricasTotales">
+                                    <i class="fas fa-chart-line me-1 text-success"></i> Ver métricas totales
+                                </label>
                             </div>
                         </div>
                         
-                        <div class="col-md-5">
-                            <label for="mes_comparacion" class="form-label fw-semibold">Mes de comparación</label>
-                            <select name="mes_comparacion" id="mes_comparacion" class="form-select">
-                                <option value="">Seleccione un mes para comparar</option>
-                                {% if meses_disponibles %}
-                                    {% for mes in meses_disponibles %}
-                                    <option value="{{ mes.valor }}" {% if mes_comparacion and mes_comparacion[0] == mes.anio and mes_comparacion[1] == mes.mes %}selected{% endif %}>
-                                        {{ mes.etiqueta }}
-                                    </option>
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                            <div class="invalid-feedback">
-                                El mes de comparación debe ser diferente al mes actual
+                        <div id="seleccionMeses" class="row g-3 w-100 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
+                            <div class="col-md-5">
+                                <label for="mes_actual" class="form-label fw-semibold">Mes actual</label>
+                                <select name="mes_actual" id="mes_actual" class="form-select" {% if tipo_metricas != 'totales' %}required{% endif %}>
+                                    <option value="">Seleccione un mes</option>
+                                    {% if meses_disponibles %}
+                                        {% for mes in meses_disponibles %}
+                                        <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
+                                            {{ mes.etiqueta }}
+                                        </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un mes actual
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-5">
+                                <label for="mes_comparacion" class="form-label fw-semibold">Mes de comparación</label>
+                                <select name="mes_comparacion" id="mes_comparacion" class="form-select">
+                                    <option value="">Seleccione un mes para comparar</option>
+                                    {% if meses_disponibles %}
+                                        {% for mes in meses_disponibles %}
+                                        <option value="{{ mes.valor }}" {% if mes_comparacion and mes_comparacion[0] == mes.anio and mes_comparacion[1] == mes.mes %}selected{% endif %}>
+                                            {{ mes.etiqueta }}
+                                        </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    El mes de comparación debe ser diferente al mes actual
+                                </div>
                             </div>
                         </div>
                         
                         <div class="col-md-2">
                             <button type="submit" id="btnComparar" class="btn btn-primary w-100">
-                                <i class="fas fa-chart-bar me-1"></i> Comparar
+                                <i class="fas fa-chart-bar me-1"></i> Aplicar
                             </button>
                         </div>
                         
@@ -1511,12 +1528,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = new URL(window.location.href);
             const params = new URLSearchParams(url.search);
             
-            // Actualizar parámetros
-            params.set('mes_actual', mesActual);
+            // Obtener el tipo de métricas seleccionado
+            const tipoMetricas = document.querySelector('input[name="tipo_metricas"]:checked').value;
+            params.set('tipo_metricas', tipoMetricas);
             
-            if (mesComparacion) {
-                params.set('mes_comparacion', mesComparacion);
+            // Solo añadir parámetros de mes si se seleccionaron métricas mensuales
+            if (tipoMetricas === 'mensual') {
+                params.set('mes_actual', mesActual);
+                
+                if (mesComparacion) {
+                    params.set('mes_comparacion', mesComparacion);
+                } else {
+                    params.delete('mes_comparacion');
+                }
             } else {
+                // Si son métricas totales, eliminar parámetros de mes
+                params.delete('mes_actual');
                 params.delete('mes_comparacion');
             }
             
@@ -1628,6 +1655,119 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btnComparar.disabled) {
                 btnComparar.disabled = false;
                 btnComparar.innerHTML = '<i class="fas fa-chart-bar me-1"></i> Comparar';
+            }
+        }
+        
+        // Initialize state
+        refreshValidationState();
+    }
+});
+</script>
+
+<script>
+// Form validation and toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const comparacionForm = document.getElementById('comparacionForm');
+    const mesActualSelect = document.getElementById('mes_actual');
+    const mesComparacionSelect = document.getElementById('mes_comparacion');
+    const validationMessages = document.getElementById('validationMessages');
+    const btnComparar = document.getElementById('btnComparar');
+    const seleccionMeses = document.getElementById('seleccionMeses');
+    const metricasMes = document.getElementById('metricasMes');
+    const metricasTotales = document.getElementById('metricasTotales');
+    
+    // Toggle functionality for monthly vs total metrics
+    if (metricasMes && metricasTotales && seleccionMeses) {
+        metricasMes.addEventListener('change', function() {
+            seleccionMeses.classList.remove('d-none');
+            if (mesActualSelect) {
+                mesActualSelect.setAttribute('required', '');
+            }
+        });
+        
+        metricasTotales.addEventListener('change', function() {
+            seleccionMeses.classList.add('d-none');
+            if (mesActualSelect) {
+                mesActualSelect.removeAttribute('required');
+            }
+        });
+    }
+    
+    if (comparacionForm) {
+        comparacionForm.addEventListener('submit', function(event) {
+            let isValid = true;
+            validationMessages.innerHTML = '';
+            
+            // Only validate monthly selections if in monthly view
+            if (metricasMes && metricasMes.checked) {
+                // Validate mes_actual is selected
+                if (!mesActualSelect.value) {
+                    isValid = false;
+                    mesActualSelect.classList.add('is-invalid');
+                    validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Debe seleccionar un mes actual</div>';
+                } else {
+                    mesActualSelect.classList.remove('is-invalid');
+                }
+                
+                // Validate mes_comparacion is selected and different from mes_actual
+                if (mesComparacionSelect.value && mesComparacionSelect.value === mesActualSelect.value) {
+                    isValid = false;
+                    mesComparacionSelect.classList.add('is-invalid');
+                    validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>El mes de comparación debe ser diferente al mes actual</div>';
+                } else {
+                    mesComparacionSelect.classList.remove('is-invalid');
+                }
+                
+                // Check minimum data requirements
+                if (mesActualSelect.options.length <= 1) {
+                    isValid = false;
+                    validationMessages.innerHTML += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No hay suficientes datos de meses disponibles para realizar comparaciones</div>';
+                }
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+            } else {
+                // Show loading state
+                btnComparar.disabled = true;
+                btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cargando...';
+                
+                if (metricasMes && metricasMes.checked) {
+                    validationMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Calculando métricas mensuales...</div>';
+                } else {
+                    validationMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Calculando métricas totales...</div>';
+                }
+            }
+        });
+        
+        // Clear validation on change
+        if (mesActualSelect) {
+            mesActualSelect.addEventListener('change', function() {
+                this.classList.remove('is-invalid');
+                refreshValidationState();
+            });
+        }
+        
+        if (mesComparacionSelect) {
+            mesComparacionSelect.addEventListener('change', function() {
+                this.classList.remove('is-invalid');
+                refreshValidationState();
+            });
+        }
+        
+        // Function to refresh validation state
+        function refreshValidationState() {
+            validationMessages.innerHTML = '';
+            
+            // If we have an error from server, keep showing it
+            {% if error %}
+            validationMessages.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>';
+            {% endif %}
+            
+            // Enable compare button if it was disabled
+            if (btnComparar.disabled) {
+                btnComparar.disabled = false;
+                btnComparar.innerHTML = '<i class="fas fa-chart-bar me-1"></i> Aplicar';
             }
         }
         

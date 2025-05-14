@@ -73,7 +73,7 @@ def calcular_promedio_alumnos(clases):
     """
     if not clases:
         return 0.0
-    
+        
     # Filtrar clases que tienen datos válidos de alumnos    
     clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None]
     if not clases_con_alumnos:
@@ -327,13 +327,13 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
     
     # Inicializar la estructura de retorno
     metricas = {
-        'metricas_actual': metricas_vacias,
-        'metricas_comparacion': None,
-        'comparacion': None,
-        'mes_actual': mes_actual,
-        'mes_comparacion': mes_comparacion
-    }
-
+            'metricas_actual': metricas_vacias,
+            'metricas_comparacion': None,
+            'comparacion': None,
+            'mes_actual': mes_actual,
+            'mes_comparacion': mes_comparacion
+        }
+    
     if not clases:
         return metricas
     
@@ -343,7 +343,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         return [c for c in clases_list if c.fecha.year == anio and c.fecha.month == mes]
         
     # Preparar variables para cuando se filtran por mes
-    clases_mes_actual = clases
+        clases_mes_actual = clases
     clases_a_procesar = clases
     
     # Calcular tendencia general para todos los meses (evolución mensual)
@@ -479,20 +479,20 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         
         # Compilar todas las métricas
         metricas_actuales = {
-            'total_clases': total_clases,
-            'total_alumnos': total_alumnos,
+        'total_clases': total_clases,
+        'total_alumnos': total_alumnos,
             'promedio_alumnos': promedio_alumnos,
             'clases': clases_ordenadas,
             'distribucion': distribucion,
-            'puntualidad': puntualidad,
+        'puntualidad': puntualidad,
             'tendencia': tendencia,  # Este es el cálculo para el período específico
             'datos_mensuales': metricas.get('datos_mensuales', []),  # Estos son TODOS los datos mensuales
-            'clases_por_mes': clases_por_mes,
-            'variedad_clases': variedad_clases,
-            'tendencia_global': tendencia_global,
-            'tendencias': {
-                'alumnos': tendencia_alumnos,
-                'puntualidad': tendencia_puntualidad,
+        'clases_por_mes': clases_por_mes,
+        'variedad_clases': variedad_clases,
+        'tendencia_global': tendencia_global,
+        'tendencias': {
+            'alumnos': tendencia_alumnos,
+            'puntualidad': tendencia_puntualidad,
                 'clases_por_mes': tendencia_clases_mes
             }
         }
@@ -509,20 +509,20 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         # Actualizar el objeto de retorno con las métricas calculadas
         metricas['metricas_actual'] = metricas_actuales
         
-        # Añadir nombres de meses para mostrar en la UI
-        if mes_actual:
-            anio_actual, mes_actual_num = mes_actual
-            import calendar
-            metricas['mes_actual_nombre'] = f"{calendar.month_name[mes_actual_num]} {anio_actual}"
-        else:
-            metricas['mes_actual_nombre'] = "Todas las clases"
-            
-        if mes_comparacion:
-            anio_comp, mes_comp_num = mes_comparacion
-            import calendar
-            metricas['mes_comparacion_nombre'] = f"{calendar.month_name[mes_comp_num]} {anio_comp}"
-        else:
-            metricas['mes_comparacion_nombre'] = "Sin comparación"
+    # Añadir nombres de meses para mostrar en la UI
+    if mes_actual:
+        anio_actual, mes_actual_num = mes_actual
+        import calendar
+        metricas['mes_actual_nombre'] = f"{calendar.month_name[mes_actual_num]} {anio_actual}"
+    else:
+        metricas['mes_actual_nombre'] = "Todas las clases"
+    
+    if mes_comparacion:
+        anio_comp, mes_comp_num = mes_comparacion
+        import calendar
+        metricas['mes_comparacion_nombre'] = f"{calendar.month_name[mes_comp_num]} {anio_comp}"
+    else:
+        metricas['mes_comparacion_nombre'] = "Sin comparación"
     
     return metricas
 
@@ -677,4 +677,4 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             },
             'mes_actual_nombre': "Mes actual",
             'mes_comparacion_nombre': "Mes comparación"
-        }
+        } 

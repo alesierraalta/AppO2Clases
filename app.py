@@ -4913,6 +4913,9 @@ def metricas_profesor(profesor_id):
         # Verificar si se debe mostrar el modo de depuración
         debug_mode = request.args.get('debug', type=bool, default=False)
         
+        # Nuevo parámetro para elegir tipo de métricas (mensual o totales)
+        tipo_metricas = request.args.get('tipo_metricas', default='mensual')
+        
         # Verificar valor de periodo_meses
         if periodo_meses <= 0:
             periodo_meses = 12
@@ -4939,7 +4942,8 @@ def metricas_profesor(profesor_id):
         mes_actual_nombre = None
         mes_comparacion_nombre = None
         
-        if mes_actual_str:
+        # Si tipo_metricas es 'totales', no procesamos los parámetros de mes
+        if tipo_metricas == 'mensual' and mes_actual_str:
             try:
                 anio, mes = mes_actual_str.split('-')
                 mes_actual = (int(anio), int(mes))
@@ -4947,7 +4951,7 @@ def metricas_profesor(profesor_id):
             except (ValueError, TypeError):
                 flash(f"Formato de mes_actual inválido. Use YYYY-MM", "warning")
         
-        if mes_comparacion_str:
+        if tipo_metricas == 'mensual' and mes_comparacion_str:
             try:
                 anio, mes = mes_comparacion_str.split('-')
                 mes_comparacion = (int(anio), int(mes))
@@ -4967,8 +4971,8 @@ def metricas_profesor(profesor_id):
         metricas = calcular_metricas_profesor(
             profesor_id=profesor.id,
             clases=clases,
-            mes_actual=mes_actual,
-            mes_comparacion=mes_comparacion
+            mes_actual=mes_actual if tipo_metricas == 'mensual' else None,
+            mes_comparacion=mes_comparacion if tipo_metricas == 'mensual' else None
         )
         
         # Manejar errores de validación
@@ -5006,6 +5010,7 @@ def metricas_profesor(profesor_id):
             meses_disponibles=meses_disponibles,
             mes_actual_nombre=mes_actual_nombre,
             mes_comparacion_nombre=mes_comparacion_nombre,
+            tipo_metricas=tipo_metricas,  # Pasar el tipo de métricas seleccionado
             error=error  # Pasar el error de validación a la plantilla
         )
     except Exception as e:
