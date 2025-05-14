@@ -561,8 +561,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         
         # Calcular diferencia en promedio de alumnos con manejo de excepciones
         try:
-            if prom_alumnos_comp > 0:
-                diff_prom_alumnos = ((prom_alumnos_actual / prom_alumnos_comp) - 1) * 100
+        if prom_alumnos_comp > 0:
+            diff_prom_alumnos = ((prom_alumnos_actual / prom_alumnos_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -571,8 +571,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         puntualidad_comp = metricas_comparacion.get('puntualidad', {}).get('tasa', 0)
         
         try:
-            if puntualidad_comp > 0:
-                diff_puntualidad = ((puntualidad_actual / puntualidad_comp) - 1) * 100
+        if puntualidad_comp > 0:
+            diff_puntualidad = ((puntualidad_actual / puntualidad_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -581,8 +581,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         clases_comp = len(metricas_comparacion.get('clases', []))
         
         try:
-            if clases_comp > 0:
-                diff_clases = ((clases_actual / clases_comp) - 1) * 100
+        if clases_comp > 0:
+            diff_clases = ((clases_actual / clases_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -591,8 +591,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         variedad_comp = metricas_comparacion.get('variedad_clases', 0)
         
         try:
-            if variedad_comp > 0:
-                diff_variedad = ((variedad_actual / variedad_comp) - 1) * 100
+        if variedad_comp > 0:
+            diff_variedad = ((variedad_actual / variedad_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -602,15 +602,15 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         
         diff_tipos = {}
         try:
-            for tipo in set(list(tipos_actual.keys()) + list(tipos_comp.keys())):
-                actual = tipos_actual.get(tipo, 0)
-                comp = tipos_comp.get(tipo, 0)
-                
+        for tipo in set(list(tipos_actual.keys()) + list(tipos_comp.keys())):
+            actual = tipos_actual.get(tipo, 0)
+            comp = tipos_comp.get(tipo, 0)
+            
                 try:
-                    if comp > 0:
-                        diff_tipos[tipo] = ((actual / comp) - 1) * 100
-                    else:
-                        diff_tipos[tipo] = 100 if actual > 0 else 0
+            if comp > 0:
+                diff_tipos[tipo] = ((actual / comp) - 1) * 100
+            else:
+                diff_tipos[tipo] = 100 if actual > 0 else 0
                 except (ZeroDivisionError, TypeError):
                     diff_tipos[tipo] = 0
         except Exception as e:

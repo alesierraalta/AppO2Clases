@@ -598,22 +598,27 @@ def control_asistencia():
         
         # Horarios programados para hoy - try without 'activo' filter if it fails
         try:
-            # Try first with activo filter
+            # Obtener SOLO horarios activos (activo=True)
             horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+            app.logger.info(f"Filtrado exitoso: obtenidos {len(horarios_hoy)} horarios activos para el día {dia_semana}")
         except Exception as e:
-            # If activo column doesn't exist, ignore it
-            app.logger.warning(f"Activo column not found, fetching all horarios: {str(e)}")
-            # Fetch all and then filter in Python
+            # Si la columna activo no existe, hacer filtrado manual
+            app.logger.warning(f"Columna activo no encontrada, usando filtrado manual: {str(e)}")
+            # Obtener todos y filtrar en Python
             horarios_temp = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
-            # Filter out any that explicitly have activo=False
+            # Excluir explícitamente los que tienen activo=False
             horarios_hoy = []
             for h in horarios_temp:
                 try:
                     if getattr(h, 'activo', True):
                         horarios_hoy.append(h)
+                    else:
+                        app.logger.info(f"Excluyendo horario inactivo: {h.id} - {h.nombre}")
                 except:
                     # Si no existe el atributo, asumir que está activo
                     horarios_hoy.append(h)
+            
+            app.logger.info(f"Después de filtrado manual: {len(horarios_hoy)} horarios activos")
         
         # Clases ya registradas hoy
         clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -998,16 +1003,17 @@ def clases_no_registradas():
     
     # 1. Obtener todos los horarios activos utilizando una consulta más completa y directa
     try:
-        # Primero intentar la consulta con el filtro activo
+        # Usar siempre el filtro de activo para mostrar solo clases activas
         sql_horarios = """
             SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, h.activo 
             FROM horario_clase h 
             WHERE h.activo = 1
             ORDER BY h.nombre
         """
+        app.logger.info("Ejecutando consulta SQL filtrando por horarios activos...")
         result_horarios = db.session.execute(sql_horarios)
     except Exception as e:
-        # Si falla, es posible que la columna activo no exista, usar consulta sin el filtro
+        # Manejo de caso donde la columna activo no existe
         app.logger.warning(f"Error al consultar horarios con filtro activo: {str(e)}. Intentando sin filtro.")
         sql_horarios = """
             SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, 1 as activo 
@@ -1015,6 +1021,7 @@ def clases_no_registradas():
             ORDER BY h.nombre
         """
         result_horarios = db.session.execute(sql_horarios)
+        app.logger.warning("Usando consulta sin filtro activo - se requiere actualizar la base de datos")
     
     horarios_activos = []
     for row in result_horarios:
@@ -1163,8 +1170,9 @@ def clases_no_registradas():
     # 4. Generar las clases esperadas que NO están registradas
     clases_no_registradas = []
     for horario in horarios_activos:
-        # Asegurarse de usar solo horarios activos
+        # Asegurarse de usar solo horarios activos - verificación explícita
         if not horario.get('activo', True):
+            print(f"DEBUG: Ignorando horario inactivo: ID {horario['id']}, {horario['nombre']}")
             continue
             
         for fecha in fechas:

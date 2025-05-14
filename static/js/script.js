@@ -5,9 +5,38 @@
 
 // Theme toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar la UI del theme toggle basado en el tema actual
-    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-    updateThemeUI(currentTheme);
+    // Add transition-ready class to enable transitions after page load
+    setTimeout(() => {
+        document.documentElement.classList.add('theme-transition-ready');
+    }, 300);
+    
+    // Check for system preference first, then localStorage
+    const savedTheme = localStorage.getItem('theme');
+    let preferredTheme;
+    
+    if (savedTheme) {
+        preferredTheme = savedTheme;
+    } else {
+        // Check system preference
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        preferredTheme = prefersDarkScheme.matches ? 'dark' : 'light';
+        // Save the detected preference
+        localStorage.setItem('theme', preferredTheme);
+    }
+    
+    // Apply theme
+    document.documentElement.setAttribute('data-bs-theme', preferredTheme);
+    updateThemeUI(preferredTheme);
+    
+    // Listen for system preference changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) {
+            // Only update automatically if user hasn't explicitly chosen a theme
+            const newTheme = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', newTheme);
+            updateThemeUI(newTheme);
+        }
+    });
     
     // Theme toggle click handler
     const themeToggle = document.getElementById('themeToggle');
@@ -18,17 +47,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
-            // Log para depuración
-            console.log('Cambiando tema de:', currentTheme, 'a:', newTheme);
+            // Add ripple effect to the body for a visual transition
+            const ripple = document.createElement('div');
+            ripple.className = 'theme-transition-ripple';
+            ripple.style.backgroundColor = newTheme === 'dark' ? '#000' : '#fff';
+            document.body.appendChild(ripple);
             
-            // Save preference
-            localStorage.setItem('theme', newTheme);
-            
-            // Apply new theme
-            document.documentElement.setAttribute('data-bs-theme', newTheme);
-            
-            // Update UI
-            updateThemeUI(newTheme);
+            // Animate ripple
+            setTimeout(() => {
+                ripple.style.transform = 'scale(100)';
+                ripple.style.opacity = '0.3';
+                
+                // Apply new theme after short delay for visual effect
+                setTimeout(() => {
+                    // Save preference
+                    localStorage.setItem('theme', newTheme);
+                    
+                    // Apply new theme
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    
+                    // Update UI
+                    updateThemeUI(newTheme);
+                    
+                    // Remove ripple after animation completes
+                    setTimeout(() => {
+                        document.body.removeChild(ripple);
+                    }, 300);
+                }, 150);
+            }, 10);
             
             // Close dropdown if open
             const dropdown = document.querySelector('.config-submenu .dropdown-menu');
@@ -61,6 +107,9 @@ function updateThemeUI(theme) {
         themeIcon.className = 'fas fa-moon';
         themeText.textContent = 'Cambiar a modo oscuro';
     }
+    
+    // Trigger any custom theme change events
+    document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
 }
 
 // Global animation and interaction behaviors

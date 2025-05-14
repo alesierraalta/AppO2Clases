@@ -1,19 +1,38 @@
 /* Controla las transiciones entre temas */
 html {
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 html, body {
   transition-property: color, background-color;
-  transition-duration: 0.2s;
+  transition-duration: 0.3s;
   transition-timing-function: ease;
 }
 
+/* Expanded list of elements with transitions */
 .navbar, .ios-tab-bar, .ios-card, .card, .dropdown-menu, 
 .btn, .form-control, .input-group-text, .ios-table th,
-.ios-table {
+.ios-table, .list-group-item, .alert, .badge,
+.modal-content, .progress, .tab-content, .table,
+.form-select, .nav-link, .card-header, .card-footer,
+.toast, .breadcrumb, .pagination {
   transition-property: color, background-color, border-color, box-shadow;
-  transition-duration: 0.2s;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Additional transitions for shadows and transforms */
+.card, .ios-card, .dropdown-menu, .modal-content, .toast, 
+.navbar, .ios-tab-bar {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1); /* Improved easing for a smoother feel */
+}
+
+/* Additional transition for navbar position changes */
+.navbar.fixed-top {
+  transition-property: color, background-color, border-color, box-shadow, transform, backdrop-filter;
+  transition-duration: 0.3s;
   transition-timing-function: ease;
 }
 
@@ -24,5 +43,40 @@ html, body {
 
 /* Añade esta clase al html al cargar la página y quítala después */
 html.theme-transition-ready {
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Smoother transitions for form elements */
+.form-control, .form-select, .form-check-input {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Special handling for icons and svgs */
+.svg-icon, .fa, .fas, .far, .fab {
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+/* Table row and cell transitions */
+.table tr, .table td, .table th {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Hover states */
+.btn:hover, .nav-link:hover, .dropdown-item:hover {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Theme toggle ripple effect */
+.theme-transition-ripple {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
 } 
