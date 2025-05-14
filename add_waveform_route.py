@@ -15,8 +15,24 @@ def control_asistencia_waveform():
     hoy = datetime.now().date()
     dia_semana = hoy.weekday()
     
-    # Horarios programados para hoy
-    horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+    # Horarios programados para hoy - try without 'activo' filter if it fails
+    try:
+        # Try first with activo filter
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+    except Exception as e:
+        # If activo column doesn't exist, ignore it
+        print(f"Warning: Activo column not found, fetching all horarios: {str(e)}")
+        # Fetch all and then filter in Python
+        horarios_temp = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        # Filter out any that explicitly have activo=False
+        horarios_hoy = []
+        for h in horarios_temp:
+            try:
+                if getattr(h, 'activo', True):
+                    horarios_hoy.append(h)
+            except:
+                # Si no existe el atributo, asumir que está activo
+                horarios_hoy.append(h)
     
     # Clases ya registradas hoy
     clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -51,7 +67,25 @@ def control_asistencia_fixed():
     hoy = datetime.now().date()
     dia_semana = hoy.weekday()
     
-    horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+    # Horarios programados para hoy - try without 'activo' filter if it fails
+    try:
+        # Try first with activo filter
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+    except Exception as e:
+        # If activo column doesn't exist, ignore it
+        print(f"Warning: Activo column not found, fetching all horarios: {str(e)}")
+        # Fetch all and then filter in Python
+        horarios_temp = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        # Filter out any that explicitly have activo=False
+        horarios_hoy = []
+        for h in horarios_temp:
+            try:
+                if getattr(h, 'activo', True):
+                    horarios_hoy.append(h)
+            except:
+                # Si no existe el atributo, asumir que está activo
+                horarios_hoy.append(h)
+    
     clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
     horarios_ya_registrados = [c.horario_id for c in clases_realizadas_hoy]
     horarios_pendientes = [h for h in horarios_hoy if h.id not in horarios_ya_registrados]

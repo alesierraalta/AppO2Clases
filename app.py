@@ -342,6 +342,23 @@ def listar_horarios():
     horarios = HorarioClase.query.order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
     return render_template('horarios/lista.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
 
+@app.route('/horarios/inactivos')
+def listar_horarios_inactivos():
+    """
+    Muestra una lista de los horarios inactivos.
+    Los horarios inactivos son aquellos marcados con activo=False.
+    """
+    try:
+        # Intentar filtrar por activo=False
+        horarios = HorarioClase.query.filter_by(activo=False).order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
+    except Exception as e:
+        # Si la columna 'activo' no existe, mostrar mensaje y devolver lista vacía
+        app.logger.warning(f"Error al filtrar horarios inactivos: {str(e)}")
+        flash('La función de horarios inactivos requiere que la base de datos esté actualizada.', 'warning')
+        horarios = []
+    
+    return render_template('horarios/inactivos.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
+
 @app.route('/horarios/nuevo', methods=['GET', 'POST'])
 def nuevo_horario():
     profesores = Profesor.query.order_by(Profesor.apellido).all()
@@ -586,7 +603,17 @@ def control_asistencia():
         except Exception as e:
             # If activo column doesn't exist, ignore it
             app.logger.warning(f"Activo column not found, fetching all horarios: {str(e)}")
-            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+            # Fetch all and then filter in Python
+            horarios_temp = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+            # Filter out any that explicitly have activo=False
+            horarios_hoy = []
+            for h in horarios_temp:
+                try:
+                    if getattr(h, 'activo', True):
+                        horarios_hoy.append(h)
+                except:
+                    # Si no existe el atributo, asumir que está activo
+                    horarios_hoy.append(h)
         
         # Clases ya registradas hoy
         clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -991,6 +1018,10 @@ def clases_no_registradas():
     
     horarios_activos = []
     for row in result_horarios:
+        # Solo procesar los horarios activos (si se usó la consulta sin filtro)
+        if not getattr(row, 'activo', 1):
+            continue
+            
         # Extraer la hora_inicio de la base de datos
         hora_inicio_original = row.hora_inicio
         
@@ -1132,6 +1163,10 @@ def clases_no_registradas():
     # 4. Generar las clases esperadas que NO están registradas
     clases_no_registradas = []
     for horario in horarios_activos:
+        # Asegurarse de usar solo horarios activos
+        if not horario.get('activo', True):
+            continue
+            
         for fecha in fechas:
             # Verificar que fecha sea un objeto date
             if not isinstance(fecha, date):
@@ -4745,15 +4780,29 @@ def reporte_mensual(mes, anio):
     ultimo_dia = date(anio, mes, calendar.monthrange(anio, mes)[1])
     
     # Consultar horarios activos
-    sql_horarios_activos = """
-    SELECT hc.id, hc.nombre, hc.hora_inicio, hc.duracion, p.nombre
-    FROM horario_clase hc
-    LEFT JOIN profesor p ON hc.profesor_id = p.id
-    WHERE hc.id NOT IN (
-        SELECT horario_id FROM clase_realizada 
-        WHERE fecha >= :fecha_inicio AND fecha <= :fecha_fin
-    )
-    """
+    try:
+        # Intentar usar el filtro activo
+        sql_horarios_activos = """
+        SELECT hc.id, hc.nombre, hc.hora_inicio, hc.duracion, p.nombre
+        FROM horario_clase hc
+        LEFT JOIN profesor p ON hc.profesor_id = p.id
+        WHERE hc.activo = 1 AND hc.id NOT IN (
+            SELECT horario_id FROM clase_realizada 
+            WHERE fecha >= :fecha_inicio AND fecha <= :fecha_fin
+        )
+        """
+    except Exception as e:
+        # Si falla, es posible que la columna activo no exista
+        app.logger.warning(f"Error al consultar con filtro activo en reporte_mensual: {str(e)}. Usando consulta sin filtro.")
+        sql_horarios_activos = """
+        SELECT hc.id, hc.nombre, hc.hora_inicio, hc.duracion, p.nombre
+        FROM horario_clase hc
+        LEFT JOIN profesor p ON hc.profesor_id = p.id
+        WHERE hc.id NOT IN (
+            SELECT horario_id FROM clase_realizada 
+            WHERE fecha >= :fecha_inicio AND fecha <= :fecha_fin
+        )
+        """
     
     # Consultar clases completadas
     sql_clases_completadas = """

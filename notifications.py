@@ -137,9 +137,20 @@ def check_and_notify_unregistered_classes():
             except Exception as e:
                 # Si falla, probablemente la columna activo no existe
                 logger.warning(f"Error al filtrar por activo: {str(e)}. Obteniendo todos los horarios.")
-                horarios_hoy = HorarioClase.query.filter(
+                # Fetch all horarios for today and filter manually
+                horarios_temp = HorarioClase.query.filter(
                     HorarioClase.dia_semana == dia_semana_hoy
                 ).all()
+                
+                # Filter out inactive horarios
+                horarios_hoy = []
+                for h in horarios_temp:
+                    try:
+                        if getattr(h, 'activo', True):
+                            horarios_hoy.append(h)
+                    except:
+                        # Si no existe el atributo, asumir que está activo
+                        horarios_hoy.append(h)
             
             if not horarios_hoy:
                 # Convertir DIAS_SEMANA a un diccionario para obtener el nombre del día

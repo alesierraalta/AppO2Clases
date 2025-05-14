@@ -10,6 +10,9 @@
             <button id="btnEliminarSeleccionados" class="btn btn-danger me-2" style="display:none">
                 <i class="fas fa-trash me-1"></i> Eliminar Seleccionados <span class="badge bg-light text-dark count-selected">0</span>
             </button>
+            <a href="{{ url_for('listar_horarios_inactivos') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-power-off me-1"></i> Ver Inactivos
+            </a>
             <a href="{{ url_for('nuevo_horario') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Nuevo Horario
             </a>
@@ -19,6 +22,9 @@
                 <button id="btnEliminarSeleccionadosMobile" class="btn btn-danger" style="display:none">
                     <i class="fas fa-trash"></i> <span class="count-selected">0</span>
                 </button>
+                <a href="{{ url_for('listar_horarios_inactivos') }}" class="btn btn-secondary">
+                    <i class="fas fa-power-off"></i>
+                </a>
                 <a href="{{ url_for('nuevo_horario') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
                 </a>
