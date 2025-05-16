@@ -291,7 +291,7 @@ def validar_datos_comparacion(clases_mes_actual, clases_mes_comparacion):
     
     return resultado
 
-def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_comparacion=None, usar_promedios=False):
+def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_comparacion=None, usar_promedios=False, generar_resumen=True):
     """
     Calcula las métricas para un profesor específico.
     
@@ -301,6 +301,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         mes_actual (tuple, optional): Tuple (año, mes) para filtrar el mes actual.
         mes_comparacion (tuple, optional): Tuple (año, mes) para comparar con el mes actual.
         usar_promedios (bool, optional): Si True, usa promedios globales en vez de datos específicos del profesor.
+        generar_resumen (bool, optional): Si True, incluye un resumen estructurado del rendimiento.
         
     Returns:
         dict: Diccionario con las métricas calculadas
@@ -524,6 +525,10 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
     else:
         metricas['mes_comparacion_nombre'] = "Sin comparación"
     
+    # Generar resumen de rendimiento si se solicita
+    if generar_resumen:
+        metricas['resumen_rendimiento'] = generar_resumen_rendimiento(metricas)
+    
     return metricas
 
 # ... existing code ...
@@ -561,8 +566,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         
         # Calcular diferencia en promedio de alumnos con manejo de excepciones
         try:
-        if prom_alumnos_comp > 0:
-            diff_prom_alumnos = ((prom_alumnos_actual / prom_alumnos_comp) - 1) * 100
+            if prom_alumnos_comp > 0:
+                diff_prom_alumnos = ((prom_alumnos_actual / prom_alumnos_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -571,8 +576,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         puntualidad_comp = metricas_comparacion.get('puntualidad', {}).get('tasa', 0)
         
         try:
-        if puntualidad_comp > 0:
-            diff_puntualidad = ((puntualidad_actual / puntualidad_comp) - 1) * 100
+            if puntualidad_comp > 0:
+                diff_puntualidad = ((puntualidad_actual / puntualidad_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -581,8 +586,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         clases_comp = len(metricas_comparacion.get('clases', []))
         
         try:
-        if clases_comp > 0:
-            diff_clases = ((clases_actual / clases_comp) - 1) * 100
+            if clases_comp > 0:
+                diff_clases = ((clases_actual / clases_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -591,8 +596,8 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         variedad_comp = metricas_comparacion.get('variedad_clases', 0)
         
         try:
-        if variedad_comp > 0:
-            diff_variedad = ((variedad_actual / variedad_comp) - 1) * 100
+            if variedad_comp > 0:
+                diff_variedad = ((variedad_actual / variedad_comp) - 1) * 100
         except (ZeroDivisionError, TypeError):
             pass
             
@@ -602,15 +607,15 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         
         diff_tipos = {}
         try:
-        for tipo in set(list(tipos_actual.keys()) + list(tipos_comp.keys())):
-            actual = tipos_actual.get(tipo, 0)
-            comp = tipos_comp.get(tipo, 0)
-            
+            for tipo in set(list(tipos_actual.keys()) + list(tipos_comp.keys())):
+                actual = tipos_actual.get(tipo, 0)
+                comp = tipos_comp.get(tipo, 0)
+                
                 try:
-            if comp > 0:
-                diff_tipos[tipo] = ((actual / comp) - 1) * 100
-            else:
-                diff_tipos[tipo] = 100 if actual > 0 else 0
+                    if comp > 0:
+                        diff_tipos[tipo] = ((actual / comp) - 1) * 100
+                    else:
+                        diff_tipos[tipo] = 100 if actual > 0 else 0
                 except (ZeroDivisionError, TypeError):
                     diff_tipos[tipo] = 0
         except Exception as e:
@@ -678,3 +683,190 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             'mes_actual_nombre': "Mes actual",
             'mes_comparacion_nombre': "Mes comparación"
         } 
+
+def generar_resumen_rendimiento(metricas, nivel_detalle=1):
+    """
+    Genera un resumen estructurado del rendimiento del profesor basado en sus métricas.
+    
+    Args:
+        metricas (dict): Diccionario con las métricas del profesor calculadas por calcular_metricas_profesor
+        nivel_detalle (int): Nivel de detalle del resumen (1=básico, 2=intermedio, 3=completo)
+        
+    Returns:
+        dict: Resumen estructurado con indicadores clave de rendimiento
+    """
+    if not metricas or 'metricas_actual' not in metricas:
+        return {
+            'estado': 'error',
+            'mensaje': 'No hay métricas disponibles para generar resumen',
+            'datos': {}
+        }
+    
+    # Extraer métricas actuales para facilitar acceso
+    m = metricas['metricas_actual']
+    
+    # Verificar si hay datos suficientes
+    if not m.get('clases') or len(m.get('clases', [])) == 0:
+        return {
+            'estado': 'advertencia',
+            'mensaje': 'Datos insuficientes para generar un resumen de rendimiento',
+            'datos': {}
+        }
+    
+    # Inicializar estructura del resumen
+    resumen = {
+        'estado': 'ok',
+        'mensaje': 'Resumen generado correctamente',
+        'datos': {
+            'periodo': metricas.get('mes_actual_nombre', 'Período actual'),
+            'indicadores_clave': {},
+            'tendencias': {},
+            'comparativas': {},
+            'recomendaciones': []
+        }
+    }
+    
+    # 1. Indicadores clave de rendimiento (KPIs)
+    kpis = {
+        'total_clases': m.get('total_clases', 0),
+        'promedio_alumnos': m.get('promedio_alumnos', 0),
+        'tasa_puntualidad': m.get('puntualidad', {}).get('tasa', 0),
+        'clases_por_mes': m.get('clases_por_mes', 0),
+        'variedad_clases': m.get('variedad_clases', 0)
+    }
+    resumen['datos']['indicadores_clave'] = kpis
+    
+    # 2. Analizar tendencias
+    datos_mensuales = m.get('datos_mensuales', [])
+    if datos_mensuales and len(datos_mensuales) >= 2:
+        # Tomar últimos 3 meses o todos si hay menos
+        ultimos_meses = datos_mensuales[-3:] if len(datos_mensuales) > 3 else datos_mensuales
+        
+        # Calcular tendencias (comparando último mes con promedio de anteriores)
+        ultimo_mes = ultimos_meses[-1]
+        meses_anteriores = ultimos_meses[:-1]
+        
+        if meses_anteriores:
+            prom_alumnos_anterior = sum(m['promedio_alumnos'] for m in meses_anteriores) / len(meses_anteriores)
+            prom_clases_anterior = sum(m['total_clases'] for m in meses_anteriores) / len(meses_anteriores)
+            
+            tendencia_alumnos = ((ultimo_mes['promedio_alumnos'] / prom_alumnos_anterior) - 1) * 100 if prom_alumnos_anterior > 0 else 0
+            tendencia_clases = ((ultimo_mes['total_clases'] / prom_clases_anterior) - 1) * 100 if prom_clases_anterior > 0 else 0
+            
+            resumen['datos']['tendencias'] = {
+                'alumnos': {
+                    'valor': tendencia_alumnos,
+                    'etiqueta': 'en aumento' if tendencia_alumnos > 5 else 'estable' if -5 <= tendencia_alumnos <= 5 else 'en descenso'
+                },
+                'clases': {
+                    'valor': tendencia_clases,
+                    'etiqueta': 'en aumento' if tendencia_clases > 5 else 'estable' if -5 <= tendencia_clases <= 5 else 'en descenso'
+                }
+            }
+    
+    # 3. Comparativas con promedios generales
+    if 'promedio_profesores' in m:
+        prom_global = m['promedio_profesores']
+        
+        # Comparar con promedios globales
+        diff_alumnos = ((m['promedio_alumnos'] / prom_global['alumnos']) - 1) * 100 if prom_global['alumnos'] > 0 else 0
+        diff_puntualidad = ((m['puntualidad']['tasa'] / prom_global['puntualidad']) - 1) * 100 if prom_global['puntualidad'] > 0 else 0
+        diff_clases = ((m['clases_por_mes'] / prom_global['clases_por_mes']) - 1) * 100 if prom_global['clases_por_mes'] > 0 else 0
+        
+        resumen['datos']['comparativas'] = {
+            'vs_promedio': {
+                'alumnos': {
+                    'valor': diff_alumnos,
+                    'etiqueta': 'por encima del promedio' if diff_alumnos > 5 else 'en el promedio' if -5 <= diff_alumnos <= 5 else 'por debajo del promedio'
+                },
+                'puntualidad': {
+                    'valor': diff_puntualidad,
+                    'etiqueta': 'por encima del promedio' if diff_puntualidad > 5 else 'en el promedio' if -5 <= diff_puntualidad <= 5 else 'por debajo del promedio'
+                },
+                'clases_por_mes': {
+                    'valor': diff_clases,
+                    'etiqueta': 'por encima del promedio' if diff_clases > 5 else 'en el promedio' if -5 <= diff_clases <= 5 else 'por debajo del promedio'
+                }
+            }
+        }
+    
+    # 4. Comparativas entre meses (si hay comparación)
+    if metricas.get('comparacion'):
+        comp = metricas['comparacion']
+        resumen['datos']['comparativas']['vs_mes_anterior'] = {
+            'global': comp.get('global', 0),
+            'alumnos': comp.get('promedio_alumnos', 0),
+            'clases': comp.get('total_clases', 0),
+            'puntualidad': comp.get('puntualidad', 0),
+            'mes_base': comp.get('mes_comparacion_nombre', 'Mes anterior')
+        }
+    
+    # 5. Generar recomendaciones basadas en métricas
+    recomendaciones = []
+    
+    # Puntualidad
+    if m['puntualidad']['tasa'] < 85:
+        recomendaciones.append("Mejorar la puntualidad en las clases para aumentar la satisfacción de los alumnos.")
+    
+    # Promedio de alumnos
+    if 'promedio_profesores' in m and m['promedio_alumnos'] < m['promedio_profesores']['alumnos'] * 0.85:
+        recomendaciones.append("Trabajar en estrategias para aumentar la asistencia promedio a las clases.")
+    
+    # Variedad de clases
+    if m['variedad_clases'] < 50:
+        recomendaciones.append("Considerar diversificar los tipos de clases impartidas para atraer más alumnos.")
+    
+    # Tendencia de alumnos
+    if 'tendencias' in resumen['datos'] and resumen['datos']['tendencias'].get('alumnos', {}).get('valor', 0) < -10:
+        recomendaciones.append("Atención: Se observa una tendencia a la baja en el número de alumnos. Evaluar posibles causas.")
+    
+    # Si no hay recomendaciones, añadir una general positiva
+    if not recomendaciones and m['puntualidad']['tasa'] > 90 and (not 'promedio_profesores' in m or m['promedio_alumnos'] > m['promedio_profesores']['alumnos']):
+        recomendaciones.append("Mantener el excelente desempeño actual. Considerar compartir mejores prácticas con otros profesores.")
+    
+    resumen['datos']['recomendaciones'] = recomendaciones
+    
+    # Calificación global (una métrica compuesta)
+    try:
+        # Ponderación de factores para calificación global
+        peso_puntualidad = 0.35
+        peso_alumnos = 0.40
+        peso_clases = 0.25
+        
+        # Normalizar valores a escala 0-100
+        puntualidad_norm = m['puntualidad']['tasa']  # Ya está en porcentaje
+        
+        alumnos_norm = 0
+        if 'promedio_profesores' in m and m['promedio_profesores']['alumnos'] > 0:
+            # Normalizar respecto al promedio (100% = doble del promedio)
+            alumnos_norm = min(100, (m['promedio_alumnos'] / m['promedio_profesores']['alumnos']) * 50)
+        else:
+            # Si no hay promedio, usar escala arbitraria (100% = 20 alumnos)
+            alumnos_norm = min(100, (m['promedio_alumnos'] / 20) * 100)
+        
+        clases_norm = min(100, (m['clases_por_mes'] / 20) * 100)  # 20 clases/mes = 100%
+        
+        # Calcular calificación global
+        calificacion_global = (
+            peso_puntualidad * puntualidad_norm +
+            peso_alumnos * alumnos_norm +
+            peso_clases * clases_norm
+        )
+        
+        resumen['datos']['calificacion_global'] = {
+            'valor': round(calificacion_global, 1),
+            'nivel': 'Excelente' if calificacion_global >= 85 else 
+                     'Muy bueno' if calificacion_global >= 70 else
+                     'Bueno' if calificacion_global >= 60 else
+                     'Regular' if calificacion_global >= 50 else
+                     'Necesita mejorar'
+        }
+    except Exception as e:
+        print(f"Error al calcular calificación global: {str(e)}")
+        resumen['datos']['calificacion_global'] = {
+            'valor': 0,
+            'nivel': 'No disponible',
+            'error': str(e)
+        }
+    
+    return resumen 

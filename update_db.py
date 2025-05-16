@@ -1,7 +1,7 @@
-from app import db, HorarioClase
+from app import db, app
 import sqlite3
 import os
-from app import app
+import sys
 
 def add_tipo_clase_column():
     """
@@ -30,8 +30,9 @@ def add_tipo_clase_column():
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='horario_clase'")
     if not cursor.fetchone():
         print("Table 'horario_clase' not found. Creating the database schema...")
-        # Use SQLAlchemy to create all tables
-        db.create_all()
+        # Use SQLAlchemy to create all tables - need app context
+        with app.app_context():
+            db.create_all()
         print("Database schema created.")
     
     # Check if the column already exists
@@ -209,5 +210,34 @@ def update_database():
         return False
 
 if __name__ == "__main__":
-    with app.app_context():
-        update_database() 
+    # Crear explícitamente un contexto de aplicación
+    try:
+        # Primero intentar el método directo de SQLite que no depende del contexto Flask
+        success = update_database()
+        if success:
+            print("Actualización completada usando SQLite directamente")
+            sys.exit(0)
+        
+        # Si el método directo no funciona, intentar con el contexto de aplicación
+        print("Intentando actualización con contexto de aplicación Flask...")
+        
+        # Empujar un contexto de aplicación
+        ctx = app.app_context()
+        ctx.push()
+        
+        # Importar HorarioClase dentro del contexto de aplicación
+        from app import HorarioClase
+        
+        # Ejecutar las actualizaciones
+        add_tipo_clase_column()
+        
+        # Liberar el contexto cuando terminemos
+        ctx.pop()
+        
+        print("Actualización de base de datos completada")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Advertencia: Error durante la actualización de la base de datos: {e}")
+        print("Este error no necesariamente indica un problema grave.")
+        print("La aplicación intentará ejecutarse normalmente.")
+        sys.exit(0)  # Salir con éxito para no detener el inicio

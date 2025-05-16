@@ -97,15 +97,15 @@
             </div>
         </div>
         
-        <!-- Selector de meses para comparación -->
+        <!-- Selector de Tipo de Vista -->
         <div class="col-lg-8 mb-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-0">
-                    <h5 class="m-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Comparación Mensual</h5>
+                    <h5 class="m-0"><i class="fas fa-eye me-2 text-primary"></i>Tipo de Vista</h5>
                 </div>
                 <div class="card-body">
-                    <form id="comparacionForm" method="GET" class="row g-3 align-items-end" novalidate>
-                        <div class="col-md-12 mb-3">
+                    <form id="tipoVistaForm" method="GET" class="row g-3 align-items-end" novalidate>
+                        <div class="col-md-8 mb-3">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasMes" value="mensual" {% if tipo_metricas != 'totales' %}checked{% endif %}>
                                 <label class="form-check-label" for="metricasMes">
@@ -120,49 +120,93 @@
                             </div>
                         </div>
                         
-                        <div id="seleccionMeses" class="row g-3 w-100 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
-                            <div class="col-md-5">
-                                <label for="mes_actual" class="form-label fw-semibold">Mes actual</label>
-                                <select name="mes_actual" id="mes_actual" class="form-select" {% if tipo_metricas != 'totales' %}required{% endif %}>
-                                    <option value="">Seleccione un mes</option>
-                                    {% if meses_disponibles %}
-                                        {% for mes in meses_disponibles %}
-                                        <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
-                                            {{ mes.etiqueta }}
-                                        </option>
-                                        {% endfor %}
-                                    {% endif %}
-                                </select>
-                                <div class="invalid-feedback">
-                                    Por favor seleccione un mes actual
-                                </div>
+                        <div id="seleccionMesVista" class="col-md-2 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
+                            <label for="mes_vista" class="form-label fw-semibold">Mes</label>
+                            <select name="mes_actual" id="mes_vista" class="form-select" {% if tipo_metricas != 'totales' %}required{% endif %}>
+                                <option value="">Seleccione</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Seleccione un mes
                             </div>
-                            
-                            <div class="col-md-5">
-                                <label for="mes_comparacion" class="form-label fw-semibold">Mes de comparación</label>
-                                <select name="mes_comparacion" id="mes_comparacion" class="form-select">
-                                    <option value="">Seleccione un mes para comparar</option>
-                                    {% if meses_disponibles %}
-                                        {% for mes in meses_disponibles %}
-                                        <option value="{{ mes.valor }}" {% if mes_comparacion and mes_comparacion[0] == mes.anio and mes_comparacion[1] == mes.mes %}selected{% endif %}>
-                                            {{ mes.etiqueta }}
-                                        </option>
-                                        {% endfor %}
-                                    {% endif %}
-                                </select>
-                                <div class="invalid-feedback">
-                                    El mes de comparación debe ser diferente al mes actual
-                                </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <button type="submit" id="btnAplicarVista" class="btn btn-primary w-100">
+                                <i class="fas fa-check me-1"></i> Aplicar
+                            </button>
+                        </div>
+                        
+                        {% if debug_mode %}
+                        <input type="hidden" name="debug" value="true">
+                        {% endif %}
+                        
+                        <div class="col-12 mt-2" id="vistaValidationMessages"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Indicador de Modo -->
+    {% if comparar_meses %}
+    <div class="alert alert-primary mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="fas fa-exchange-alt fa-2x"></i>
+            </div>
+            <div>
+                <h5 class="mb-1">Modo Comparación</h5>
+                <p class="mb-0">Comparando métricas entre <strong>{{ mes_actual_nombre }}</strong> y <strong>{{ mes_comparacion_nombre }}</strong>.</p>
+                <a href="{{ url_for('metricas_profesor', profesor_id=profesor.id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Vista Normal
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de Comparación de Meses -->
+    {% if not comparar_meses %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="m-0"><i class="fas fa-balance-scale me-2 text-primary"></i>Comparación Entre Meses</h5>
+                </div>
+                <div class="card-body">
+                    <form id="comparacionForm" method="GET" class="row g-3 align-items-end" novalidate>
+                        <div class="col-md-5">
+                            <label for="mes_comparacion" class="form-label fw-semibold">Segundo mes</label>
+                            <select name="mes_comparacion" id="mes_comparacion" class="form-select" required>
+                                <option value="">Seleccione un mes para comparar</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}">
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                El segundo mes debe ser diferente al primero
                             </div>
                         </div>
                         
                         <div class="col-md-2">
                             <button type="submit" id="btnComparar" class="btn btn-primary w-100">
-                                <i class="fas fa-chart-bar me-1"></i> Aplicar
+                                <i class="fas fa-balance-scale me-1"></i> Comparar
                             </button>
                         </div>
                         
-                        <!-- Campo oculto para mantener el modo de depuración si está activo -->
+                        <input type="hidden" name="comparar" value="true">
+                        
                         {% if debug_mode %}
                         <input type="hidden" name="debug" value="true">
                         {% endif %}
@@ -172,43 +216,47 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
+    </div>
+    {% endif %}
+    
+    <!-- Resumen de Rendimiento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 py-3">
-                    <h5 class="m-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Resumen de Rendimiento</h5>
+                    <h5 class="m-0 text-center"><i class="fas fa-chart-pie me-2 text-primary"></i>Resumen de Rendimiento</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row g-3">
+                <div class="card-body py-4">
+                    <div class="row g-4 justify-content-center">
                         <div class="col-md-6 col-lg-3">
                             <div class="card metrics-card border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3">
+                                <div class="card-body text-center p-4">
                                     <p class="metric-title">Clases Impartidas</p>
-                                    <h2 class="metric-value text-primary mb-0">{{ metricas.total_clases }}</h2>
+                                    <h2 class="metric-value text-primary mb-0" style="font-size: 3rem;">{{ metricas.total_clases }}</h2>
                                 </div>
-                                <div class="card-footer bg-primary text-white p-1 text-center">
-                                    <small><i class="fas fa-calendar-alt me-1"></i>Total</small>
+                                <div class="card-footer bg-primary text-white p-2 text-center">
+                                    <span><i class="fas fa-calendar-alt me-1"></i>Total</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-6 col-lg-3">
                             <div class="card metrics-card border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3">
+                                <div class="card-body text-center p-4">
                                     <p class="metric-title">Alumnos Totales</p>
-                                    <h2 class="metric-value text-success mb-0">{{ metricas.total_alumnos }}</h2>
+                                    <h2 class="metric-value text-success mb-0" style="font-size: 3rem;">{{ metricas.total_alumnos }}</h2>
                                 </div>
-                                <div class="card-footer bg-success text-white p-1 text-center">
-                                    <small><i class="fas fa-users me-1"></i>Participantes</small>
+                                <div class="card-footer bg-success text-white p-2 text-center">
+                                    <span><i class="fas fa-users me-1"></i>Participantes</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-6 col-lg-3">
                             <div class="card metrics-card border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3">
+                                <div class="card-body text-center p-4">
                                     <p class="metric-title">Puntualidad</p>
-                                    <h2 class="metric-value text-info mb-0">
+                                    <h2 class="metric-value text-info mb-0" style="font-size: 3rem;">
                                         {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
                                             {{ (metricas.puntualidad.tasa)|round(1) }}%
                                         {% else %}
@@ -216,17 +264,17 @@
                                         {% endif %}
                                     </h2>
                                 </div>
-                                <div class="card-footer bg-info text-white p-1 text-center">
-                                    <small><i class="fas fa-clock me-1"></i>A tiempo</small>
+                                <div class="card-footer bg-info text-white p-2 text-center">
+                                    <span><i class="fas fa-clock me-1"></i>A tiempo</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-6 col-lg-3">
                             <div class="card metrics-card border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3">
+                                <div class="card-body text-center p-4">
                                     <p class="metric-title">Variedad de Clases</p>
-                                    <h2 class="metric-value text-warning mb-0">
+                                    <h2 class="metric-value text-warning mb-0" style="font-size: 3rem;">
                                         {% if metricas.variedad_clases is defined %}
                                             {{ metricas.variedad_clases|round(1) }}%
                                         {% else %}
@@ -234,12 +282,55 @@
                                         {% endif %}
                                     </h2>
                                 </div>
-                                <div class="card-footer bg-warning text-white p-1 text-center">
-                                    <small><i class="fas fa-random me-1"></i>Diversidad</small>
+                                <div class="card-footer bg-warning text-white p-2 text-center">
+                                    <span><i class="fas fa-random me-1"></i>Diversidad</span>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    {% if metricas.resumen_rendimiento and metricas.resumen_rendimiento.datos and metricas.resumen_rendimiento.datos.recomendaciones %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-center mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Recomendaciones</h6>
+                                    <ul class="list-group list-group-flush">
+                                        {% for recomendacion in metricas.resumen_rendimiento.datos.recomendaciones %}
+                                        <li class="list-group-item bg-transparent border-0">
+                                            <i class="fas fa-check-circle text-success me-2"></i>{{ recomendacion }}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if metricas.resumen_rendimiento and metricas.resumen_rendimiento.datos and metricas.resumen_rendimiento.datos.calificacion_global %}
+                    <div class="row mt-4 justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-2">Calificación Global</h6>
+                                    <h3 class="mb-1">{{ metricas.resumen_rendimiento.datos.calificacion_global.nivel }}</h3>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}%;" 
+                                             aria-valuenow="{{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}" 
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2">
+                                            {{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}/100
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -352,39 +443,23 @@
     {% endif %}
     
     {% if comparacion %}
-    <!-- Sección de resultados de comparación mensual -->
+    <!-- Resultados de la comparación -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="m-0"><i class="fas fa-exchange-alt me-2 text-primary"></i>Resultados de Comparación Mensual</h5>
-                    <div class="d-flex align-items-center">
-                        <span class="badge rounded-pill px-3 py-2 me-2" 
-                              style="background-color: {{ 'var(--bs-success)' if comparacion.global > 0 else 'var(--bs-danger)' if comparacion.global < 0 else 'var(--bs-secondary)' }}; color: white;">
-                            {% if comparacion.global > 0 %}
-                                <i class="fas fa-arrow-up me-1"></i> {{ comparacion.global|round(1) }}% de mejora global
-                            {% elif comparacion.global < 0 %}
-                                <i class="fas fa-arrow-down me-1"></i> {{ (comparacion.global * -1)|round(1) }}% de disminución global
-                            {% else %}
-                                <i class="fas fa-equals me-1"></i> Sin cambios
-                            {% endif %}
-                        </span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" 
-                                title="La comparación muestra los cambios desde {{ comparacion.mes_comparacion_nombre if comparacion and comparacion.mes_comparacion_nombre else mes_comparacion_nombre if mes_comparacion_nombre else 'Mes anterior' }} hasta {{ comparacion.mes_actual_nombre if comparacion and comparacion.mes_actual_nombre else mes_actual_nombre if mes_actual_nombre else 'Mes actual' }}">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                    </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-balance-scale me-2 text-primary"></i>Comparación Entre Meses</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <div class="row g-4">
-                        <!-- Cambio global -->
+                        <!-- Puntuación Global -->
                         <div class="col-lg-3 col-md-6">
                             <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.global > 10 else 'border-start border-danger border-5' if comparacion.global < -10 else 'shadow-sm' }}" 
                                 style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.global > 10 else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.global < -10 }}">
                                 <div class="card-body text-center p-3">
                                     <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-chart-line me-2"></i>
-                                        Rendimiento Global
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Puntuación Global
                                         {% if comparacion.global > 10 or comparacion.global < -10 %}
                                         <span class="badge bg-{{ 'success' if comparacion.global > 10 else 'danger' }} ms-2">
                                             Cambio significativo
@@ -406,23 +481,18 @@
                                             </h3>
                                         {% endif %}
                                     </div>
+                                    <div class="d-flex justify-content-center align-items-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntuacion|round(1) }} (Actual)</span>
+                                        <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntuacion|round(1) }} (Anterior)</span>
+                                    </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.global > 0 else 'danger' if comparacion.global < 0 else 'secondary' }}" 
-                                            role="progressbar" 
-                                            style="width: {{ [comparacion.global|abs, 100]|min }}%;" 
-                                            aria-valuenow="{{ comparacion.global|abs }}" 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                    <div class="mt-3 pt-1 border-top">
-                                        <div class="d-flex justify-content-between text-muted small">
-                                            <div>
-                                                <i class="fas fa-calendar-alt me-1"></i> {{ comparacion.mes_comparacion_nombre if comparacion and comparacion.mes_comparacion_nombre else mes_comparacion_nombre if mes_comparacion_nombre else 'Mes anterior' }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-calendar-check me-1"></i> {{ comparacion.mes_actual_nombre if comparacion and comparacion.mes_actual_nombre else mes_actual_nombre if mes_actual_nombre else 'Mes actual' }}
-                                            </div>
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.global|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.global|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
                                         </div>
                                     </div>
                                 </div>
@@ -465,11 +535,11 @@
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.promedio_alumnos > 0 else 'danger' if comparacion.promedio_alumnos < 0 else 'secondary' }}" 
-                                            role="progressbar" 
-                                            style="width: {{ [comparacion.promedio_alumnos|abs, 100]|min }}%;" 
-                                            aria-valuenow="{{ comparacion.promedio_alumnos|abs }}" 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="100">
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.promedio_alumnos|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.promedio_alumnos|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
                                         </div>
                                     </div>
                                 </div>
@@ -512,11 +582,11 @@
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.puntualidad > 0 else 'danger' if comparacion.puntualidad < 0 else 'secondary' }}" 
-                                            role="progressbar" 
-                                            style="width: {{ [comparacion.puntualidad|abs, 100]|min }}%;" 
-                                            aria-valuenow="{{ comparacion.puntualidad|abs }}" 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="100">
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.puntualidad|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.puntualidad|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
                                         </div>
                                     </div>
                                 </div>
@@ -559,11 +629,11 @@
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.total_clases > 0 else 'danger' if comparacion.total_clases < 0 else 'secondary' }}" 
-                                            role="progressbar" 
-                                            style="width: {{ [comparacion.total_clases|abs, 100]|min }}%;" 
-                                            aria-valuenow="{{ comparacion.total_clases|abs }}" 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="100">
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.total_clases|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.total_clases|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
                                         </div>
                                     </div>
                                 </div>
@@ -832,8 +902,6 @@ document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.plugins.tooltip.cornerRadius = 4;
     Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
     
-    // No longer displaying distribution chart by type of class since the section was removed
-
     {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
     try {
         // Gráfico de evolución mensual
@@ -1401,8 +1469,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarMesesDisponibles();
     });
     
-    // Código de manejo de cálculo de tendencias eliminado
-    
     // Si estamos en modo debug, expandir automáticamente los paneles de depuración
     {% if debug_mode %}
     // Expandir el primer panel del acordeón de depuración
@@ -1443,11 +1509,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función para inicializar los selectores de meses con los datos ya disponibles
     function cargarMesesDisponibles() {
-        const mesActualSelect = document.getElementById('mes_actual');
+        const mesVista = document.getElementById('mes_vista');
         const mesComparacionSelect = document.getElementById('mes_comparacion');
-        const btnComparar = document.getElementById('btnComparar');
         
-        if (!mesActualSelect || !mesComparacionSelect) return;
+        if (!mesVista || !mesComparacionSelect) return;
 
         // Los meses disponibles ya están definidos en el template, no necesitamos hacer una petición AJAX
         try {
@@ -1457,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const mesComparacionParam = urlParams.get('mes_comparacion');
             
             if (mesActualParam) {
-                mesActualSelect.value = mesActualParam;
+                mesVista.value = mesActualParam;
             }
             
             if (mesComparacionParam) {
@@ -1465,314 +1530,66 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Si no hay un mes seleccionado y tenemos opciones, seleccionar el primero por defecto
-            if (!mesActualSelect.value && mesActualSelect.options.length > 1) {
-                mesActualSelect.value = mesActualSelect.options[1].value;
+            if (!mesVista.value && mesVista.options.length > 1) {
+                mesVista.value = mesVista.options[1].value;
             }
         } catch (error) {
             console.error('Error al configurar meses:', error);
-            
-            // Mostrar mensaje de error si ocurre algún problema
-            const validationMessages = document.getElementById('validationMessages');
-            if (validationMessages) {
-                validationMessages.innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        Error al inicializar selectores de meses: ${error.message}
-                    </div>
-                `;
-            }
         }
     }
     
-    // Implementar validación y manejo del formulario
+    // Implementar validación para el formulario de comparación
     const comparacionForm = document.getElementById('comparacionForm');
     const validationMessages = document.getElementById('validationMessages');
     
     if (comparacionForm) {
         comparacionForm.addEventListener('submit', function(event) {
-            // Prevenir envío por defecto
-            event.preventDefault();
+            let isValid = true;
             
-            // Resetear mensajes
             if (validationMessages) {
                 validationMessages.innerHTML = '';
             }
             
-            comparacionForm.classList.remove('was-validated');
-            
-            // Obtener valores
-            const mesActual = document.getElementById('mes_actual').value;
-            const mesComparacion = document.getElementById('mes_comparacion').value;
-            
-            // Validar mes actual (requerido)
-            if (!mesActual) {
-                comparacionForm.classList.add('was-validated');
-                return;
-            }
-            
-            // Validar que los meses sean diferentes
-            if (mesComparacion && mesActual === mesComparacion) {
-                document.getElementById('mes_comparacion').classList.add('is-invalid');
-                if (validationMessages) {
-                    validationMessages.innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Los meses de comparación deben ser diferentes
-                        </div>
-                    `;
-                }
-                return;
-            }
-            
-            // Construir URL con parámetros
-            const url = new URL(window.location.href);
-            const params = new URLSearchParams(url.search);
-            
-            // Obtener el tipo de métricas seleccionado
-            const tipoMetricas = document.querySelector('input[name="tipo_metricas"]:checked').value;
-            params.set('tipo_metricas', tipoMetricas);
-            
-            // Solo añadir parámetros de mes si se seleccionaron métricas mensuales
-            if (tipoMetricas === 'mensual') {
-                params.set('mes_actual', mesActual);
-                
-                if (mesComparacion) {
-                    params.set('mes_comparacion', mesComparacion);
-                } else {
-                    params.delete('mes_comparacion');
-                }
-            } else {
-                // Si son métricas totales, eliminar parámetros de mes
-                params.delete('mes_actual');
-                params.delete('mes_comparacion');
-            }
-            
-            // Mantener otros parámetros existentes (como debug)
-            const debugParam = params.get('debug');
-            if (debugParam) {
-                params.set('debug', debugParam);
-            }
-            
-            // Añadir indicador de carga
-            if (validationMessages) {
-                validationMessages.innerHTML = `
-                    <div class="alert alert-info">
-                        <i class="fas fa-spinner fa-spin me-2"></i>
-                        Cargando datos...
-                    </div>
-                `;
-            }
-            
-            // Deshabilitar el botón para evitar clics múltiples
-            const btnComparar = document.getElementById('btnComparar');
-            if (btnComparar) {
-                btnComparar.disabled = true;
-                btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cargando...';
-            }
-            
-            // Redirigir con nuevos parámetros
-            window.location.href = `${url.pathname}?${params.toString()}`;
-        });
-    }
-    
-    // Cargar meses disponibles al cargar la página
-    cargarMesesDisponibles();
-});
-
-// Comparison chart function removed as requested
-</script>
-
-<!-- Add this JavaScript to the end of the file -->
-<script>
-// Form validation
-document.addEventListener('DOMContentLoaded', function() {
-    const comparacionForm = document.getElementById('comparacionForm');
-    const mesActualSelect = document.getElementById('mes_actual');
-    const mesComparacionSelect = document.getElementById('mes_comparacion');
-    const validationMessages = document.getElementById('validationMessages');
-    const btnComparar = document.getElementById('btnComparar');
-    
-    if (comparacionForm) {
-        comparacionForm.addEventListener('submit', function(event) {
-            let isValid = true;
-            validationMessages.innerHTML = '';
-            
-            // Validate mes_actual is selected
-            if (!mesActualSelect.value) {
+            // Validar que se ha seleccionado un mes de comparación
+            const mesComparacion = document.getElementById('mes_comparacion');
+            if (!mesComparacion.value) {
                 isValid = false;
-                mesActualSelect.classList.add('is-invalid');
-                validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Debe seleccionar un mes actual</div>';
+                mesComparacion.classList.add('is-invalid');
             } else {
-                mesActualSelect.classList.remove('is-invalid');
-            }
-            
-            // Validate mes_comparacion is selected and different from mes_actual
-            if (mesComparacionSelect.value && mesComparacionSelect.value === mesActualSelect.value) {
-                isValid = false;
-                mesComparacionSelect.classList.add('is-invalid');
-                validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>El mes de comparación debe ser diferente al mes actual</div>';
-            } else {
-                mesComparacionSelect.classList.remove('is-invalid');
-            }
-            
-            // Check minimum data requirements
-            if (mesActualSelect.options.length <= 1) {
-                isValid = false;
-                validationMessages.innerHTML += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No hay suficientes datos de meses disponibles para realizar comparaciones</div>';
+                mesComparacion.classList.remove('is-invalid');
             }
             
             if (!isValid) {
                 event.preventDefault();
+                if (validationMessages) {
+                    validationMessages.innerHTML = '<div class="alert alert-danger">Por favor, seleccione un mes para comparar</div>';
+                }
             } else {
-                // Show loading state
-                btnComparar.disabled = true;
-                btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cargando...';
-                validationMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Calculando métricas comparativas...</div>';
+                // Mostrar estado de carga
+                const btnComparar = document.getElementById('btnComparar');
+                if (btnComparar) {
+                    btnComparar.disabled = true;
+                    btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Comparando...';
+                }
             }
         });
-        
-        // Clear validation on change
-        mesActualSelect.addEventListener('change', function() {
-            this.classList.remove('is-invalid');
-            refreshValidationState();
-        });
-        
-        mesComparacionSelect.addEventListener('change', function() {
-            this.classList.remove('is-invalid');
-            refreshValidationState();
-        });
-        
-        // Function to refresh validation state
-        function refreshValidationState() {
-            validationMessages.innerHTML = '';
-            
-            // If we have an error from server, keep showing it
-            {% if error %}
-            validationMessages.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>';
-            {% endif %}
-            
-            // Enable compare button if it was disabled
-            if (btnComparar.disabled) {
-                btnComparar.disabled = false;
-                btnComparar.innerHTML = '<i class="fas fa-chart-bar me-1"></i> Comparar';
-            }
-        }
-        
-        // Initialize state
-        refreshValidationState();
     }
-});
-</script>
-
-<script>
-// Form validation and toggle functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const comparacionForm = document.getElementById('comparacionForm');
-    const mesActualSelect = document.getElementById('mes_actual');
-    const mesComparacionSelect = document.getElementById('mes_comparacion');
-    const validationMessages = document.getElementById('validationMessages');
-    const btnComparar = document.getElementById('btnComparar');
-    const seleccionMeses = document.getElementById('seleccionMeses');
+    
+    // Toggle functionality para el selector de tipo de métricas
     const metricasMes = document.getElementById('metricasMes');
     const metricasTotales = document.getElementById('metricasTotales');
+    const seleccionMesVista = document.getElementById('seleccionMesVista');
     
-    // Toggle functionality for monthly vs total metrics
-    if (metricasMes && metricasTotales && seleccionMeses) {
+    if (metricasMes && metricasTotales && seleccionMesVista) {
         metricasMes.addEventListener('change', function() {
-            seleccionMeses.classList.remove('d-none');
-            if (mesActualSelect) {
-                mesActualSelect.setAttribute('required', '');
-            }
+            seleccionMesVista.classList.remove('d-none');
+            document.getElementById('mes_vista').setAttribute('required', '');
         });
         
         metricasTotales.addEventListener('change', function() {
-            seleccionMeses.classList.add('d-none');
-            if (mesActualSelect) {
-                mesActualSelect.removeAttribute('required');
-            }
+            seleccionMesVista.classList.add('d-none');
+            document.getElementById('mes_vista').removeAttribute('required');
         });
-    }
-    
-    if (comparacionForm) {
-        comparacionForm.addEventListener('submit', function(event) {
-            let isValid = true;
-            validationMessages.innerHTML = '';
-            
-            // Only validate monthly selections if in monthly view
-            if (metricasMes && metricasMes.checked) {
-                // Validate mes_actual is selected
-                if (!mesActualSelect.value) {
-                    isValid = false;
-                    mesActualSelect.classList.add('is-invalid');
-                    validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Debe seleccionar un mes actual</div>';
-                } else {
-                    mesActualSelect.classList.remove('is-invalid');
-                }
-                
-                // Validate mes_comparacion is selected and different from mes_actual
-                if (mesComparacionSelect.value && mesComparacionSelect.value === mesActualSelect.value) {
-                    isValid = false;
-                    mesComparacionSelect.classList.add('is-invalid');
-                    validationMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>El mes de comparación debe ser diferente al mes actual</div>';
-                } else {
-                    mesComparacionSelect.classList.remove('is-invalid');
-                }
-                
-                // Check minimum data requirements
-                if (mesActualSelect.options.length <= 1) {
-                    isValid = false;
-                    validationMessages.innerHTML += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No hay suficientes datos de meses disponibles para realizar comparaciones</div>';
-                }
-            }
-            
-            if (!isValid) {
-                event.preventDefault();
-            } else {
-                // Show loading state
-                btnComparar.disabled = true;
-                btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cargando...';
-                
-                if (metricasMes && metricasMes.checked) {
-                    validationMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Calculando métricas mensuales...</div>';
-                } else {
-                    validationMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Calculando métricas totales...</div>';
-                }
-            }
-        });
-        
-        // Clear validation on change
-        if (mesActualSelect) {
-            mesActualSelect.addEventListener('change', function() {
-                this.classList.remove('is-invalid');
-                refreshValidationState();
-            });
-        }
-        
-        if (mesComparacionSelect) {
-            mesComparacionSelect.addEventListener('change', function() {
-                this.classList.remove('is-invalid');
-                refreshValidationState();
-            });
-        }
-        
-        // Function to refresh validation state
-        function refreshValidationState() {
-            validationMessages.innerHTML = '';
-            
-            // If we have an error from server, keep showing it
-            {% if error %}
-            validationMessages.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>';
-            {% endif %}
-            
-            // Enable compare button if it was disabled
-            if (btnComparar.disabled) {
-                btnComparar.disabled = false;
-                btnComparar.innerHTML = '<i class="fas fa-chart-bar me-1"></i> Aplicar';
-            }
-        }
-        
-        // Initialize state
-        refreshValidationState();
     }
 });
 </script>

@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+Verificacion de dependencias exitosa.
+
+Configurando notificaciones...
+Estableciendo numero de telefono predeterminado para notificaciones...
+Configurando horas de notificacion predeterminadas: 13:30 y 20:30
+Configuracion de notificaciones completada.
+Inicializando la base de datos...
+Error setting up date handling: No application found. Either work inside a view function or push an application context. See http://flask-sqlalchemy.pocoo.org/contexts/.
+Base de datos inicializada correctamente (metodo 1)
+: was unexpected at this time.#!/usr/bin/env python3
 """
 App.py Improvement Script
 

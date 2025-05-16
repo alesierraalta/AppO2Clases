@@ -32,6 +32,18 @@ echo Actualizando dependencias...
 pip install -r requirements.txt
 
 echo.
+echo Verificando dependencias críticas...
+python check_dependencies.py
+
+echo.
+echo Actualizando esquema de la base de datos...
+python update_db.py
+
+echo.
+echo Verificando notificaciones...
+python check_notifications.py
+
+echo.
 echo ¡Actualización completada con éxito!
 echo.
 echo Para iniciar la aplicación, ejecute: run.bat

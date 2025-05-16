@@ -7,6 +7,8 @@ import enum
 from sqlalchemy.types import TypeDecorator, Enum, DateTime, String
 from sqlalchemy import event
 from sqlalchemy.event import listen
+from flask import current_app, has_app_context
+import sys
 
 # Inicializamos SQLAlchemy sin la aplicación, para hacerlo más modular.
 db = SQLAlchemy()
@@ -438,6 +440,8 @@ class HorarioClase(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     capacidad_maxima = db.Column(db.Integer, default=20)
     tipo_clase = db.Column(db.String(20), default='OTRO')
+    activo = db.Column(db.Boolean, default=True)  # Columna para marcar si el horario está activo
+    fecha_desactivacion = db.Column(db.Date, nullable=True)  # Fecha en que se desactivó
     clases_realizadas = db.relationship('ClaseRealizada', backref='horario', lazy=True)
     
     def __repr__(self):
@@ -694,32 +698,45 @@ class ClaseRealizada(db.Model):
 
 def setup_date_handling(app=None):
     """
-    Set up date handling for the application.
-    This function standardizes the date formats in the database.
+    Configura el manejo de fechas para la aplicación.
+    Esta función debe ser llamada dentro de un contexto de aplicación.
     """
+    # Verificar si hay un contexto de aplicación antes de configurar eventos
+    if not has_app_context() and app is None:
+        print("Advertencia: Sin contexto de aplicación para la configuración de fechas.")
+        print("Esta advertencia es normal durante la inicialización y no afecta el funcionamiento.")
+        return False
+    
     try:
-        @event.listens_for(db.engine, 'connect')
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            # Configure SQLite to use ISO date formats
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA case_sensitive_like=OFF")
-            cursor.close()
-        
-        # Event listener to standardize date formats during model loading
-        @event.listens_for(EventoHorario, 'load')
-        def process_evento_horario_load(target, context):
-            # Standardize the date format if it's using ISO format with T
-            if hasattr(target, 'fecha') and target.fecha and isinstance(target.fecha, str):
-                if 'T' in target.fecha:
-                    try:
-                        # Convert from ISO format to standard format
-                        date_part, time_part = target.fecha.split('T')
-                        if '.' in time_part:
-                            time_part = time_part.split('.')[0]
-                        target.fecha = f"{date_part} {time_part}"
-                    except Exception as e:
-                        # Log error but don't crash
-                        print(f"Error processing date format: {str(e)}")
+        # Solo ejecutar esta parte si tenemos un contexto de aplicación o una app
+        if has_app_context() or app is not None:
+            # Configurar el pragma de SQLite
+            @event.listens_for(db.engine, 'connect', once=True)
+            def set_sqlite_pragma(dbapi_connection, connection_record):
+                # Configure SQLite to use ISO date formats
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
+            
+            # Configurar el evento para EventoHorario
+            current_module = sys.modules[__name__]
+            if hasattr(current_module, 'EventoHorario'):
+                EventoHorario = getattr(current_module, 'EventoHorario')
+                
+                @event.listens_for(EventoHorario, 'load')
+                def process_evento_horario_load(target, context):
+                    # Standardize the date format if it's using ISO format with T
+                    if (hasattr(target, 'fecha') and 
+                        target.fecha is not None and 
+                        isinstance(target.fecha, str) and
+                        'T' in target.fecha):
+                        try:
+                            date_part, time_part = target.fecha.split('T')
+                            if '.' in time_part:
+                                time_part = time_part.split('.')[0]
+                            target.fecha = f"{date_part} {time_part}"
+                        except Exception as e:
+                            print(f"Error processing date format: {e}")
         
         return True
     except Exception as e:

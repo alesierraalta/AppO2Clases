@@ -4880,87 +4880,103 @@ def metricas_profesor(profesor_id):
         # Obtener datos del profesor
         profesor = Profesor.query.get_or_404(profesor_id)
         
-        # Obtener parámetros de filtro opcional
-        periodo_meses = request.args.get('periodo', type=int, default=12)
-        tipo_clase = request.args.get('tipo_clase', default=None)
-        
         # Verificar si se debe mostrar el modo de depuración
         debug_mode = request.args.get('debug', type=bool, default=False)
         
-        # Nuevo parámetro para elegir tipo de métricas (mensual o totales)
-        tipo_metricas = request.args.get('tipo_metricas', default='mensual')
-        
-        # Verificar valor de periodo_meses
-        if periodo_meses <= 0:
-            periodo_meses = 12
-        
-        # Obtener fecha fin del análisis (hoy por defecto)
-        fecha_fin_str = request.args.get('fecha_fin', default=None)
-        fecha_fin = None
-        if fecha_fin_str:
-            try:
-                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-            except ValueError:
-                fecha_fin = None
-        
-        # Verificar si se debe forzar el recálculo (ignorar caché)
-        force_recalculate = request.args.get('force_recalculate', type=bool, default=False)
-        
-        # Nuevos parámetros para comparación mensual
-        mes_actual_str = request.args.get('mes_actual', default=None)  # formato: YYYY-MM
-        mes_comparacion_str = request.args.get('mes_comparacion', default=None)  # formato: YYYY-MM
-        
-        # Convertir parámetros de mes si se proporcionan
-        mes_actual = None
-        mes_comparacion = None
-        mes_actual_nombre = None
-        mes_comparacion_nombre = None
-        
-        # Si tipo_metricas es 'totales', no procesamos los parámetros de mes
-        if tipo_metricas == 'mensual' and mes_actual_str:
-            try:
-                anio, mes = mes_actual_str.split('-')
-                mes_actual = (int(anio), int(mes))
-                mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
-            except (ValueError, TypeError):
-                flash(f"Formato de mes_actual inválido. Use YYYY-MM", "warning")
-        
-        if tipo_metricas == 'mensual' and mes_comparacion_str:
-            try:
-                anio, mes = mes_comparacion_str.split('-')
-                mes_comparacion = (int(anio), int(mes))
-                mes_comparacion_nombre = f"{calendar.month_name[int(mes)]} {anio}"
-            except (ValueError, TypeError):
-                flash(f"Formato de mes_comparacion inválido. Use YYYY-MM", "warning")
-        
-        # Calcular métricas directamente usando el módulo de utils
-        from utils.metricas_profesores import calcular_metricas_profesor
+        # Obtener parámetros de filtro opcional
+        tipo_clase = request.args.get('tipo_clase', default=None)
         
         # Obtener todas las clases del profesor
         clases = profesor.obtener_todas_clases()
         
-        # Variable para almacenar errores de validación
+        # Obtener datos de meses disponibles para los selectores
+        meses_disponibles = obtener_meses_disponibles(clases)
+        
+        # Variables comunes
+        mes_actual = None
+        mes_comparacion = None
+        mes_actual_nombre = "Sin selección"
+        mes_comparacion_nombre = "Sin selección"
         error = None
         
-        metricas = calcular_metricas_profesor(
-            profesor_id=profesor.id,
-            clases=clases,
-            mes_actual=mes_actual if tipo_metricas == 'mensual' else None,
-            mes_comparacion=mes_comparacion if tipo_metricas == 'mensual' else None
-        )
-        
-        # Manejar errores de validación
-        if 'error_comparacion' in metricas:
-            error = metricas['error_comparacion']
-            # Mantener las métricas base pero sin comparación
-            if 'comparacion' in metricas:
-                del metricas['comparacion']
+        # Verificar si estamos en modo comparación
+        if 'comparar' in request.args:
+            # --- MODO COMPARACIÓN ENTRE MESES ---
+            mes_actual_str = request.args.get('mes_actual', default=None)
+            mes_comparacion_str = request.args.get('mes_comparacion', default=None)
+            
+            # Procesar ambos meses
+            if mes_actual_str:
+                try:
+                    anio, mes = mes_actual_str.split('-')
+                    mes_actual = (int(anio), int(mes))
+                    mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato del primer mes inválido. Use YYYY-MM", "warning")
+            
+            if mes_comparacion_str:
+                try:
+                    anio, mes = mes_comparacion_str.split('-')
+                    mes_comparacion = (int(anio), int(mes))
+                    mes_comparacion_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato del segundo mes inválido. Use YYYY-MM", "warning")
+            
+            # Validar selección de ambos meses
+            if not mes_actual or not mes_comparacion:
+                error = "Debe seleccionar dos meses diferentes para realizar la comparación."
+                metricas = {}
+            elif mes_actual == mes_comparacion:
+                error = "Los meses seleccionados para comparar deben ser diferentes."
+                metricas = {}
+            else:
+                # Calcular métricas con comparación
+                from utils.metricas_profesores import calcular_metricas_profesor
+                metricas = calcular_metricas_profesor(
+                    profesor_id=profesor.id,
+                    clases=clases,
+                    mes_actual=mes_actual,
+                    mes_comparacion=mes_comparacion
+                )
+                
+                # Manejar errores de validación
+                if 'error_comparacion' in metricas:
+                    error = metricas['error_comparacion']
+                    if 'comparacion' in metricas:
+                        del metricas['comparacion']
+            
+            # Forzar tipo métricas a mensual en modo comparación
+            tipo_metricas = 'mensual'
+            
+        else:
+            # --- MODO VISUALIZACIÓN NORMAL ---
+            tipo_metricas = request.args.get('tipo_metricas', default='mensual')
+            mes_actual_str = request.args.get('mes_actual', default=None)
+            
+            # Procesar parámetros de mes solo si es tipo mensual
+            if tipo_metricas == 'mensual' and mes_actual_str:
+                try:
+                    anio, mes = mes_actual_str.split('-')
+                    mes_actual = (int(anio), int(mes))
+                    mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato de mes inválido. Use YYYY-MM", "warning")
+            
+            # Calcular métricas según el tipo seleccionado
+            from utils.metricas_profesores import calcular_metricas_profesor
+            metricas = calcular_metricas_profesor(
+                profesor_id=profesor.id,
+                clases=clases,
+                mes_actual=mes_actual if tipo_metricas == 'mensual' else None,
+                mes_comparacion=None  # No hay comparación en este modo
+            )
+            
+            # Para métricas totales, mostrar mensaje apropiado
+            if tipo_metricas == 'totales':
+                mes_actual_nombre = "Todas las clases"
         
         # Obtener tipos de clase para filtros en la UI
         tipos_clase = HorarioClase.obtener_tipos_clase()
-        
-        # Obtener datos de meses disponibles para los selectores
-        meses_disponibles = obtener_meses_disponibles(clases)
         
         # Obtener ranking de profesores para comparativas si no está presente
         if 'ranking_profesores' not in metricas.get('metricas_actual', {}) or not metricas.get('metricas_actual', {}).get('ranking_profesores'):
@@ -4976,7 +4992,6 @@ def metricas_profesor(profesor_id):
             metricas_comparacion=metricas.get('metricas_comparacion'),
             comparacion=metricas.get('comparacion'),
             tipos_clase=tipos_clase,
-            periodo_actual=periodo_meses,
             tipo_clase_actual=tipo_clase or 'Todos',
             debug_mode=debug_mode,
             mes_actual=mes_actual,
@@ -4984,7 +4999,8 @@ def metricas_profesor(profesor_id):
             meses_disponibles=meses_disponibles,
             mes_actual_nombre=mes_actual_nombre,
             mes_comparacion_nombre=mes_comparacion_nombre,
-            tipo_metricas=tipo_metricas,  # Pasar el tipo de métricas seleccionado
+            tipo_metricas=tipo_metricas,  # Tipo de métricas seleccionado
+            comparar_meses='comparar' in request.args,  # Indicar si estamos en modo comparación
             error=error  # Pasar el error de validación a la plantilla
         )
     except Exception as e:
