@@ -60,7 +60,10 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 db = SQLAlchemy(app)
 
 # Importar modelos después de inicializar db y app
-from models import Profesor, HorarioClase, ClaseRealizada
+from models import Profesor, HorarioClase, ClaseRealizada, EventoHorario, TipoEventoHorario, setup_date_handling
+
+# Configurar el manejo de fechas para la aplicación
+setup_date_handling(app)
 
 # Importar el blueprint de API
 from api_routes import api
@@ -138,6 +141,17 @@ def divmod_filter(value, arg):
 @app.template_filter('now')
 def now_filter(value=None):
     return datetime.now()
+
+# Filtro para obtener valor seguro de enum
+@app.template_filter('enum_value')
+def enum_value_filter(value):
+    """
+    Obtiene el valor de un enum de forma segura, independientemente de si es un miembro del enum o un string.
+    Útil para las plantillas cuando se trabaja con enum a través de SQLAlchemy.
+    """
+    if hasattr(value, 'value'):
+        return value.value
+    return str(value)
 
 # Función para convertir un valor decimal de Excel a objeto time
 def excel_time_to_time(excel_time):
@@ -338,26 +352,9 @@ def eliminar_varios_profesores():
 # Rutas para Horarios de Clases
 @app.route('/horarios')
 def listar_horarios():
-    # Mostrar todos los horarios pero indicando su estado (activo/inactivo)
+    # Mostrar todos los horarios
     horarios = HorarioClase.query.order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
     return render_template('horarios/lista.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
-
-@app.route('/horarios/inactivos')
-def listar_horarios_inactivos():
-    """
-    Muestra una lista de los horarios inactivos.
-    Los horarios inactivos son aquellos marcados con activo=False.
-    """
-    try:
-        # Intentar filtrar por activo=False
-        horarios = HorarioClase.query.filter_by(activo=False).order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
-    except Exception as e:
-        # Si la columna 'activo' no existe, mostrar mensaje y devolver lista vacía
-        app.logger.warning(f"Error al filtrar horarios inactivos: {str(e)}")
-        flash('La función de horarios inactivos requiere que la base de datos esté actualizada.', 'warning')
-        horarios = []
-    
-    return render_template('horarios/inactivos.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
 
 @app.route('/horarios/nuevo', methods=['GET', 'POST'])
 def nuevo_horario():
@@ -540,111 +537,7 @@ def eliminar_varios_horarios():
     
     return redirect(url_for('listar_horarios'))
 
-@app.route('/horarios/desactivar/<int:id>', methods=['GET', 'POST'])
-def desactivar_horario(id):
-    """
-    Permite activar o desactivar un horario sin eliminarlo.
-    Un horario desactivado no aparecerá en la lista de clases pendientes 
-    ni en las clases no registradas, pero seguirá visible en la lista de horarios.
-    
-    Si se desactiva, se registra la fecha desde la que el horario está inactivo,
-    lo que permite mostrar registros históricos anteriores a esa fecha en informes.
-    
-    Implementa el patrón Event Sourcing para mantener un historial completo de 
-    cambios de estado del horario.
-    """
-    horario = HorarioClase.query.get_or_404(id)
-    
-    # Si es una petición POST, proceder con la activación/desactivación
-    if request.method == 'POST':
-        opcion = request.form.get('opcion')
-        
-        try:
-            if opcion == 'desactivar':
-                # Obtener la fecha de desactivación del formulario
-                fecha_desactivacion_str = request.form.get('fecha_desactivacion')
-                motivo = request.form.get('motivo', 'No especificado')
-                
-                if fecha_desactivacion_str:
-                    try:
-                        # Convertir la fecha de texto a objeto date
-                        fecha_desactivacion = datetime.strptime(fecha_desactivacion_str, '%Y-%m-%d').date()
-                    except ValueError:
-                        # Si hay error en el formato, usar la fecha actual
-                        fecha_desactivacion = datetime.now().date()
-                        app.logger.warning(f"Formato de fecha inválido: {fecha_desactivacion_str}. Usando fecha actual.")
-                else:
-                    # Si no hay fecha, usar la fecha actual
-                    fecha_desactivacion = datetime.now().date()
-                
-                # 1. Primero registrar el evento de desactivación
-                nuevo_evento = EventoHorario(
-                    horario_id=horario.id,
-                    tipo=TipoEventoHorario.DESACTIVACION,
-                    fecha=datetime.now(),
-                    fecha_aplicacion=fecha_desactivacion,
-                    motivo=motivo,
-                    datos_adicionales={"usuario": getattr(current_user, 'id', None) if 'current_user' in globals() else None}
-                )
-                db.session.add(nuevo_evento)
-                
-                # 2. Actualizar el modelo para compatibilidad con código existente
-                horario.activo = False
-                horario.fecha_desactivacion = fecha_desactivacion
-                
-                db.session.commit()
-                flash(f'Horario "{horario.nombre}" desactivado con éxito desde {fecha_desactivacion.strftime("%d/%m/%Y")}. Ya no aparecerá en la lista de clases pendientes.', 'success')
-            
-            elif opcion == 'activar':
-                motivo = request.form.get('motivo', 'No especificado')
-                
-                # 1. Registrar el evento de activación
-                nuevo_evento = EventoHorario(
-                    horario_id=horario.id,
-                    tipo=TipoEventoHorario.ACTIVACION,
-                    fecha=datetime.now(),
-                    fecha_aplicacion=datetime.now().date(),
-                    motivo=motivo,
-                    datos_adicionales={"usuario": getattr(current_user, 'id', None) if 'current_user' in globals() else None}
-                )
-                db.session.add(nuevo_evento)
-                
-                # 2. Actualizar el modelo para compatibilidad con código existente
-                horario.activo = True
-                horario.fecha_desactivacion = None
-                
-                db.session.commit()
-                flash(f'Horario "{horario.nombre}" activado con éxito. Ahora aparecerá en la lista de clases pendientes.', 'success')
-            else:
-                flash('Operación cancelada', 'info')
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Error al cambiar estado activo: {str(e)}")
-            flash(f'Error al modificar el horario: La base de datos necesita ser actualizada. {str(e)}', 'danger')
-            
-        return redirect(url_for('listar_horarios'))
-    
-    # Para solicitudes GET, mostrar la confirmación
-    try:
-        estado_actual = "activado" if horario.activo else "desactivado"
-        accion = "desactivar" if horario.activo else "activar"
-    except Exception as e:
-        app.logger.warning(f"Activo column not found: {str(e)}")
-        estado_actual = "activado"  # Default value
-        accion = "desactivar"
-    
-    # Obtener la fecha actual para el campo de fecha
-    today_date = datetime.now().date().strftime('%Y-%m-%d')
-    
-    # Obtener historial de eventos para mostrar
-    eventos = EventoHorario.query.filter_by(horario_id=horario.id).order_by(EventoHorario.fecha.desc()).all()
-    
-    return render_template('horarios/confirmar_desactivar.html', 
-                          horario=horario,
-                          estado_actual=estado_actual,
-                          accion=accion,
-                          today_date=today_date,
-                          eventos=eventos)
+# Route removed - desactivar_horario
 
 # Rutas para Control de Asistencia
 @app.route('/asistencia')
@@ -655,42 +548,9 @@ def control_asistencia():
         # En Python, weekday() devuelve 0 (lunes) a 6 (domingo)
         dia_semana = hoy.weekday()
         
-        # Horarios programados para hoy - try without 'activo' filter if it fails
-        try:
-            # Obtener SOLO horarios activos (activo=True o fecha_desactivacion > hoy)
-            hoy_date = hoy
-            horarios_hoy = HorarioClase.query.filter(
-                HorarioClase.dia_semana == dia_semana,
-                db.or_(
-                    HorarioClase.activo == True,
-                    db.and_(
-                        HorarioClase.activo == False,
-                        db.or_(
-                            HorarioClase.fecha_desactivacion == None,
-                            HorarioClase.fecha_desactivacion > hoy_date
-                        )
-                    )
-                )
-            ).order_by(HorarioClase.hora_inicio).all()
-            app.logger.info(f"Filtrado exitoso: obtenidos {len(horarios_hoy)} horarios activos para el día {dia_semana}")
-        except Exception as e:
-            # Si la columna activo no existe, hacer filtrado manual
-            app.logger.warning(f"Columna activo no encontrada, usando filtrado manual: {str(e)}")
-            # Obtener todos y filtrar en Python
-            horarios_temp = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
-            # Excluir explícitamente los que tienen activo=False
-            horarios_hoy = []
-            for h in horarios_temp:
-                try:
-                    if getattr(h, 'activo', True):
-                        horarios_hoy.append(h)
-                    else:
-                        app.logger.info(f"Excluyendo horario inactivo: {h.id} - {h.nombre}")
-                except:
-                    # Si no existe el atributo, asumir que está activo
-                    horarios_hoy.append(h)
-            
-            app.logger.info(f"Después de filtrado manual: {len(horarios_hoy)} horarios activos")
+        # Obtener todos los horarios programados para hoy sin filtrar por activo
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        app.logger.info(f"Obtenidos {len(horarios_hoy)} horarios para el día {dia_semana}")
         
         # Clases ya registradas hoy
         clases_realizadas_hoy = ClaseRealizada.query.filter_by(fecha=hoy).all()
@@ -1074,43 +934,19 @@ def clases_no_registradas():
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
     
     # 1. Obtener todos los horarios activos utilizando una consulta más completa y directa
-    try:
-        # Usar siempre el filtro de activo para mostrar solo clases activas
-        sql_horarios = """
-            SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, h.activo 
-            FROM horario_clase h 
-            WHERE h.activo = 1
-            ORDER BY h.nombre
-        """
-        app.logger.info("Ejecutando consulta SQL filtrando por horarios activos...")
-        result_horarios = db.session.execute(sql_horarios)
-    except Exception as e:
-        # Manejo de caso donde la columna activo no existe
-        app.logger.warning(f"Error al consultar horarios con filtro activo: {str(e)}. Intentando sin filtro.")
-        sql_horarios = """
-            SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion, 1 as activo 
-            FROM horario_clase h 
-            ORDER BY h.nombre
-        """
-        result_horarios = db.session.execute(sql_horarios)
-        app.logger.warning("Usando consulta sin filtro activo - se requiere actualizar la base de datos")
+    # Obtener todos los horarios sin filtrar por activo
+    sql_horarios = """
+        SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion
+        FROM horario_clase h 
+        ORDER BY h.nombre
+    """
+    app.logger.info("Ejecutando consulta SQL para todos los horarios...")
+    result_horarios = db.session.execute(sql_horarios)
     
     horarios_activos = []
     for row in result_horarios:
-        # Solo procesar los horarios activos o inactivos pero verificando fecha_desactivacion
-        horario_activo = getattr(row, 'activo', 1)
-        fecha_desactivacion = getattr(row, 'fecha_desactivacion', None)
-        
-        # Si el horario está inactivo, verificar si tiene fecha de desactivación
-        if not horario_activo:
-            # Si no tiene fecha de desactivación, omitir este horario (siempre ha estado inactivo)
-            if fecha_desactivacion is None:
-                continue
-                
-            # Si tiene fecha de desactivación, pero estamos consultando fechas posteriores a ella,
-            # omitir también este horario
-            if fecha_inicio and fecha_desactivacion and fecha_inicio > fecha_desactivacion:
-                continue
+        # Procesar todos los horarios
+        # (Se eliminó código de filtrado por activo/inactivo)
             
         # Extraer la hora_inicio de la base de datos
         hora_inicio_original = row.hora_inicio
@@ -1169,9 +1005,7 @@ def clases_no_registradas():
             'dia_semana': row.dia_semana,
             'profesor_id': row.profesor_id,
             'duracion': duracion,
-            'hora_fin_str': hora_fin_str,
-            'activo': bool(row.activo),  # Convertir a booleano
-            'fecha_desactivacion': getattr(row, 'fecha_desactivacion', None)  # Incluir fecha de desactivación
+            'hora_fin_str': hora_fin_str
         }
         
         # Verificar si es clase POWER BIKE para depuración
@@ -1254,26 +1088,7 @@ def clases_no_registradas():
     # 4. Generar las clases esperadas que NO están registradas
     clases_no_registradas = []
     for horario in horarios_activos:
-        # Verificar si el horario estaba activo en la fecha específica
-        # Si el horario está marcado como inactivo, verificar fecha_desactivacion
-        horario_activo = horario.get('activo', True)
-        fecha_desactivacion = horario.get('fecha_desactivacion')
-        
-        if not horario_activo:
-            # Si no tiene fecha de desactivación, nunca estuvo activo
-            if fecha_desactivacion is None:
-                print(f"DEBUG: Ignorando horario inactivo sin fecha de desactivación: ID {horario['id']}, {horario['nombre']}")
-                continue
-                
-            # Convertir fecha_desactivacion a objeto date si es necesario
-            if isinstance(fecha_desactivacion, str):
-                try:
-                    fecha_desactivacion = datetime.strptime(fecha_desactivacion, '%Y-%m-%d').date()
-                except ValueError:
-                    # Si hay error al convertir, asumir que está inactivo
-                    print(f"DEBUG: Error al convertir fecha_desactivacion: {fecha_desactivacion}")
-                    continue
-            
+        # Todos los horarios son considerados activos
         for fecha in fechas:
             # Verificar que fecha sea un objeto date
             if not isinstance(fecha, date):
@@ -1281,12 +1096,6 @@ def clases_no_registradas():
                     fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
                 except (ValueError, TypeError):
                     continue  # Saltar esta fecha si no podemos convertirla
-            
-            # Verificar si el horario estaba activo en esta fecha específica
-            if not horario_activo and fecha_desactivacion is not None:
-                # Si la fecha es posterior o igual a la fecha de desactivación, ignorar esta fecha
-                if fecha >= fecha_desactivacion:
-                    continue
             
             # Si el día de la semana coincide con el día del horario
             if fecha.weekday() == horario['dia_semana']:
@@ -5211,3 +5020,102 @@ def obtener_meses_disponibles(clases):
     
     # Ordenar por fecha (más reciente primero)
     return sorted(list(meses.values()), key=lambda x: f"{x['anio']}-{x['mes']:02d}", reverse=True)
+
+@app.route('/mantenimiento/fix-dates')
+def fix_problematic_dates():
+    """
+    Función de mantenimiento para corregir formatos de fecha problemáticos
+    en la base de datos.
+    """
+    try:
+        # Obtener conexión directa a SQLite
+        import sqlite3
+        conn = sqlite3.connect('gimnasio.db')
+        cursor = conn.cursor()
+        
+        # Corregir la fecha problemática específica
+        cursor.execute("""
+            UPDATE evento_horario 
+            SET fecha = '2025-05-16 08:18:35' 
+            WHERE fecha = '2025-05-16T08:18:35.167165'
+        """)
+        
+        problematic_record_fixes = cursor.rowcount
+        
+        # Corregir cualquier otro registro con formato 'T'
+        cursor.execute("""
+            SELECT id, fecha FROM evento_horario 
+            WHERE fecha LIKE '%T%'
+        """)
+        
+        t_format_records = cursor.fetchall()
+        fixed_t_format = 0
+        
+        for record_id, date_str in t_format_records:
+            # Convertir de formato ISO a formato estándar
+            try:
+                date_part, time_part = date_str.split('T')
+                if '.' in time_part:
+                    time_part = time_part.split('.')[0]
+                    
+                fixed_date = f"{date_part} {time_part}"
+                
+                cursor.execute(
+                    "UPDATE evento_horario SET fecha = ? WHERE id = ?",
+                    (fixed_date, record_id)
+                )
+                fixed_t_format += 1
+            except Exception as e:
+                app.logger.error(f"Error fixing date format for record {record_id}: {str(e)}")
+        
+        # Corregir cualquier registro con microsegundos (formato con punto)
+        cursor.execute("""
+            SELECT id, fecha FROM evento_horario 
+            WHERE fecha LIKE '%.%'
+        """)
+        
+        microsecond_records = cursor.fetchall()
+        fixed_microseconds = 0
+        
+        for record_id, date_str in microsecond_records:
+            # Eliminar los microsegundos
+            try:
+                if ' ' in date_str:  # Formato estándar con microsegundos
+                    parts = date_str.split('.')
+                    fixed_date = parts[0]  # Tomar solo la parte antes del punto
+                    
+                    cursor.execute(
+                        "UPDATE evento_horario SET fecha = ? WHERE id = ?",
+                        (fixed_date, record_id)
+                    )
+                    fixed_microseconds += 1
+            except Exception as e:
+                app.logger.error(f"Error fixing microsecond format for record {record_id}: {str(e)}")
+        
+        # Confirmar cambios
+        conn.commit()
+        
+        # Verificar si aún quedan registros problemáticos
+        cursor.execute("SELECT COUNT(*) FROM evento_horario WHERE fecha LIKE '%T%'")
+        remaining_t = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM evento_horario WHERE fecha LIKE '%.%'")
+        remaining_ms = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return render_template(
+            'mantenimiento/resultado.html',
+            titulo="Corrección de fechas",
+            mensaje=f"Se corrigieron {problematic_record_fixes} registros con la fecha problemática específica, {fixed_t_format} registros con formato 'T' y {fixed_microseconds} registros con microsegundos. Quedan {remaining_t} registros con 'T' y {remaining_ms} con microsegundos.",
+            detalles=f"La operación de mantenimiento ha finalizado exitosamente."
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Error en fix_problematic_dates: {str(e)}")
+        return render_template(
+            'mantenimiento/resultado.html',
+            titulo="Error en corrección de fechas",
+            mensaje=f"Ocurrió un error: {str(e)}",
+            detalles=f"No se pudieron corregir las fechas problemáticas."
+        )

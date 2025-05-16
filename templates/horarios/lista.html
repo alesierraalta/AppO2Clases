@@ -10,9 +10,7 @@
             <button id="btnEliminarSeleccionados" class="btn btn-danger me-2" style="display:none">
                 <i class="fas fa-trash me-1"></i> Eliminar Seleccionados <span class="badge bg-light text-dark count-selected">0</span>
             </button>
-            <a href="{{ url_for('listar_horarios_inactivos') }}" class="btn btn-secondary me-2">
-                <i class="fas fa-power-off me-1"></i> Ver Inactivos
-            </a>
+
             <a href="{{ url_for('nuevo_horario') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Nuevo Horario
             </a>
@@ -22,9 +20,7 @@
                 <button id="btnEliminarSeleccionadosMobile" class="btn btn-danger" style="display:none">
                     <i class="fas fa-trash"></i> <span class="count-selected">0</span>
                 </button>
-                <a href="{{ url_for('listar_horarios_inactivos') }}" class="btn btn-secondary">
-                    <i class="fas fa-power-off"></i>
-                </a>
+
                 <a href="{{ url_for('nuevo_horario') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
                 </a>
@@ -65,14 +61,7 @@
                         <option value="OTRO">OTRO</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="filtroEstado" class="form-label">Estado:</label>
-                    <select id="filtroEstado" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="1">Activos</option>
-                        <option value="0">Inactivos</option>
-                    </select>
-                </div>
+
             </div>
             <div class="mt-3 text-end">
                 <button id="resetFiltros" class="btn btn-outline-secondary">
@@ -90,28 +79,7 @@
 
     <!-- Contadores por tipo de clase -->
     <div class="row mb-4">
-        <!-- Estado activo/inactivo counters -->
-        <div class="col-12 mb-3">
-            <div class="card">
-                <div class="card-body p-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">Resumen de horarios</h5>
-                        </div>
-                        <div class="d-flex">
-                            <div class="me-4">
-                                <span class="badge bg-success me-1" style="font-size: 0.9rem;">Activos</span>
-                                <span class="fw-bold" id="contadorActivos">0</span>
-                            </div>
-                            <div>
-                                <span class="badge bg-secondary me-1" style="font-size: 0.9rem;">Inactivos</span>
-                                <span class="fw-bold" id="contadorInactivos">0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
         <div class="col-6 col-md-3 contador-card">
             <div class="card bg-move text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
@@ -179,54 +147,45 @@
                                 <th scope="col" class="d-none d-md-table-cell">Duración</th>
                                 <th scope="col" class="d-none d-lg-table-cell">Capacidad</th>
                                 <th scope="col" class="d-none d-md-table-cell">Profesor</th>
-                                <th scope="col">Estado</th>
+
                                 <th scope="col" class="actions-column">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for horario in horarios %}
-                            {% set is_active = horario.activo is defined and horario.activo %}
-                            <tr>
+                            <tr data-tipo="{{ horario.tipo_clase or 'OTRO' }}" data-dia="{{ horario.dia_semana }}">
+                                <td class="checkbox-column">
+                                    <div class="form-check">
+                                        <input class="form-check-input checkbox-horario" type="checkbox" name="horarios_ids[]" value="{{ horario.id }}">
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ horario.id }}</td>
                                 <td>
                                     <a href="{{ url_for('editar_horario', id=horario.id) }}" class="fw-bold text-decoration-none">
                                         {{ horario.nombre }}
                                     </a>
                                 </td>
-                                <td>{{ horario.nombre_dia }}</td>
-                                <td>{{ horario.hora_inicio.strftime('%H:%M') }}</td>
                                 <td>
                                     <span class="badge bg-primary">{{ horario.tipo_clase }}</span>
                                 </td>
-                                <td>
+                                <td>{{ horario.nombre_dia }}</td>
+                                <td>{{ horario.hora_inicio.strftime('%H:%M') }}</td>
+                                <td class="d-none d-md-table-cell">{{ horario.duracion }} min</td>
+                                <td class="d-none d-lg-table-cell">{{ horario.capacidad_maxima }}</td>
+                                <td class="d-none d-md-table-cell">
                                     {% if horario.profesor %}
                                     {{ horario.profesor.nombre_completo }}
                                     {% else %}
                                     <span class="text-muted">Sin asignar</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if is_active %}
-                                    <span class="badge bg-success">Activo</span>
-                                    {% if horario.ultimo_evento %}
-                                    <br><small class="text-muted">Desde {{ horario.ultimo_evento.fecha.strftime('%d/%m/%Y') }}</small>
-                                    {% endif %}
-                                    {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
-                                    {% if horario.fecha_desactivacion %}
-                                    <br><small class="text-muted">Desde {{ horario.fecha_desactivacion.strftime('%d/%m/%Y') }}</small>
-                                    {% elif horario.ultimo_evento %}
-                                    <br><small class="text-muted">Desde {{ horario.ultimo_evento.fecha.strftime('%d/%m/%Y') }}</small>
-                                    {% endif %}
-                                    {% endif %}
-                                </td>
+
                                 <td class="text-center">
                                     <div class="btn-group">
                                         <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-{% if is_active %}warning{% else %}success{% endif %}">
-                                            <i class="fas fa-{% if is_active %}power-off{% else %}check-circle{% endif %}"></i>
-                                        </a>
+
                                         <a href="{{ url_for('confirmar_eliminar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-danger">
                                             <i class="fas fa-trash"></i>
                                         </a>
@@ -538,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filtroTexto = document.getElementById('filtroTexto');
     const filtroDia = document.getElementById('filtroDia');
     const filtroTipo = document.getElementById('filtroTipo');
-    const filtroEstado = document.getElementById('filtroEstado');
+
     const resetFiltros = document.getElementById('resetFiltros');
     const tablaHorarios = document.getElementById('tablaHorarios');
     const noResultados = document.getElementById('noResultados');
@@ -557,9 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
         move: 0,
         ride: 0,
         box: 0,
-        otro: 0,
-        activos: 0,
-        inactivos: 0
+        otro: 0
     };
     
     // Inicializar contadores
@@ -569,22 +526,14 @@ document.addEventListener('DOMContentLoaded', function() {
             move: 0,
             ride: 0,
             box: 0,
-            otro: 0,
-            activos: 0,
-            inactivos: 0
+            otro: 0
         };
         
         // Contar solo filas visibles
         tablaHorarios.querySelectorAll('tbody tr').forEach(fila => {
             if (fila.style.display !== 'none') {
                 const tipo = fila.dataset.tipo || 'OTRO';
-                const activo = fila.dataset.activo === '1';
-                
-                if (activo) {
-                    contadores.activos++;
-                } else {
-                    contadores.inactivos++;
-                }
+
                 
                 switch(tipo) {
                     case 'MOVE':
@@ -607,8 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('contadorRide').textContent = contadores.ride;
         document.getElementById('contadorBox').textContent = contadores.box;
         document.getElementById('contadorOtro').textContent = contadores.otro;
-        document.getElementById('contadorActivos').textContent = contadores.activos;
-        document.getElementById('contadorInactivos').textContent = contadores.inactivos;
     }
     
     // Función para aplicar filtros
@@ -616,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let textoFiltrado = filtroTexto.value.toLowerCase();
         let diaFiltrado = filtroDia.value;
         let tipoFiltrado = filtroTipo.value;
-        let estadoFiltrado = filtroEstado.value;
+
         let filasVisibles = 0;
         
         tablaHorarios.querySelectorAll('tbody tr').forEach(fila => {
@@ -640,10 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarFila = false;
             }
             
-            // Filtrar por estado
-            if (estadoFiltrado !== '' && fila.getAttribute('data-activo') !== estadoFiltrado) {
-                mostrarFila = false;
-            }
+
             
             if (mostrarFila) {
                 fila.style.display = '';
