@@ -344,7 +344,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         return [c for c in clases_list if c.fecha.year == anio and c.fecha.month == mes]
         
     # Preparar variables para cuando se filtran por mes
-        clases_mes_actual = clases
+    clases_mes_actual = clases
     clases_a_procesar = clases
     
     # Calcular tendencia general para todos los meses (evolución mensual)
@@ -404,6 +404,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
                 'clases': clases_ordenadas_comp,
                 'clases_por_mes': clases_por_mes_comp,
                 'variedad_clases': variedad_clases_comp,
+                'score_global': 0,  # Inicializar score_global para evitar errores
                 'datos_mensuales': metricas.get('datos_mensuales', [])  # Incluir datos mensuales completos
             }
             
@@ -487,6 +488,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             'distribucion': distribucion,
         'puntualidad': puntualidad,
             'tendencia': tendencia,  # Este es el cálculo para el período específico
+            'score_global': 0,  # Inicializar score_global para evitar errores
             'datos_mensuales': metricas.get('datos_mensuales', []),  # Estos son TODOS los datos mensuales
         'clases_por_mes': clases_por_mes,
         'variedad_clases': variedad_clases,

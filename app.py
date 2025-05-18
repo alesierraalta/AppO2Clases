@@ -4905,7 +4905,7 @@ def metricas_profesor(profesor_id):
             mes_actual_str = request.args.get('mes_actual', default=None)
             mes_comparacion_str = request.args.get('mes_comparacion', default=None)
             
-            # Procesar ambos meses
+            # Procesar primer mes (mes actual)
             if mes_actual_str:
                 try:
                     anio, mes = mes_actual_str.split('-')
@@ -4914,6 +4914,7 @@ def metricas_profesor(profesor_id):
                 except (ValueError, TypeError):
                     flash(f"Formato del primer mes inválido. Use YYYY-MM", "warning")
             
+            # Procesar segundo mes (mes de comparación)
             if mes_comparacion_str:
                 try:
                     anio, mes = mes_comparacion_str.split('-')
@@ -4932,6 +4933,11 @@ def metricas_profesor(profesor_id):
             else:
                 # Calcular métricas con comparación
                 from utils.metricas_profesores import calcular_metricas_profesor
+                
+                # Obtener el tipo de métricas seleccionado (mensual o totales)
+                tipo_metricas_original = request.args.get('tipo_metricas', default='mensual')
+                
+                # Siempre usar los meses específicos en modo comparación, incluso en métricas totales
                 metricas = calcular_metricas_profesor(
                     profesor_id=profesor.id,
                     clases=clases,
@@ -4945,8 +4951,9 @@ def metricas_profesor(profesor_id):
                     if 'comparacion' in metricas:
                         del metricas['comparacion']
             
-            # Forzar tipo métricas a mensual en modo comparación
-            tipo_metricas = 'mensual'
+            # En modo comparación, respetamos el tipo de vista seleccionado
+            # (mensual o totales) para mantener la consistencia visual
+            tipo_metricas = tipo_metricas_original
             
         else:
             # --- MODO VISUALIZACIÓN NORMAL ---
@@ -4961,19 +4968,29 @@ def metricas_profesor(profesor_id):
                     mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
                 except (ValueError, TypeError):
                     flash(f"Formato de mes inválido. Use YYYY-MM", "warning")
+                    # Si hay un error, mostramos las métricas totales
+                    tipo_metricas = 'totales'
+            
+            # Para métricas totales, mostrar mensaje apropiado
+            if tipo_metricas == 'totales':
+                mes_actual = None
+                mes_actual_nombre = "Todas las clases"
+            elif tipo_metricas == 'mensual' and not mes_actual:
+                # Si no se seleccionó un mes pero estamos en vista mensual y hay meses disponibles,
+                # seleccionamos el mes más reciente por defecto
+                if meses_disponibles:
+                    mes_mas_reciente = meses_disponibles[0]  # El primer elemento es el más reciente
+                    mes_actual = (mes_mas_reciente['anio'], mes_mas_reciente['mes'])
+                    mes_actual_nombre = mes_mas_reciente['etiqueta']
             
             # Calcular métricas según el tipo seleccionado
             from utils.metricas_profesores import calcular_metricas_profesor
             metricas = calcular_metricas_profesor(
                 profesor_id=profesor.id,
                 clases=clases,
-                mes_actual=mes_actual if tipo_metricas == 'mensual' else None,
+                mes_actual=mes_actual,
                 mes_comparacion=None  # No hay comparación en este modo
             )
-            
-            # Para métricas totales, mostrar mensaje apropiado
-            if tipo_metricas == 'totales':
-                mes_actual_nombre = "Todas las clases"
         
         # Obtener tipos de clase para filtros en la UI
         tipos_clase = HorarioClase.obtener_tipos_clase()

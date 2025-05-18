@@ -105,7 +105,7 @@
                 </div>
                 <div class="card-body">
                     <form id="tipoVistaForm" method="GET" class="row g-3 align-items-end" novalidate>
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasMes" value="mensual" {% if tipo_metricas != 'totales' %}checked{% endif %}>
                                 <label class="form-check-label" for="metricasMes">
@@ -120,10 +120,10 @@
                             </div>
                         </div>
                         
-                        <div id="seleccionMesVista" class="col-md-2 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
-                            <label for="mes_vista" class="form-label fw-semibold">Mes</label>
+                        <div id="seleccionMesVista" class="col-md-4 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
+                            <label for="mes_vista" class="form-label fw-semibold">Seleccionar mes para visualizar</label>
                             <select name="mes_actual" id="mes_vista" class="form-select" {% if tipo_metricas != 'totales' %}required{% endif %}>
-                                <option value="">Seleccione</option>
+                                <option value="">Seleccione un mes</option>
                                 {% if meses_disponibles %}
                                     {% for mes in meses_disponibles %}
                                     <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
@@ -182,10 +182,29 @@
                 </div>
                 <div class="card-body">
                     <form id="comparacionForm" method="GET" class="row g-3 align-items-end" novalidate>
-                        <div class="col-md-5">
+                        <!-- Primer mes (mes actual) - Siempre visible -->
+                        <div class="col-md-4">
+                            <label for="mes_actual_comparacion" class="form-label fw-semibold">Primer mes</label>
+                            <select name="mes_actual" id="mes_actual_comparacion" class="form-select" required>
+                                <option value="">Seleccione el primer mes</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Seleccione el primer mes para comparar
+                            </div>
+                        </div>
+                        
+                        <!-- Segundo mes -->
+                        <div class="col-md-4">
                             <label for="mes_comparacion" class="form-label fw-semibold">Segundo mes</label>
                             <select name="mes_comparacion" id="mes_comparacion" class="form-select" required>
-                                <option value="">Seleccione un mes para comparar</option>
+                                <option value="">Seleccione el segundo mes</option>
                                 {% if meses_disponibles %}
                                     {% for mes in meses_disponibles %}
                                     <option value="{{ mes.valor }}">
@@ -467,14 +486,20 @@
                                         {% endif %}
                                     </h6>
                                     <div class="d-flex justify-content-center align-items-center mb-2">
-                                        {% if comparacion.global > 0 %}
-                                            <h3 class="text-success mb-0">
-                                                <i class="fas fa-arrow-up me-2"></i>{{ comparacion.global|round(1) }}%
-                                            </h3>
-                                        {% elif comparacion.global < 0 %}
-                                            <h3 class="text-danger mb-0">
-                                                <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.global * -1)|round(1) }}%
-                                            </h3>
+                                        {% if comparacion and comparacion.global is defined and comparacion.global is not none %}
+                                            {% if comparacion.global > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.global|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.global < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.global * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
                                         {% else %}
                                             <h3 class="text-muted mb-0">
                                                 <i class="fas fa-equals me-2"></i>0%
@@ -482,9 +507,9 @@
                                         {% endif %}
                                     </div>
                                     <div class="d-flex justify-content-center align-items-center mt-2">
-                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntuacion|round(1) }} (Actual)</span>
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntuacion|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 }} (Actual)</span>
                                         <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
-                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntuacion|round(1) }} (Anterior)</span>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntuacion|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 }} (Anterior)</span>
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.global > 0 else 'danger' if comparacion.global < 0 else 'secondary' }}" 
@@ -514,14 +539,20 @@
                                         {% endif %}
                                     </h6>
                                     <div class="d-flex justify-content-center align-items-center mb-2">
-                                        {% if comparacion.promedio_alumnos > 0 %}
-                                            <h3 class="text-success mb-0">
-                                                <i class="fas fa-arrow-up me-2"></i>{{ comparacion.promedio_alumnos|round(1) }}%
-                                            </h3>
-                                        {% elif comparacion.promedio_alumnos < 0 %}
-                                            <h3 class="text-danger mb-0">
-                                                <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.promedio_alumnos * -1)|round(1) }}%
-                                            </h3>
+                                        {% if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none %}
+                                            {% if comparacion.promedio_alumnos > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.promedio_alumnos|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.promedio_alumnos < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.promedio_alumnos * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
                                         {% else %}
                                             <h3 class="text-muted mb-0">
                                                 <i class="fas fa-equals me-2"></i>0%
@@ -529,9 +560,9 @@
                                         {% endif %}
                                     </div>
                                     <div class="d-flex justify-content-center align-items-center mt-2">
-                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.promedio_alumnos|round(1) }} (Actual)</span>
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.promedio_alumnos is defined and comparacion.mes_actual.promedio_alumnos is not none else 0 }} (Actual)</span>
                                         <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
-                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.promedio_alumnos|round(1) }} (Anterior)</span>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.promedio_alumnos is defined and comparacion.mes_comparacion.promedio_alumnos is not none else 0 }} (Anterior)</span>
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.promedio_alumnos > 0 else 'danger' if comparacion.promedio_alumnos < 0 else 'secondary' }}" 
@@ -561,14 +592,20 @@
                                         {% endif %}
                                     </h6>
                                     <div class="d-flex justify-content-center align-items-center mb-2">
-                                        {% if comparacion.puntualidad > 0 %}
-                                            <h3 class="text-success mb-0">
-                                                <i class="fas fa-arrow-up me-2"></i>{{ comparacion.puntualidad|round(1) }}%
-                                            </h3>
-                                        {% elif comparacion.puntualidad < 0 %}
-                                            <h3 class="text-danger mb-0">
-                                                <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.puntualidad * -1)|round(1) }}%
-                                            </h3>
+                                        {% if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none %}
+                                            {% if comparacion.puntualidad > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.puntualidad|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.puntualidad < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.puntualidad * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
                                         {% else %}
                                             <h3 class="text-muted mb-0">
                                                 <i class="fas fa-equals me-2"></i>0%
@@ -576,9 +613,9 @@
                                         {% endif %}
                                     </div>
                                     <div class="d-flex justify-content-center align-items-center mt-2">
-                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntualidad|round(1) }}% (Actual)</span>
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntualidad is defined and comparacion.mes_actual.puntualidad is not none else 0 }}% (Actual)</span>
                                         <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
-                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntualidad|round(1) }}% (Anterior)</span>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntualidad is defined and comparacion.mes_comparacion.puntualidad is not none else 0 }}% (Anterior)</span>
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
                                         <div class="progress-bar bg-{{ 'success' if comparacion.puntualidad > 0 else 'danger' if comparacion.puntualidad < 0 else 'secondary' }}" 
@@ -608,14 +645,20 @@
                                         {% endif %}
                                     </h6>
                                     <div class="d-flex justify-content-center align-items-center mb-2">
-                                        {% if comparacion.total_clases > 0 %}
-                                            <h3 class="text-success mb-0">
-                                                <i class="fas fa-arrow-up me-2"></i>{{ comparacion.total_clases|round(1) }}%
-                                            </h3>
-                                        {% elif comparacion.total_clases < 0 %}
-                                            <h3 class="text-danger mb-0">
-                                                <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.total_clases * -1)|round(1) }}%
-                                            </h3>
+                                        {% if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none %}
+                                            {% if comparacion.total_clases > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.total_clases|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.total_clases < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.total_clases * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
                                         {% else %}
                                             <h3 class="text-muted mb-0">
                                                 <i class="fas fa-equals me-2"></i>0%
@@ -668,8 +711,8 @@
                                     </span>
                                     <span>
                                         Rendimiento global 
-                                        <strong class="text-{{ 'success' if comparacion.global > 0 else 'danger' }}">
-                                            {{ comparacion.global|abs|round(1) }}% {{ 'mayor' if comparacion.global > 0 else 'menor' }}
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.global is defined and comparacion.global is not none and comparacion.global > 0 else 'danger' }}">
+                                            {{ comparacion.global|abs|round(1) if comparacion and comparacion.global is defined and comparacion.global is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.global is defined and comparacion.global is not none and comparacion.global > 0 else 'menor' }}
                                         </strong>
                                     </span>
                                 </div>
@@ -683,8 +726,8 @@
                                     </span>
                                     <span>
                                         Puntualidad 
-                                        <strong class="text-{{ 'success' if comparacion.puntualidad > 0 else 'danger' }}">
-                                            {{ comparacion.puntualidad|abs|round(1) }}% {{ 'mayor' if comparacion.puntualidad > 0 else 'menor' }}
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none and comparacion.puntualidad > 0 else 'danger' }}">
+                                            {{ comparacion.puntualidad|abs|round(1) if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none and comparacion.puntualidad > 0 else 'menor' }}
                                         </strong>
                                     </span>
                                 </div>
@@ -698,8 +741,8 @@
                                     </span>
                                     <span>
                                         Promedio de alumnos
-                                        <strong class="text-{{ 'success' if comparacion.promedio_alumnos > 0 else 'danger' }}">
-                                            {{ comparacion.promedio_alumnos|abs|round(1) }}% {{ 'mayor' if comparacion.promedio_alumnos > 0 else 'menor' }}
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none and comparacion.promedio_alumnos > 0 else 'danger' }}">
+                                            {{ comparacion.promedio_alumnos|abs|round(1) if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none and comparacion.promedio_alumnos > 0 else 'menor' }}
                                         </strong>
                                     </span>
                                 </div>
@@ -713,8 +756,8 @@
                                     </span>
                                     <span>
                                         Número de clases
-                                        <strong class="text-{{ 'success' if comparacion.total_clases > 0 else 'danger' }}">
-                                            {{ comparacion.total_clases|abs|round(1) }}% {{ 'mayor' if comparacion.total_clases > 0 else 'menor' }}
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none and comparacion.total_clases > 0 else 'danger' }}">
+                                            {{ comparacion.total_clases|abs|round(1) if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none and comparacion.total_clases > 0 else 'menor' }}
                                         </strong>
                                     </span>
                                 </div>
@@ -928,7 +971,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alumnos: {{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual else 0 }},
             puntualidad: {{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual else 0 }},
             clases: {{ comparacion.mes_actual.total_clases|round(1) if comparacion and comparacion.mes_actual else 0 }},
-            score: {{ metricas.score_global|round(1) if metricas.score_global else 0 }}
+            score: {{ metricas.score_global|round(1) if metricas and metricas.score_global is defined and metricas.score_global is not none else 0 }}
         };
         
         // Preparar datos del mes de comparación
@@ -936,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alumnos: {{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
             puntualidad: {{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
             clases: {{ comparacion.mes_comparacion.total_clases|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
-            score: {{ metricas_comparacion.score_global|round(1) if metricas_comparacion and metricas_comparacion.score_global else 0 }}
+            score: {{ metricas_comparacion.score_global|round(1) if metricas_comparacion and metricas_comparacion.score_global is defined and metricas_comparacion.score_global is not none else 0 }}
         };
         
         // Define min/max values for scaling (fix minAlumnos undefined error)
@@ -1592,5 +1635,154 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- Add this before the closing body tag -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const tipoMetricas = document.querySelectorAll('input[name="tipo_metricas"]');
+        const mesVistaSelect = document.getElementById('mes_vista');
+        const seleccionMesVista = document.getElementById('seleccionMesVista');
+        const mesActualComparacion = document.getElementById('mes_actual_comparacion');
+        const mesComparacion = document.getElementById('mes_comparacion');
+        const tipoVistaForm = document.getElementById('tipoVistaForm');
+        const comparacionForm = document.getElementById('comparacionForm');
+        const validationMessages = document.getElementById('validationMessages');
+        
+        // Toggle month selection visibility based on metrics type
+        tipoMetricas.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (this.value === 'totales') {
+                    seleccionMesVista.classList.add('d-none');
+                    mesVistaSelect.removeAttribute('required');
+                    
+                    // No sincronizamos automáticamente cuando cambiamos a vista total
+                    // Pero mantenemos el selector activo en el formulario de comparación
+                } else {
+                    seleccionMesVista.classList.remove('d-none');
+                    mesVistaSelect.setAttribute('required', 'required');
+                    
+                    // Sincronizar el mes seleccionado con el formulario de comparación
+                    if (mesVistaSelect.value) {
+                        syncMonthSelections(mesVistaSelect, mesActualComparacion);
+                    }
+                }
+            });
+        });
+        
+        // Update the comparison form's first month select when the view month changes
+        if (mesVistaSelect && mesActualComparacion) {
+            mesVistaSelect.addEventListener('change', function() {
+                syncMonthSelections(mesVistaSelect, mesActualComparacion);
+                
+                // If second month is the same as first month, reset it
+                if (mesComparacion && mesComparacion.value === this.value) {
+                    mesComparacion.selectedIndex = 0;
+                }
+            });
+            
+            // Initial sync when page loads
+            syncMonthSelections(mesVistaSelect, mesActualComparacion);
+        }
+        
+        // Prevent selecting the same month in comparison dropdown
+        if (mesActualComparacion && mesComparacion) {
+            mesActualComparacion.addEventListener('change', function() {
+                if (mesComparacion.value === this.value && this.value !== '') {
+                    mesComparacion.selectedIndex = 0;
+                }
+                
+                // Disable the option in the comparison dropdown that matches the first month
+                updateDisabledOptions(mesActualComparacion, mesComparacion);
+            });
+            
+            mesComparacion.addEventListener('change', function() {
+                if (mesActualComparacion.value === this.value && this.value !== '') {
+                    // Show a warning tooltip
+                    showValidationMessage('No puede seleccionar el mismo mes en ambos campos', 'warning');
+                }
+            });
+            
+            // Initial update of disabled options
+            updateDisabledOptions(mesActualComparacion, mesComparacion);
+        }
+        
+        // Validation for comparison form
+        if (comparacionForm) {
+            comparacionForm.addEventListener('submit', function(event) {
+                // Get selected values
+                const mesActualValue = mesActualComparacion.value;
+                const mesComparacionValue = mesComparacion.value;
+                
+                // Clear previous validation messages
+                validationMessages.innerHTML = '';
+                
+                // Validate selections
+                if (!mesActualValue || !mesComparacionValue) {
+                    event.preventDefault();
+                    showValidationMessage('Debe seleccionar ambos meses para comparar', 'warning');
+                    return false;
+                }
+                
+                if (mesActualValue === mesComparacionValue) {
+                    event.preventDefault();
+                    showValidationMessage('Los meses seleccionados deben ser diferentes', 'warning');
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+        // Helper function to sync month selections
+        function syncMonthSelections(sourceSelect, targetSelect) {
+            if (sourceSelect && targetSelect) {
+                const selectedValue = sourceSelect.value;
+                if (selectedValue) {
+                    // Find the same option in the target select
+                    for (let i = 0; i < targetSelect.options.length; i++) {
+                        if (targetSelect.options[i].value === selectedValue) {
+                            targetSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Helper function to update disabled options in second dropdown
+        function updateDisabledOptions(firstSelect, secondSelect) {
+            const selectedValue = firstSelect.value;
+            
+            // Reset all options first
+            for (let i = 0; i < secondSelect.options.length; i++) {
+                secondSelect.options[i].disabled = false;
+            }
+            
+            // Disable the matching option in the second select
+            if (selectedValue) {
+                for (let i = 0; i < secondSelect.options.length; i++) {
+                    if (secondSelect.options[i].value === selectedValue) {
+                        secondSelect.options[i].disabled = true;
+                        if (secondSelect.value === selectedValue) {
+                            secondSelect.selectedIndex = 0;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Helper function to show validation messages
+        function showValidationMessage(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} mt-2`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = message;
+            validationMessages.innerHTML = '';
+            validationMessages.appendChild(alertDiv);
+        }
+    });
 </script>
 {% endblock %}
