@@ -212,6 +212,7 @@ def get_profesores_promedio(exclude_profesor_id=None):
     stats_alumnos = []
     stats_clases = []
     stats_variedad = []
+    stats_costo_por_alumno = []
     
     for prof in profesores:
         if exclude_profesor_id and prof.id == exclude_profesor_id:
@@ -240,18 +241,33 @@ def get_profesores_promedio(exclude_profesor_id=None):
         total_tipos_posibles = 4  # MOVE, RIDE, BOX, OTRO
         variedad = (tipos_distintos / total_tipos_posibles) * 100
         stats_variedad.append(variedad)
+        
+        # Calcular costo por alumno
+        costo_por_alumno = calcular_costo_por_alumno(clases_prof)
+        if costo_por_alumno > 0:
+            stats_costo_por_alumno.append(costo_por_alumno)
     
     # Calcular promedios finales
     prom_puntualidad = np.mean(stats_puntualidad) if stats_puntualidad else 0
     prom_alumnos = np.mean(stats_alumnos) if stats_alumnos else 0
     prom_clases = np.mean(stats_clases) if stats_clases else 0
     prom_variedad = np.mean(stats_variedad) if stats_variedad else 0
+    prom_costo_por_alumno = np.mean(stats_costo_por_alumno) if stats_costo_por_alumno else 0
+    
+    # Calcular mínimo y máximo de costo por alumno
+    min_costo_por_alumno = min(stats_costo_por_alumno) if stats_costo_por_alumno else 0
+    max_costo_por_alumno = max(stats_costo_por_alumno) if stats_costo_por_alumno else 0
     
     return {
         'puntualidad': prom_puntualidad,
         'alumnos': prom_alumnos,
         'clases_por_mes': prom_clases,
-        'variedad_clases': prom_variedad
+        'variedad_clases': prom_variedad,
+        'costo_por_alumno': {
+            'promedio': prom_costo_por_alumno,
+            'minimo': min_costo_por_alumno,
+            'maximo': max_costo_por_alumno
+        }
     }
 
 def validar_datos_comparacion(clases_mes_actual, clases_mes_comparacion):
@@ -290,6 +306,38 @@ def validar_datos_comparacion(clases_mes_actual, clases_mes_comparacion):
         return resultado
     
     return resultado
+
+def calcular_costo_por_alumno(clases):
+    """
+    Calcula el costo por alumno basado en la tarifa del profesor y la cantidad de alumnos.
+    
+    Args:
+        clases (list): Lista de objetos ClaseRealizada
+        
+    Returns:
+        float: Costo promedio por alumno
+    """
+    if not clases:
+        return 0.0
+        
+    # Filtrar clases que tienen datos válidos de alumnos
+    clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None and c.cantidad_alumnos > 0]
+    if not clases_con_alumnos:
+        return 0.0
+    
+    total_costo = 0
+    total_alumnos = 0
+    
+    for clase in clases_con_alumnos:
+        # Obtener la tarifa del profesor por clase
+        tarifa = clase.profesor.tarifa_por_clase
+        
+        # Sumar al total
+        total_costo += tarifa
+        total_alumnos += clase.cantidad_alumnos
+    
+    # Calcular costo promedio por alumno
+    return total_costo / total_alumnos if total_alumnos > 0 else 0.0
 
 def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_comparacion=None, usar_promedios=False, generar_resumen=True):
     """
@@ -393,10 +441,11 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             # Calcular score global para mes de comparación
             promedio_alumnos_comp = calcular_promedio_alumnos(clases_mes_comparacion)
             
-            # Ponderación de factores para score global
+            # Ponderación de factores para score global - Nuevos pesos
             peso_puntualidad = 0.30
-            peso_alumnos = 0.45
-            peso_clases = 0.25
+            peso_alumnos = 0.40
+            peso_clases = 0.15
+            peso_costo = 0.15
             
             # Normalizar valores a escala 0-100
             puntualidad_norm_comp = puntualidad_comp['tasa'] # Ya está en porcentaje
@@ -414,11 +463,28 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             
             clases_norm_comp = min(100, (clases_por_mes_comp / 20) * 100)  # 20 clases/mes = 100%
             
+            # Calcular costo por alumno para el mes de comparación
+            costo_por_alumno_comp = calcular_costo_por_alumno(clases_mes_comparacion)
+            
+            # Normalizar costo por alumno de forma relativa (menor costo = mejor puntuación)
+            costo_norm_comp = 0
+            if costo_por_alumno_comp > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
+                min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
+                max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
+                
+                if min_costo == max_costo:  # Evitar división por cero
+                    costo_norm_comp = 100 if costo_por_alumno_comp <= min_costo else 0
+                elif max_costo > min_costo:
+                    # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
+                    # el más alto recibe 0 puntos, y el resto se distribuye linealmente
+                    costo_norm_comp = max(0, 100 - ((costo_por_alumno_comp - min_costo) / (max_costo - min_costo)) * 100)
+            
             # Calcular score global para comparación
             score_global_comp = (
                 peso_puntualidad * puntualidad_norm_comp +
                 peso_alumnos * alumnos_norm_comp +
-                peso_clases * clases_norm_comp
+                peso_clases * clases_norm_comp +
+                peso_costo * costo_norm_comp
             )
             
             # Asegurar que score_global_comp esté definido
@@ -440,6 +506,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
                 'variedad_clases': variedad_clases_comp,
                 'score_global': score_global_comp,  # Asignar el score calculado
                 'puntuacion': score_global_comp,    # Añadir para compatibilidad con la UI
+                'costo_por_alumno': costo_por_alumno_comp,  # Añadir costo por alumno
                 'datos_mensuales': metricas.get('datos_mensuales', [])  # Incluir datos mensuales completos
             }
             
@@ -450,6 +517,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             promedio_alumnos_actual = calcular_promedio_alumnos(clases_mes_actual)
             puntualidad_actual = calcular_tasa_puntualidad(clases_mes_actual)
             clases_por_mes_actual = len(clases_mes_actual)  # Simplificado para comparación mes a mes
+            costo_por_alumno_actual = calcular_costo_por_alumno(clases_mes_actual)
 
             # Normalizar valores a escala 0-100
             puntualidad_norm_actual = puntualidad_actual['tasa']  # Ya está en porcentaje
@@ -463,12 +531,26 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
                 alumnos_norm_actual = min(100, (promedio_alumnos_actual / 20) * 100)
 
             clases_norm_actual = min(100, (clases_por_mes_actual / 20) * 100)  # 20 clases/mes = 100%
+            
+            # Normalizar costo por alumno (menor costo = mejor puntuación)
+            costo_norm_actual = 0
+            if costo_por_alumno_actual > 0:
+                # Un costo menor es mejor, por lo que invertimos la normalización
+                # Usamos una escala donde $0 = 100% y $50+ = 0%
+                costo_norm_actual = max(0, 100 - (costo_por_alumno_actual / 50) * 100)
 
-            # Calcular score global para mes actual
+            # Ponderación de factores para score global - Nuevos pesos
+            peso_puntualidad = 0.30
+            peso_alumnos = 0.40
+            peso_clases = 0.15
+            peso_costo = 0.15
+            
+            # Calcular score global para mes actual con la nueva ponderación
             score_global_actual = (
                 peso_puntualidad * puntualidad_norm_actual +
                 peso_alumnos * alumnos_norm_actual +
-                peso_clases * clases_norm_actual
+                peso_clases * clases_norm_actual +
+                peso_costo * costo_norm_actual
             )
 
             # Asegurar que score_global_actual esté definido
@@ -481,14 +563,16 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
                     'clases': clases_mes_actual, 
                     'puntualidad': puntualidad_actual,
                     'variedad_clases': (len([t for t, c in calcular_distribucion_clases(clases_mes_actual)['tipos'].items() if c > 0]) / 4) * 100,
-                    'score_global': score_global_actual  # Añadir el score_global para el mes actual
+                    'score_global': score_global_actual,  # Añadir el score_global para el mes actual
+                    'costo_por_alumno': calcular_costo_por_alumno(clases_mes_actual)  # Añadir costo por alumno
                 },
                 # Usamos clases_mes_comparacion para calcular métricas de comparación
                 {
                     'clases': clases_mes_comparacion,
                     'puntualidad': puntualidad_comp,
                     'variedad_clases': variedad_clases_comp,
-                    'score_global': score_global_comp  # Añadir el score_global para el mes de comparación
+                    'score_global': score_global_comp,  # Añadir el score_global para el mes de comparación
+                    'costo_por_alumno': costo_por_alumno_comp  # Añadir costo por alumno
                 }
             )
             
@@ -547,8 +631,9 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         # Calcular score global para métricas actuales
         # Ponderación de factores para score global
         peso_puntualidad = 0.30
-        peso_alumnos = 0.45
-        peso_clases = 0.25
+        peso_alumnos = 0.40
+        peso_clases = 0.15
+        peso_costo = 0.15
         
         # Normalizar valores a escala 0-100
         puntualidad_norm = puntualidad['tasa']  # Ya está en porcentaje
@@ -567,11 +652,28 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         
         clases_norm = min(100, (clases_por_mes / 20) * 100)  # 20 clases/mes = 100%
         
+        # Calcular costo por alumno
+        costo_por_alumno = calcular_costo_por_alumno(clases_a_procesar)
+        
+        # Normalizar costo por alumno de forma relativa (menor costo = mejor puntuación)
+        costo_norm = 0
+        if costo_por_alumno > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
+            min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
+            max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
+            
+            if min_costo == max_costo:  # Evitar división por cero
+                costo_norm = 100 if costo_por_alumno <= min_costo else 0
+            elif max_costo > min_costo:
+                # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
+                # el más alto recibe 0 puntos, y el resto se distribuye linealmente
+                costo_norm = max(0, 100 - ((costo_por_alumno - min_costo) / (max_costo - min_costo)) * 100)
+        
         # Calcular score global
         score_global = (
             peso_puntualidad * puntualidad_norm +
             peso_alumnos * alumnos_norm +
-            peso_clases * clases_norm
+            peso_clases * clases_norm +
+            peso_costo * costo_norm
         )
         
         # Asegurar que score_global esté definido
@@ -588,6 +690,7 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             'tendencia': tendencia,  # Este es el cálculo para el período específico
             'score_global': score_global,  # Asignar el score calculado
             'puntuacion': score_global,    # Añadir para compatibilidad con la UI
+            'costo_por_alumno': costo_por_alumno,  # Añadir costo por alumno
             'datos_mensuales': metricas.get('datos_mensuales', []),  # Estos son TODOS los datos mensuales
         'clases_por_mes': clases_por_mes,
         'variedad_clases': variedad_clases,
@@ -596,7 +699,8 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             'alumnos': tendencia_alumnos,
             'puntualidad': tendencia_puntualidad,
                 'clases_por_mes': tendencia_clases_mes
-            }
+            },
+        'promedio_profesores': promedios_profesores  # Add this line to include the average data
         }
         
         # Añadir promedios de profesores para comparación cuando no estemos en modo de comparación
@@ -734,6 +838,18 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             # Si score_comp es 0 pero score_actual tiene valor, mostrar 100% de mejora
             diff_global = 100 if score_actual > 0 else 0
         
+        # Costo por alumno
+        costo_actual = metricas_actual.get('costo_por_alumno', 0)
+        costo_comp = metricas_comparacion.get('costo_por_alumno', 0)
+
+        try:
+            if costo_comp > 0:
+                diff_costo = ((costo_actual / costo_comp) - 1) * 100
+            else:
+                diff_costo = 0
+        except (ZeroDivisionError, TypeError):
+            diff_costo = 0
+        
         # Extraer nombres de meses para mostrar en la UI
         # Los nombres de meses ahora deben venir en los parámetros o se calculan arriba
         mes_actual_nombre = metricas_actual.get('mes_actual_nombre', "Mes actual")
@@ -746,20 +862,23 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             'puntualidad': diff_puntualidad,
             'total_clases': diff_clases,
             'variedad_clases': diff_variedad,
+            'costo_por_alumno': diff_costo,  # Añadir diferencia de costo por alumno
             'distribucion_tipos': diff_tipos,
             'mes_actual': {
                 'promedio_alumnos': prom_alumnos_actual,
                 'puntualidad': puntualidad_actual,
                 'total_clases': clases_actual,
                 'variedad_clases': variedad_actual,
-                'puntuacion': metricas_actual.get('score_global', 0)
+                'puntuacion': metricas_actual.get('score_global', 0),
+                'costo_por_alumno': costo_actual  # Añadir costo por alumno del mes actual
             },
             'mes_comparacion': {
                 'promedio_alumnos': prom_alumnos_comp,
                 'puntualidad': puntualidad_comp,
                 'total_clases': clases_comp,
                 'variedad_clases': variedad_comp,
-                'puntuacion': metricas_comparacion.get('score_global', 0)
+                'puntuacion': metricas_comparacion.get('score_global', 0),
+                'costo_por_alumno': costo_comp  # Añadir costo por alumno del mes de comparación
             },
             'mes_actual_nombre': mes_actual_nombre,
             'mes_comparacion_nombre': mes_comparacion_nombre
@@ -773,20 +892,23 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             'puntualidad': 0,
             'total_clases': 0,
             'variedad_clases': 0,
+            'costo_por_alumno': 0,  # Añadir costo por alumno
             'distribucion_tipos': {},
             'mes_actual': {
                 'promedio_alumnos': 0,
                 'puntualidad': 0,
                 'total_clases': 0,
                 'variedad_clases': 0,
-                'puntuacion': 0
+                'puntuacion': 0,
+                'costo_por_alumno': 0  # Añadir costo por alumno
             },
             'mes_comparacion': {
                 'promedio_alumnos': 0,
                 'puntualidad': 0,
                 'total_clases': 0,
                 'variedad_clases': 0,
-                'puntuacion': 0
+                'puntuacion': 0,
+                'costo_por_alumno': 0  # Añadir costo por alumno
             },
             'mes_actual_nombre': "Mes actual",
             'mes_comparacion_nombre': "Mes comparación"
@@ -937,9 +1059,10 @@ def generar_resumen_rendimiento(metricas, nivel_detalle=1):
     # Calificación global (una métrica compuesta)
     try:
         # Ponderación de factores para calificación global
-        peso_puntualidad = 0.35
+        peso_puntualidad = 0.30
         peso_alumnos = 0.40
-        peso_clases = 0.25
+        peso_clases = 0.15
+        peso_costo = 0.15
         
         # Normalizar valores a escala 0-100
         puntualidad_norm = m['puntualidad']['tasa']  # Ya está en porcentaje
@@ -954,11 +1077,19 @@ def generar_resumen_rendimiento(metricas, nivel_detalle=1):
         
         clases_norm = min(100, (m['clases_por_mes'] / 20) * 100)  # 20 clases/mes = 100%
         
+        # Normalizar costo por alumno (menor costo = mejor puntuación)
+        costo_norm = 0
+        if 'costo_por_alumno' in m and m['costo_por_alumno'] > 0:
+            # Un costo menor es mejor, por lo que invertimos la normalización
+            # Usamos una escala donde $0 = 100% y $50+ = 0%
+            costo_norm = max(0, 100 - (m['costo_por_alumno'] / 50) * 100)
+            
         # Calcular calificación global
         calificacion_global = (
             peso_puntualidad * puntualidad_norm +
             peso_alumnos * alumnos_norm +
-            peso_clases * clases_norm
+            peso_clases * clases_norm +
+            peso_costo * costo_norm
         )
         
         resumen['datos']['calificacion_global'] = {
