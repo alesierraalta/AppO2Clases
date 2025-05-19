@@ -473,20 +473,25 @@
                     <div class="row g-4">
                         <!-- Puntuación Global -->
                         <div class="col-lg-3 col-md-6">
-                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.global > 10 else 'border-start border-danger border-5' if comparacion.global < -10 else 'shadow-sm' }}" 
-                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.global > 10 else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.global < -10 }}">
+                            {% set mes_actual_puntuacion = comparacion.mes_actual.puntuacion if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 %}
+                            {% set mes_comparacion_puntuacion = comparacion.mes_comparacion.puntuacion if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 %}
+                            {% set mostrar_cambio_significativo = comparacion.global > 10 or comparacion.global < -10 %}
+                            {% set son_ambos_cero = mes_actual_puntuacion == 0 and mes_comparacion_puntuacion == 0 %}
+                            
+                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.global > 10 and not son_ambos_cero else 'border-start border-danger border-5' if comparacion.global < -10 and not son_ambos_cero else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.global > 10 and not son_ambos_cero else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.global < -10 and not son_ambos_cero }}">
                                 <div class="card-body text-center p-3">
                                     <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
                                         <i class="fas fa-chart-bar me-2"></i>
                                         Puntuación Global
-                                        {% if comparacion.global > 10 or comparacion.global < -10 %}
+                                        {% if mostrar_cambio_significativo and not son_ambos_cero %}
                                         <span class="badge bg-{{ 'success' if comparacion.global > 10 else 'danger' }} ms-2">
                                             Cambio significativo
                                         </span>
                                         {% endif %}
                                     </h6>
                                     <div class="d-flex justify-content-center align-items-center mb-2">
-                                        {% if comparacion and comparacion.global is defined and comparacion.global is not none %}
+                                        {% if comparacion and comparacion.global is defined and comparacion.global is not none and not son_ambos_cero %}
                                             {% if comparacion.global > 0 %}
                                                 <h3 class="text-success mb-0">
                                                     <i class="fas fa-arrow-up me-2"></i>{{ comparacion.global|round(1) }}%
@@ -507,15 +512,15 @@
                                         {% endif %}
                                     </div>
                                     <div class="d-flex justify-content-center align-items-center mt-2">
-                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntuacion|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 }} (Actual)</span>
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ mes_actual_puntuacion|round(1) if mes_actual_puntuacion != 0 else "0" }} (Actual)</span>
                                         <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
-                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntuacion|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 }} (Anterior)</span>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ mes_comparacion_puntuacion|round(1) if mes_comparacion_puntuacion != 0 else "0" }} (Anterior)</span>
                                     </div>
                                     <div class="progress mt-3" style="height: 6px;">
-                                        <div class="progress-bar bg-{{ 'success' if comparacion.global > 0 else 'danger' if comparacion.global < 0 else 'secondary' }}" 
+                                        <div class="progress-bar bg-{{ 'success' if comparacion.global > 0 and not son_ambos_cero else 'danger' if comparacion.global < 0 and not son_ambos_cero else 'secondary' }}" 
                                              role="progressbar" 
-                                             style="width: {{ [comparacion.global|abs, 100]|min }}%;" 
-                                             aria-valuenow="{{ comparacion.global|abs }}" 
+                                             style="width: {{ [comparacion.global|abs, 100]|min if not son_ambos_cero else 0 }}%;" 
+                                             aria-valuenow="{{ comparacion.global|abs if not son_ambos_cero else 0 }}" 
                                              aria-valuemin="0" 
                                              aria-valuemax="100">
                                         </div>
@@ -968,21 +973,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Preparar datos del mes actual
         const mesActualData = {
-            alumnos: {{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual else 0 }},
-            puntualidad: {{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual else 0 }},
-            clases: {{ comparacion.mes_actual.total_clases|round(1) if comparacion and comparacion.mes_actual else 0 }},
-            score: {{ metricas.score_global|round(1) if metricas and metricas.score_global is defined and metricas.score_global is not none else 0 }}
+            alumnos: {{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.promedio_alumnos is defined and comparacion.mes_actual.promedio_alumnos is not none else 0 }},
+            puntualidad: {{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntualidad is defined and comparacion.mes_actual.puntualidad is not none else 0 }},
+            clases: {{ comparacion.mes_actual.total_clases if comparacion and comparacion.mes_actual and comparacion.mes_actual.total_clases is defined and comparacion.mes_actual.total_clases is not none else 0 }},
+            score: {{ comparacion.mes_actual.puntuacion|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 }}
         };
         
         // Preparar datos del mes de comparación
         const mesComparacionData = {
-            alumnos: {{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
-            puntualidad: {{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
-            clases: {{ comparacion.mes_comparacion.total_clases|round(1) if comparacion and comparacion.mes_comparacion else 0 }},
-            score: {{ metricas_comparacion.score_global|round(1) if metricas_comparacion and metricas_comparacion.score_global is defined and metricas_comparacion.score_global is not none else 0 }}
+            alumnos: {{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.promedio_alumnos is defined and comparacion.mes_comparacion.promedio_alumnos is not none else 0 }},
+            puntualidad: {{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntualidad is defined and comparacion.mes_comparacion.puntualidad is not none else 0 }},
+            clases: {{ comparacion.mes_comparacion.total_clases if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.total_clases is defined and comparacion.mes_comparacion.total_clases is not none else 0 }},
+            score: {{ comparacion.mes_comparacion.puntuacion|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 }}
         };
         
-        // Define min/max values for scaling (fix minAlumnos undefined error)
+        // Definir función para comprobar si se debe mostrar cambio significativo
+        const sonAmbosCero = (val1, val2) => (val1 === 0 && val2 === 0);
+        
+        // Define min/max values for scaling with proper validation
         const minAlumnos = Math.min(mesActualData.alumnos, mesComparacionData.alumnos) * 0.8 || 0;
         const maxAlumnos = Math.max(mesActualData.alumnos, mesComparacionData.alumnos) * 1.2 || 10;
         
@@ -1054,9 +1062,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 let formatted = value;
                                 if (dataIndex === 0 || dataIndex === 1) { // Score global o puntualidad
                                     unidad = '%';
-                                    formatted = value.toFixed(1);
+                                    formatted = parseFloat(value).toFixed(1);
                                 } else if (dataIndex === 2) { // Promedio alumnos
-                                    formatted = value.toFixed(1);
+                                    formatted = parseFloat(value).toFixed(1);
                                 } else { // Total clases
                                     formatted = Math.round(value);
                                 }
@@ -1073,6 +1081,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             size: 11
                         },
                         formatter: function(value, context) {
+                            if (value === 0 || value === undefined || value === null) {
+                                return '0';
+                            }
+                            
                             const dataIndex = context.dataIndex;
                             
                             // Determinar unidad y formato según el tipo de dato
@@ -1080,9 +1092,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             let formatted = value;
                             if (dataIndex === 0 || dataIndex === 1) { // Score global o puntualidad
                                 unidad = '%';
-                                formatted = value.toFixed(1);
+                                formatted = parseFloat(value).toFixed(1);
                             } else if (dataIndex === 2) { // Promedio alumnos
-                                formatted = value.toFixed(1);
+                                formatted = parseFloat(value).toFixed(1);
                             } else { // Total clases
                                 formatted = Math.round(value);
                             }

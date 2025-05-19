@@ -390,6 +390,40 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             tipos_distintos_comp = len([t for t, c in distribucion_comp['tipos'].items() if c > 0])
             variedad_clases_comp = (tipos_distintos_comp / 4) * 100  # MOVE, RIDE, BOX, OTRO
             
+            # Calcular score global para mes de comparación
+            promedio_alumnos_comp = calcular_promedio_alumnos(clases_mes_comparacion)
+            
+            # Ponderación de factores para score global
+            peso_puntualidad = 0.30
+            peso_alumnos = 0.45
+            peso_clases = 0.25
+            
+            # Normalizar valores a escala 0-100
+            puntualidad_norm_comp = puntualidad_comp['tasa'] # Ya está en porcentaje
+            
+            # Obtener datos de promedio de profesores
+            promedios_profesores = get_profesores_promedio(exclude_profesor_id=profesor_id)
+            
+            alumnos_norm_comp = 0
+            if promedios_profesores and promedios_profesores['alumnos'] > 0:
+                # Normalizar respecto al promedio (100% = doble del promedio)
+                alumnos_norm_comp = min(100, (promedio_alumnos_comp / promedios_profesores['alumnos']) * 50)
+            else:
+                # Si no hay promedio, usar escala arbitraria (100% = 20 alumnos)
+                alumnos_norm_comp = min(100, (promedio_alumnos_comp / 20) * 100)
+            
+            clases_norm_comp = min(100, (clases_por_mes_comp / 20) * 100)  # 20 clases/mes = 100%
+            
+            # Calcular score global para comparación
+            score_global_comp = (
+                peso_puntualidad * puntualidad_norm_comp +
+                peso_alumnos * alumnos_norm_comp +
+                peso_clases * clases_norm_comp
+            )
+            
+            # Asegurar que score_global_comp esté definido
+            score_global_comp = round(score_global_comp, 1) if score_global_comp is not None else 0
+            
             # Asegurar que los datos mensuales estén disponibles para la comparación 
             # (usamos los datos para todos los meses, no solo el mes de comparación)
             
@@ -397,33 +431,64 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             metricas_comparacion = {
                 'total_clases': total_clases_comp,
                 'total_alumnos': total_alumnos_comp,
-                'promedio_alumnos': calcular_promedio_alumnos(clases_mes_comparacion),
+                'promedio_alumnos': promedio_alumnos_comp,
                 'puntualidad': puntualidad_comp,
                 'distribucion': distribucion_comp,
                 'tendencia': tendencia_comp,
                 'clases': clases_ordenadas_comp,
                 'clases_por_mes': clases_por_mes_comp,
                 'variedad_clases': variedad_clases_comp,
-                'score_global': 0,  # Inicializar score_global para evitar errores
+                'score_global': score_global_comp,  # Asignar el score calculado
+                'puntuacion': score_global_comp,    # Añadir para compatibilidad con la UI
                 'datos_mensuales': metricas.get('datos_mensuales', [])  # Incluir datos mensuales completos
             }
             
             # Guardar métricas de comparación
             metricas['metricas_comparacion'] = metricas_comparacion
             
+            # Calcular score global para mes actual antes de la comparación
+            promedio_alumnos_actual = calcular_promedio_alumnos(clases_mes_actual)
+            puntualidad_actual = calcular_tasa_puntualidad(clases_mes_actual)
+            clases_por_mes_actual = len(clases_mes_actual)  # Simplificado para comparación mes a mes
+
+            # Normalizar valores a escala 0-100
+            puntualidad_norm_actual = puntualidad_actual['tasa']  # Ya está en porcentaje
+
+            alumnos_norm_actual = 0
+            if promedios_profesores and promedios_profesores['alumnos'] > 0:
+                # Normalizar respecto al promedio (100% = doble del promedio)
+                alumnos_norm_actual = min(100, (promedio_alumnos_actual / promedios_profesores['alumnos']) * 50)
+            else:
+                # Si no hay promedio, usar escala arbitraria (100% = 20 alumnos)
+                alumnos_norm_actual = min(100, (promedio_alumnos_actual / 20) * 100)
+
+            clases_norm_actual = min(100, (clases_por_mes_actual / 20) * 100)  # 20 clases/mes = 100%
+
+            # Calcular score global para mes actual
+            score_global_actual = (
+                peso_puntualidad * puntualidad_norm_actual +
+                peso_alumnos * alumnos_norm_actual +
+                peso_clases * clases_norm_actual
+            )
+
+            # Asegurar que score_global_actual esté definido
+            score_global_actual = round(score_global_actual, 1) if score_global_actual is not None else 0
+
             # Calcular la comparación entre ambos meses
             comparacion = comparar_metricas_mensuales(
                 # Usamos clases_mes_actual para calcular métricas actuales
                 {
                     'clases': clases_mes_actual, 
-                    'puntualidad': calcular_tasa_puntualidad(clases_mes_actual),
-                    'variedad_clases': (len([t for t, c in calcular_distribucion_clases(clases_mes_actual)['tipos'].items() if c > 0]) / 4) * 100
+                    'puntualidad': puntualidad_actual,
+                    'variedad_clases': (len([t for t, c in calcular_distribucion_clases(clases_mes_actual)['tipos'].items() if c > 0]) / 4) * 100,
+                    'score_global': score_global_actual  # Añadir el score_global para el mes actual
                 },
                 # Usamos clases_mes_comparacion para calcular métricas de comparación
                 {
                     'clases': clases_mes_comparacion,
                     'puntualidad': puntualidad_comp,
-                    'variedad_clases': variedad_clases_comp
+                    'variedad_clases': variedad_clases_comp,
+                    'score_global': score_global_comp  # Añadir el score_global para el mes de comparación
                 }
             )
             
@@ -479,6 +544,39 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         tendencia_puntualidad = 0
         tendencia_clases_mes = 0
         
+        # Calcular score global para métricas actuales
+        # Ponderación de factores para score global
+        peso_puntualidad = 0.30
+        peso_alumnos = 0.45
+        peso_clases = 0.25
+        
+        # Normalizar valores a escala 0-100
+        puntualidad_norm = puntualidad['tasa']  # Ya está en porcentaje
+        
+        # Obtener datos de promedio de profesores si no se obtuvieron antes
+        if not 'promedios_profesores' in locals() or not promedios_profesores:
+            promedios_profesores = get_profesores_promedio(exclude_profesor_id=profesor_id)
+        
+        alumnos_norm = 0
+        if promedios_profesores and promedios_profesores['alumnos'] > 0:
+            # Normalizar respecto al promedio (100% = doble del promedio)
+            alumnos_norm = min(100, (promedio_alumnos / promedios_profesores['alumnos']) * 50)
+        else:
+            # Si no hay promedio, usar escala arbitraria (100% = 20 alumnos)
+            alumnos_norm = min(100, (promedio_alumnos / 20) * 100)
+        
+        clases_norm = min(100, (clases_por_mes / 20) * 100)  # 20 clases/mes = 100%
+        
+        # Calcular score global
+        score_global = (
+            peso_puntualidad * puntualidad_norm +
+            peso_alumnos * alumnos_norm +
+            peso_clases * clases_norm
+        )
+        
+        # Asegurar que score_global esté definido
+        score_global = round(score_global, 1) if score_global is not None else 0
+        
         # Compilar todas las métricas
         metricas_actuales = {
         'total_clases': total_clases,
@@ -488,7 +586,8 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             'distribucion': distribucion,
         'puntualidad': puntualidad,
             'tendencia': tendencia,  # Este es el cálculo para el período específico
-            'score_global': 0,  # Inicializar score_global para evitar errores
+            'score_global': score_global,  # Asignar el score calculado
+            'puntuacion': score_global,    # Añadir para compatibilidad con la UI
             'datos_mensuales': metricas.get('datos_mensuales', []),  # Estos son TODOS los datos mensuales
         'clases_por_mes': clases_por_mes,
         'variedad_clases': variedad_clases,
@@ -624,13 +723,16 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
             print(f"Error al calcular diferencias por tipo: {str(e)}")
             diff_tipos = {}
                 
-        # Calcular diferencia global usando pesos recalibrados (sin variedad de clases)
-        diff_global = (
-            0.45 * diff_prom_alumnos +
-            0.30 * diff_puntualidad +
-            0.25 * diff_clases
-            # Variedad de clases eliminada del cálculo por solicitud
-        )
+        # Calcular diferencia global usando los valores de score_global en lugar de recalcularla
+        score_actual = metricas_actual.get('score_global', 0)
+        score_comp = metricas_comparacion.get('score_global', 0)
+
+        # Evitar división por cero y calcular el cambio porcentual correcto
+        if score_comp > 0:
+            diff_global = ((score_actual / score_comp) - 1) * 100
+        else:
+            # Si score_comp es 0 pero score_actual tiene valor, mostrar 100% de mejora
+            diff_global = 100 if score_actual > 0 else 0
         
         # Extraer nombres de meses para mostrar en la UI
         # Los nombres de meses ahora deben venir en los parámetros o se calculan arriba
@@ -649,13 +751,15 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
                 'promedio_alumnos': prom_alumnos_actual,
                 'puntualidad': puntualidad_actual,
                 'total_clases': clases_actual,
-                'variedad_clases': variedad_actual
+                'variedad_clases': variedad_actual,
+                'puntuacion': metricas_actual.get('score_global', 0)
             },
             'mes_comparacion': {
                 'promedio_alumnos': prom_alumnos_comp,
                 'puntualidad': puntualidad_comp,
                 'total_clases': clases_comp,
-                'variedad_clases': variedad_comp
+                'variedad_clases': variedad_comp,
+                'puntuacion': metricas_comparacion.get('score_global', 0)
             },
             'mes_actual_nombre': mes_actual_nombre,
             'mes_comparacion_nombre': mes_comparacion_nombre
@@ -674,13 +778,15 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
                 'promedio_alumnos': 0,
                 'puntualidad': 0,
                 'total_clases': 0,
-                'variedad_clases': 0
+                'variedad_clases': 0,
+                'puntuacion': 0
             },
             'mes_comparacion': {
                 'promedio_alumnos': 0,
                 'puntualidad': 0,
                 'total_clases': 0,
-                'variedad_clases': 0
+                'variedad_clases': 0,
+                'puntuacion': 0
             },
             'mes_actual_nombre': "Mes actual",
             'mes_comparacion_nombre': "Mes comparación"
