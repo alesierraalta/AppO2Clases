@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Script para crear las tablas de la base de datos, con capacidad de recuperación
-en caso de que falle el método principal que utiliza Flask-SQLAlchemy.
+Script para crear las tablas de la base de datos de forma independiente,
+sin necesidad de contexto de aplicación Flask.
 """
 
 import os
@@ -10,15 +10,27 @@ import sys
 import sqlite3
 from datetime import datetime
 
-def create_tables_manually():
+def verify_table_exists(db_path, table_name):
+    """Verifica si una tabla específica existe en la base de datos"""
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except Exception as e:
+        print(f"Error al verificar tabla {table_name}: {str(e)}")
+        return False
+
+def create_tables_manually(db_path='gimnasio.db'):
     """
     Crea las tablas manualmente utilizando SQLite directamente.
-    Esta función se utiliza como respaldo si falla el método Flask-SQLAlchemy.
     """
-    print("Creando tablas manualmente con SQLite...")
+    print(f"Creando tablas manualmente en {db_path} usando SQLite...")
     
     try:
-        conn = sqlite3.connect('gimnasio.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
         # Crear tabla profesor
@@ -32,6 +44,7 @@ def create_tables_manually():
             email TEXT
         )
         ''')
+        print("✓ Tabla 'profesor' creada o ya existente")
         
         # Crear tabla horario_clase
         cursor.execute('''
@@ -50,6 +63,7 @@ def create_tables_manually():
             FOREIGN KEY (profesor_id) REFERENCES profesor (id)
         )
         ''')
+        print("✓ Tabla 'horario_clase' creada o ya existente")
         
         # Crear tabla clase_realizada
         cursor.execute('''
@@ -67,6 +81,7 @@ def create_tables_manually():
             FOREIGN KEY (profesor_id) REFERENCES profesor (id)
         )
         ''')
+        print("✓ Tabla 'clase_realizada' creada o ya existente")
         
         # Crear tabla evento_horario
         cursor.execute('''
@@ -81,57 +96,89 @@ def create_tables_manually():
             FOREIGN KEY (horario_id) REFERENCES horario_clase (id)
         )
         ''')
+        print("✓ Tabla 'evento_horario' creada o ya existente")
+        
+        # Crear tabla notificacion (si no existe ya)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notificacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT NOT NULL,
+            mensaje TEXT NOT NULL,
+            destinatario TEXT,
+            fecha_programada DATETIME,
+            estado TEXT DEFAULT 'pendiente',
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_envio DATETIME,
+            datos_adicionales TEXT
+        )
+        ''')
+        print("✓ Tabla 'notificacion' creada o ya existente")
         
         conn.commit()
         conn.close()
         
-        print("Tablas creadas manualmente con éxito")
+        # Verificar que todas las tablas existan
+        required_tables = ['profesor', 'horario_clase', 'clase_realizada', 'evento_horario', 'notificacion']
+        missing = []
+        
+        for table in required_tables:
+            if not verify_table_exists(db_path, table):
+                missing.append(table)
+        
+        if missing:
+            print(f"ERROR: No se pudieron crear las siguientes tablas: {', '.join(missing)}")
+            return False
+            
+        print("✓ Todas las tablas fueron creadas exitosamente")
         return True
     except Exception as e:
         print(f"Error al crear tablas manualmente: {str(e)}")
         return False
 
-# Método principal usando Flask-SQLAlchemy
-print("Starting database table creation...")
-
-try:
-    # Intentar crear tablas usando Flask-SQLAlchemy
-    from app import app, db
-    from models import Profesor, HorarioClase, ClaseRealizada, EventoHorario
+def create_db_with_flask():
+    """Intenta crear la base de datos usando Flask-SQLAlchemy (método secundario)"""
+    print("Intentando crear tablas usando Flask-SQLAlchemy...")
     
-    # Execute within the app context
-    with app.app_context():
-        # Create all tables if they don't exist
-        db.create_all()
-        print("Tables created successfully.")
+    try:
+        # Intentar crear tablas usando Flask-SQLAlchemy
+        from app import app, db
+        from models import Profesor, HorarioClase, ClaseRealizada, EventoHorario
         
-        # Check if tables exist
-        print("Verifying tables...")
+        # Execute within the app context
+        with app.app_context():
+            # Create all tables if they don't exist
+            db.create_all()
+            print("Tables created successfully with Flask-SQLAlchemy.")
+            return True
+    except Exception as e:
+        print(f"Error al crear tablas con Flask-SQLAlchemy: {str(e)}")
+        return False
+
+if __name__ == "__main__":
+    db_path = 'gimnasio.db'
+    print(f"=== Inicializando base de datos en: {db_path} ===")
+    
+    # Verificar si la base de datos existe, y crearla si no
+    if not os.path.exists(db_path):
+        print(f"Archivo de base de datos no encontrado. Creando {db_path}...")
         try:
-            # Trying to query the tables to see if they exist
-            profesor_count = Profesor.query.count()
-            horario_count = HorarioClase.query.count()
-            clase_count = ClaseRealizada.query.count()
-            
-            print(f"Database contains:")
-            print(f"- {profesor_count} profesores")
-            print(f"- {horario_count} horarios de clase")
-            print(f"- {clase_count} clases realizadas")
-            
+            conn = sqlite3.connect(db_path)
+            conn.close()
+            print(f"Archivo de base de datos {db_path} creado correctamente.")
         except Exception as e:
-            print(f"Error verifying tables: {e}")
-        
-        print("Database setup complete.")
+            print(f"ERROR: No se pudo crear el archivo de base de datos: {str(e)}")
+            sys.exit(1)
     
-    sys.exit(0)  # Éxito
-except Exception as e:
-    print(f"Error al crear tablas con Flask-SQLAlchemy: {str(e)}")
-    print("Intentando método alternativo...")
-
-# Si llegamos aquí, el método principal falló, intentar crear tablas manualmente
-if create_tables_manually():
-    print("Base de datos creada correctamente mediante método alternativo")
-    sys.exit(0)  # Éxito
-else:
+    # Método 1: Crear tablas manualmente con SQLite (más confiable)
+    if create_tables_manually(db_path):
+        print("Base de datos inicializada correctamente (método manual directo)")
+        sys.exit(0)
+    
+    # Método 2: Intentar con Flask-SQLAlchemy como respaldo
+    if create_db_with_flask():
+        print("Base de datos inicializada correctamente (método Flask-SQLAlchemy)")
+        sys.exit(0)
+    
+    # Si llegamos aquí, ambos métodos fallaron
     print("ERROR: No se pudo crear la base de datos por ningún método.")
-    sys.exit(1)  # Error 
+    sys.exit(1) 
