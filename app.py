@@ -1245,6 +1245,13 @@ def limpiar_formato_hora(hora_input):
 
 @app.route('/informes/mensual', methods=['GET', 'POST'])
 def informe_mensual():
+    # Diccionario de nombres de meses en español
+    MESES_ES = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
     # Función para calcular la puntualidad
     def calcular_puntualidad(hora_llegada, hora_inicio, nombre_clase=""):
         if not hora_llegada:
@@ -1255,29 +1262,23 @@ def informe_mensual():
             print("⚠️ ADVERTENCIA: hora_inicio es None, no se puede calcular puntualidad")
             return "N/A"
         
-        # Registrar en el log los tipos de datos
-        print("="*50)
-        print(f"DEBUG calcular_puntualidad en INFORME:")
-        print(f"Clase: {nombre_clase}")
-        print(f"Tipo de hora_llegada: {type(hora_llegada)}, valor: {hora_llegada}")
-        print(f"Tipo de hora_inicio: {type(hora_inicio)}, valor: {hora_inicio}")
+        # Registrar en el log los tipos de datos (debug desactivado)
+        # Comentado para producción
         
         # CORRECCIÓN ESPECÍFICA PARA POWER BIKE
         if nombre_clase and "POWER BIKE" in nombre_clase:
             # Crear una nueva hora_inicio fija de 7:30
             hora_correcta = time(hour=7, minute=30)
-            print(f"CORRECCIÓN POWER BIKE: Cambiando hora_inicio de {hora_inicio} a {hora_correcta}")
+            # Log eliminado para producción
             hora_inicio = hora_correcta
         
         # Convertir las horas usando nuestra función global
         hora_llegada_convertida = convertir_hora_con_microsegundos(hora_llegada)
         if not hora_llegada_convertida:
-            print("⚠️ ERROR: No se pudo convertir hora_llegada")
             return "Error formato"
         
         hora_inicio_convertida = convertir_hora_con_microsegundos(hora_inicio)
         if not hora_inicio_convertida:
-            print("⚠️ ERROR: No se pudo convertir hora_inicio")
             return "Error formato"
         
         # Usar las horas convertidas
@@ -1285,12 +1286,8 @@ def informe_mensual():
         hora_inicio = hora_inicio_convertida
         
         # Calcular minutos de retraso (asegurando que ambos son objetos time)
-        print(f"⏰ Comparando: hora_llegada={hora_llegada} vs hora_inicio={hora_inicio}")
         
-        # SOSPECHA: Si representan el mismo tiempo, puede haber un problema aquí
-        if hora_llegada == hora_inicio:
-            print("⚠️ ALERTA: hora_llegada y hora_inicio son EXACTAMENTE IGUALES")
-            print("   Esto podría indicar que se está usando la misma hora para ambos")
+        # Verificar si son exactamente iguales (caso especial)
         
         # Corregir la comparación: el profesor es puntual solo si llega a tiempo o antes
         if hora_llegada <= hora_inicio:
@@ -1298,8 +1295,7 @@ def informe_mensual():
                 datetime.combine(date.min, hora_inicio) - 
                 datetime.combine(date.min, hora_llegada)
             ).total_seconds() / 60
-            print(f"✅ PUNTUAL! Llegó {diferencia:.2f} minutos antes")
-            print("="*50)
+            # El profesor llegó puntual
             return "Puntual"
         
         # Calcular minutos de retraso
@@ -1308,16 +1304,11 @@ def informe_mensual():
             datetime.combine(date.min, hora_inicio)
         ).total_seconds() / 60
         
-        print(f"⏱ Diferencia en minutos: {diferencia_minutos:.2f}")
-        
         resultado = ""
         if diferencia_minutos <= 10:
             resultado = "Retraso leve"
         else:
             resultado = "Retraso significativo"
-            
-        print(f"Resultado: {resultado}")
-        print("="*50)
         
         return resultado
 
@@ -1343,7 +1334,17 @@ def informe_mensual():
         hoy = datetime.now()
         mes_actual = hoy.month
         anio_actual = hoy.year
-        return render_template('informes/mensual.html', mes_actual=mes_actual, anio_actual=anio_actual)
+        
+        # Initialize empty variables for template to avoid Jinja2 UndefinedError
+        conteo_tipos = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        alumnos_tipos = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        
+        return render_template('informes/mensual.html', 
+                              mes_actual=mes_actual, 
+                              anio_actual=anio_actual,
+                              # Pass empty dictionaries to avoid undefined errors
+                              conteo_tipos=conteo_tipos,
+                              alumnos_tipos=alumnos_tipos)
     
     # Esta parte se ejecuta tanto para POST como para GET con parámetros
     # Limpiar caché de la sesión
@@ -1568,11 +1569,21 @@ def informe_mensual():
     
     # Obtener todos los horarios activos
     # Obtener todos los horarios, incluidos los inactivos pero con fecha de desactivación
-    sql_horarios = """
-    SELECT id, nombre, hora_inicio, tipo_clase, dia_semana, profesor_id, duracion, activo, fecha_desactivacion 
-    FROM horario_clase
-    """
-    result_horarios = db.session.execute(sql_horarios)
+    try:
+        sql_horarios = """
+        SELECT id, nombre, hora_inicio, tipo_clase, dia_semana, profesor_id, duracion, activo, fecha_desactivacion 
+        FROM horario_clase
+        """
+        result_horarios = db.session.execute(sql_horarios)
+    except Exception as e:
+        # Si la columna activo no existe, usar versión compatible con bases de datos antiguas
+        print(f"Error al ejecutar consulta con columna 'activo': {str(e)}")
+        print("Usando consulta alternativa sin columna 'activo'")
+        sql_horarios = """
+        SELECT id, nombre, hora_inicio, tipo_clase, dia_semana, profesor_id, duracion
+        FROM horario_clase
+        """
+        result_horarios = db.session.execute(sql_horarios)
     
     horarios_activos = []
     for row in result_horarios:
@@ -1623,6 +1634,15 @@ def informe_mensual():
         duracion = getattr(row, 'duracion', 60)
         hora_fin_str = calcular_hora_fin(hora_inicio, duracion)
         
+        # Verificar si la columna activo existe en el resultado
+        try:
+            activo = getattr(row, 'activo', True)  # Por defecto activo=True si no existe la columna
+            fecha_desactivacion = getattr(row, 'fecha_desactivacion', None)
+        except:
+            # Si no existe la columna activo, asumimos que está activo
+            activo = True
+            fecha_desactivacion = None
+        
         # Crear el objeto horario con los datos procesados
         horario = {
             'id': row.id,
@@ -1633,7 +1653,9 @@ def informe_mensual():
             'dia_semana': row.dia_semana,
             'profesor_id': row.profesor_id,
             'duracion': duracion,
-            'hora_fin_str': hora_fin_str
+            'hora_fin_str': hora_fin_str,
+            'activo': activo,
+            'fecha_desactivacion': fecha_desactivacion
         }
         
         # Verificar si es clase POWER BIKE para depuración
@@ -1853,6 +1875,8 @@ def informe_mensual():
         tipo_clase = clase['tipo_clase']
         conteo_no_registradas[tipo_clase] += 1
     
+    # The morning/afternoon classification logic has been removed
+    
     return render_template('informes/mensual_resultado.html', 
                           mes=mes, 
                           anio=anio, 
@@ -1860,7 +1884,7 @@ def informe_mensual():
                           clases_no_registradas=clases_no_registradas,
                           conteo_no_registradas=conteo_no_registradas,
                           resumen_profesores=resumen_profesores,
-                          nombre_mes=calendar.month_name[mes],
+                          nombre_mes=MESES_ES[mes],
                           conteo_tipos=conteo_tipos,
                           alumnos_tipos=alumnos_tipos,
                           total_clases=total_clases,
@@ -4700,6 +4724,13 @@ def importar_db():
 
 @app.route('/reporte_mensual/<int:mes>/<int:anio>')
 def reporte_mensual(mes, anio):
+    # Diccionario de nombres de meses en español
+    MESES_ES = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
     # Obtener el primer y último día del mes
     primer_dia = date(anio, mes, 1)
     ultimo_dia = date(anio, mes, calendar.monthrange(anio, mes)[1])
@@ -4811,7 +4842,7 @@ def reporte_mensual(mes, anio):
     return render_template('reporte_mensual.html', 
                           mes=mes, 
                           anio=anio, 
-                          nombre_mes=calendar.month_name[mes],
+                          nombre_mes=MESES_ES[mes],
                           horarios=horarios_procesados)
 
 if __name__ == '__main__':
@@ -4870,13 +4901,21 @@ def convertir_hora_con_microsegundos(valor_hora):
                 continue
                 
     # Si todas las conversiones fallan
-    print(f"ERROR: No se pudo convertir {valor_hora} a objeto time")
+    # Registrar en el log pero no imprimir en consola
+    app.logger.error(f"No se pudo convertir {valor_hora} a objeto time")
     return None
 
 @app.route('/informes/profesor/<int:profesor_id>/metricas')
 def metricas_profesor(profesor_id):
     """Mostrar métricas detalladas de un profesor específico"""
     try:
+        # Diccionario de nombres de meses en español
+        MESES_ES = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        
         # Obtener datos del profesor
         profesor = Profesor.query.get_or_404(profesor_id)
         
@@ -4910,7 +4949,7 @@ def metricas_profesor(profesor_id):
                 try:
                     anio, mes = mes_actual_str.split('-')
                     mes_actual = (int(anio), int(mes))
-                    mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                    mes_actual_nombre = f"{MESES_ES[int(mes)]} {anio}"
                 except (ValueError, TypeError):
                     flash(f"Formato del primer mes inválido. Use YYYY-MM", "warning")
             
@@ -4919,7 +4958,7 @@ def metricas_profesor(profesor_id):
                 try:
                     anio, mes = mes_comparacion_str.split('-')
                     mes_comparacion = (int(anio), int(mes))
-                    mes_comparacion_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                    mes_comparacion_nombre = f"{MESES_ES[int(mes)]} {anio}"
                 except (ValueError, TypeError):
                     flash(f"Formato del segundo mes inválido. Use YYYY-MM", "warning")
             
@@ -4965,7 +5004,7 @@ def metricas_profesor(profesor_id):
                 try:
                     anio, mes = mes_actual_str.split('-')
                     mes_actual = (int(anio), int(mes))
-                    mes_actual_nombre = f"{calendar.month_name[int(mes)]} {anio}"
+                    mes_actual_nombre = f"{MESES_ES[int(mes)]} {anio}"
                 except (ValueError, TypeError):
                     flash(f"Formato de mes inválido. Use YYYY-MM", "warning")
                     # Si hay un error, mostramos las métricas totales
@@ -5036,6 +5075,13 @@ def obtener_meses_disponibles(clases):
     Returns:
         list: Lista de diccionarios con años y meses disponibles
     """
+    # Diccionario de nombres de meses en español
+    MESES_ES = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
     if not clases:
         return []
     
@@ -5046,7 +5092,7 @@ def obtener_meses_disponibles(clases):
         if clave not in meses:
             meses[clave] = {
                 'valor': clave,
-                'etiqueta': f"{calendar.month_name[clase.fecha.month]} {clase.fecha.year}",
+                'etiqueta': f"{MESES_ES[clase.fecha.month]} {clase.fecha.year}",
                 'anio': clase.fecha.year,
                 'mes': clase.fecha.month
             }

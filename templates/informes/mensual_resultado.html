@@ -169,6 +169,14 @@
         }
     }
 
+    /* Estilos para subtítulos de gráficos */
+    .chart-subtitle {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: center;
+        margin-bottom: 0.75rem;
+    }
+
     .toggle-clases {
         transition: transform 0.15s ease, background-color 0.15s;
     }
@@ -214,6 +222,332 @@
     }
     .badge {
         border: none !important;
+    }
+
+    /* Ajuste normalizado para gráficos de pastel */
+    .card .card-body canvas {
+        height: 300px !important; /* Increased from 240px */
+        width: 100% !important;
+        margin: 0 auto;
+        display: block;
+    }
+    .chart-title-large {
+        font-size: 1.2rem !important; /* Increased from 1.15rem */
+        font-weight: 600 !important;
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #222;
+    }
+    @media (max-width: 768px) {
+        .card .card-body canvas {
+            height: 240px !important; /* Increased from 180px */
+        }
+        .chart-title-large {
+            font-size: 1.1rem !important; /* Increased from 1rem */
+        }
+    }
+
+    /* Modern, balanced pie chart layout */
+    .pie-chart-container {
+        width: 100%;
+        height: 0;
+        padding-bottom: 100%; /* Esto crea un contenedor cuadrado */
+        position: relative;
+        margin: 0 auto;
+    }
+    
+    .chart-actual {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .chart-container {
+        position: relative;
+        border-radius: 16px;
+        background-color: var(--o2-card-bg);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        overflow: hidden;
+        height: auto !important; /* Auto-altura para mantener proporciones */
+        width: 100%;
+        aspect-ratio: 1/1; /* Forzar proporción cuadrada para el contenedor */
+        border: 1px solid rgba(var(--bs-primary-rgb), 0.1);
+        margin-bottom: 20px; /* Added margin between charts */
+        max-width: 500px; /* Limitar el ancho máximo */
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .chart-container:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        border-color: rgba(var(--bs-primary-rgb), 0.2);
+    }
+    
+    .chart-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--o2-border-color);
+        background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.02));
+    }
+    
+    .chart-title {
+        font-size: 1.25rem; /* Increased from 1.15rem */
+        font-weight: 700;
+        margin-bottom: 0;
+        color: var(--o2-text-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .chart-title i {
+        font-size: 1.1em;
+        margin-right: 10px;
+        background: linear-gradient(45deg, #2980b9, #3498db);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .chart-body {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: auto !important;
+        width: 100%;
+        aspect-ratio: 1/1;
+    }
+    
+    @media (min-width: 992px) {
+        .chart-body {
+            padding: 25px 10px 35px 10px; /* Más espacio abajo para las leyendas */
+        }
+    }
+    
+    .chart-container canvas {
+        max-width: 100%;
+        max-height: 100%;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1/1;
+    }
+    
+    .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 20px;
+        gap: 15px;
+        padding: 10px 20px 15px;
+        position: relative;
+    }
+    
+    .chart-legend::before {
+        content: "Tipos de Clase:";
+        display: block;
+        width: 100%;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: var(--o2-text-color);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 0;
+        padding: 10px 18px;
+        border-radius: 30px;
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .legend-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .legend-label {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    /* Specific color labels for legend items */
+    .legend-move .legend-color {
+        background-color: #2ecc71 !important;
+    }
+    
+    .legend-ride .legend-color {
+        background-color: #3498db !important;
+    }
+    
+    .legend-box .legend-color {
+        background-color: #e74c3c !important;
+    }
+    
+    .legend-otro .legend-color {
+        background-color: #95a5a6 !important;
+    }
+    
+    /* Analytics section general styles */
+    .analytics-section {
+        position: relative;
+        margin-bottom: 3rem;
+    }
+    
+    .analytics-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .analytics-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--o2-text-color);
+        margin-bottom: 0;
+        margin-right: auto;
+        display: flex;
+        align-items: center;
+    }
+    
+    .analytics-title i {
+        color: #3498db;
+        margin-right: 10px;
+        font-size: 1.2em;
+    }
+    
+    .chart-info-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background-color: rgba(var(--bs-info-rgb), 0.1);
+        color: var(--bs-info);
+        z-index: 1;
+        opacity: 0.8;
+        transition: all 0.2s ease;
+    }
+    
+    .chart-info-badge:hover {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
+    .chart-row {
+        margin-top: 20px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 991px) {
+        .chart-container {
+            margin-bottom: 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .pie-chart-container {
+            height: 350px; /* Increased from 300px */
+        }
+        
+        .chart-header {
+            padding: 15px;
+        }
+        
+        .chart-title {
+            font-size: 1.1rem; /* Increased from 1rem */
+        }
+        
+        .chart-body {
+            padding: 15px 10px;
+        }
+        
+        .legend-item {
+            padding: 6px 10px; /* Increased from 4px 8px */
+            margin-bottom: 8px;
+        }
+        
+        .legend-label {
+            font-size: 0.9rem; /* Increased from 0.8rem */
+        }
+    }
+    
+    /* Dark mode adjustments */
+    [data-bs-theme="dark"] .chart-container {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        border-color: rgba(255,255,255,0.1);
+    }
+    
+    [data-bs-theme="dark"] .legend-item {
+        background-color: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.05);
+    }
+    
+    [data-bs-theme="dark"] .chart-info-badge {
+        background-color: rgba(13, 202, 240, 0.2);
+    }
+    
+    [data-bs-theme="dark"] .chart-title i {
+        background: linear-gradient(45deg, #3498db, #2ecc71);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Estilos para el panel lateral de referencia de colores */
+    @media (min-width: 992px) {
+        .color-reference-panel {
+            position: absolute;
+            top: 70px;
+            right: -180px;
+            width: 170px;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .charts-container {
+            position: relative;
+        }
+        
+        .charts-container:hover .color-reference-panel {
+            right: 20px;
+        }
+        
+        .color-type-item {
+            margin-bottom: 8px;
+        }
+        
+        .mobile-reference-panel {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 991px) {
+        .color-reference-panel {
+            display: none;
+        }
+        
+        .mobile-reference-panel {
+            display: block;
+        }
     }
 </style>
 
@@ -288,6 +622,9 @@
 {% endblock %}
 
 {% block content %}
+<h1 class="mb-4">Informe Mensual: {{ nombre_mes }} {{ anio }}</h1>
+
+<!-- Display the action buttons -->
 <div class="container-fluid py-4">
     <!-- Header con acciones principales -->
     <div class="card bg-light mb-4 shadow-sm">
@@ -953,20 +1290,102 @@
                         <i class="fas fa-chart-pie me-2"></i> Análisis Visual 
                     </h3>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <canvas id="classTypeChart"></canvas>
+                <div class="card-body p-md-4">
+                    <div class="analytics-header">
+                        <h4 class="analytics-title">
+                            <i class="fas fa-chart-line"></i> Distribución por tipos de clase
+                        </h4>
+                        <span class="badge bg-info">Período: {{ nombre_mes }} {{ anio }}</span>
+                    </div>
+                    
+                    <!-- Panel de referencia de colores móvil -->
+                    <div class="mb-4 p-3 border rounded shadow-sm mobile-reference-panel" style="background-color: rgba(var(--bs-light-rgb), 0.7);">
+                        <h5 class="mb-3 text-center border-bottom pb-2"><i class="fas fa-palette me-2"></i>Referencia de Tipos de Clase</h5>
+                        <div class="d-flex flex-wrap justify-content-center gap-4">
+                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);">
+                                <div style="width: 24px; height: 24px; background-color: #2ecc71; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                <span class="fw-bold">MOVE</span>
+                            </div>
+                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3);">
+                                <div style="width: 24px; height: 24px; background-color: #3498db; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                <span class="fw-bold">RIDE</span>
+                            </div>
+                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3);">
+                                <div style="width: 24px; height: 24px; background-color: #e74c3c; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                <span class="fw-bold">BOX</span>
+                            </div>
+                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(149, 165, 166, 0.1); border: 1px solid rgba(149, 165, 166, 0.3);">
+                                <div style="width: 24px; height: 24px; background-color: #95a5a6; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                <span class="fw-bold">OTRO</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row chart-row charts-container">
+                        <!-- Panel de referencia de colores lateral (para escritorio) -->
+                        <div class="color-reference-panel p-3 border rounded shadow" style="background-color: rgba(var(--bs-light-rgb), 0.9);">
+                            <h6 class="mb-3 text-center pb-2 border-bottom"><i class="fas fa-palette me-2"></i>Tipos de Clase</h6>
+                            <div class="d-flex flex-column">
+                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);">
+                                    <div style="width: 18px; height: 18px; background-color: #2ecc71; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                    <span class="fw-bold small">MOVE</span>
+                                </div>
+                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3);">
+                                    <div style="width: 18px; height: 18px; background-color: #3498db; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                    <span class="fw-bold small">RIDE</span>
+                                </div>
+                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3);">
+                                    <div style="width: 18px; height: 18px; background-color: #e74c3c; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                    <span class="fw-bold small">BOX</span>
+                                </div>
+                                <div class="color-type-item d-flex align-items-center p-2 rounded" style="background-color: rgba(149, 165, 166, 0.1); border: 1px solid rgba(149, 165, 166, 0.3);">
+                                    <div style="width: 18px; height: 18px; background-color: #95a5a6; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                    <span class="fw-bold small">OTRO</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <canvas id="studentTypeChart"></canvas>
+                        
+                        <!-- Hacemos que ambos gráficos ocupen más espacio horizontal -->
+                        <div class="col-lg-5 offset-lg-1 mb-4">
+                            <div class="chart-container h-100 position-relative shadow-sm">
+                                <div class="chart-info-badge">
+                                    <i class="fas fa-info-circle me-1"></i> Distribución de clases
                                 </div>
+                                <div class="chart-header">
+                                    <h4 class="chart-title">
+                                        <i class="fas fa-calendar-check"></i>
+                                        Clases por Tipo
+                                    </h4>
+                                </div>
+                                <div class="chart-body pt-4 pb-4">
+                                    <div class="pie-chart-container">
+                                        <div class="chart-actual">
+                                            <canvas id="classTypeChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-legend pb-4" id="clasesLegend"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 mb-4">
+                            <div class="chart-container h-100 position-relative shadow-sm">
+                                <div class="chart-info-badge">
+                                    <i class="fas fa-info-circle me-1"></i> Distribución de alumnos
+                                </div>
+                                <div class="chart-header">
+                                    <h4 class="chart-title">
+                                        <i class="fas fa-users"></i>
+                                        Alumnos por Tipo
+                                    </h4>
+                                </div>
+                                <div class="chart-body pt-4 pb-4">
+                                    <div class="pie-chart-container">
+                                        <div class="chart-actual">
+                                            <canvas id="studentTypeChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-legend pb-4" id="alumnosLegend"></div>
                             </div>
                         </div>
                     </div>
@@ -1004,196 +1423,6 @@
         </a>
     </div>
 </div>
-
-<style media="print">
-    @page {
-        size: portrait;
-    }
-    nav, .btn, footer, .no-print, #btn-back-to-top {
-        display: none !important;
-    }
-    .card {
-        break-inside: avoid;
-        border: 1px solid #dee2e6 !important;
-        box-shadow: none !important;
-    }
-    .collapse {
-        display: block !important;
-    }
-    table {
-        width: 100% !important;
-    }
-    .container-fluid {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-    }
-    body {
-        font-size: 12pt;
-    }
-    .badge {
-        border: 1px solid #333 !important;
-    }
-</style>
-
-<style>
-    #btn-back-to-top {
-        display: none;
-        transition: all 0.2s ease;
-    }
-    .report-nav-pills .nav-link {
-        color: #6c757d;
-    }
-    .report-nav-pills .nav-link.active {
-        background-color: #0d6efd;
-        color: white;
-    }
-    .table-hover tbody tr:hover {
-        background-color: rgba(13, 110, 253, 0.05);
-    }
-    html {
-        scroll-behavior: smooth;
-    }
-    .badge.fs-6 {
-        font-size: 0.9rem !important;
-    }
-    
-    /* Estilos para los tipos de clase */
-    .bg-move {
-        background-color: #28a745 !important;
-    }
-    .bg-ride {
-        background-color: #007bff !important;
-    }
-    .bg-box {
-        background-color: #dc3545 !important;
-    }
-    
-    /* Estilos para la sección de clases no registradas */
-    #clases-no-registradas .badge {
-        font-size: 0.85rem;
-        padding: 0.4em 0.8em;
-    }
-    
-    .table-warning {
-        --bs-table-bg: rgba(255, 193, 7, 0.15);
-    }
-    
-    tr.table-warning:hover {
-        --bs-table-hover-bg: rgba(255, 193, 7, 0.25);
-    }
-    
-    /* Estilos para los filtros de profesor */
-    .filter-tipo-clase {
-        transition: all 0.2s ease;
-        border-width: 1px;
-        font-weight: 500;
-    }
-    .filter-tipo-clase:hover {
-        transform: translateY(-2px);
-    }
-    .filter-tipo-clase.active {
-        border-width: 2px;
-        transform: translateY(-2px);
-        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15) !important;
-    }
-    #search-profesor:focus {
-        box-shadow: none;
-        border-color: var(--o2-input-border);
-    }
-    #search-profesor::placeholder {
-        color: #adb5bd;
-        font-style: italic;
-    }
-    .input-group-lg .form-control {
-        font-size: 0.95rem;
-    }
-    #no-results-message {
-        color: var(--o2-text-color);
-        background-color: rgba(var(--bs-secondary-rgb), 0.05);
-    }
-    #clear-search {
-        cursor: pointer;
-        color: var(--o2-text-color);
-    }
-    #clear-search:hover {
-        color: #dc3545;
-    }
-    /* Animaciones para filtrado */
-    .profesor-row {
-        transition: all 0.3s ease;
-    }
-    .table-hover tbody tr.profesor-row:hover {
-        background-color: rgba(13, 110, 253, 0.08);
-    }
-    .fadeIn {
-        animation: fadeIn 0.5s;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Animaciones para despliegue de detalles */
-    .slide-down {
-        animation: slideDown 0.25s ease-out forwards;
-        transform-origin: top;
-        overflow: hidden;
-    }
-    .slide-up {
-        animation: slideUp 0.2s ease-in forwards;
-        transform-origin: top;
-        overflow: hidden;
-    }
-    @keyframes slideDown {
-        from { 
-            opacity: 0.8;
-            max-height: 0;
-            transform: scaleY(0.97);
-        }
-        to { 
-            opacity: 1;
-            max-height: 2000px;
-            transform: scaleY(1);
-        }
-    }
-    @keyframes slideUp {
-        from { 
-            opacity: 1;
-            max-height: 2000px;
-            transform: scaleY(1);
-        }
-        to { 
-            opacity: 0.8;
-            max-height: 0;
-            transform: scaleY(0.97);
-        }
-    }
-
-    .toggle-clases {
-        transition: transform 0.15s ease, background-color 0.15s;
-    }
-    .toggle-clases:hover {
-        transform: scale(1.12);
-        background-color: #f8f9fa;
-    }
-    .toggle-clases:active {
-        transform: scale(0.95);
-    }
-    .toggle-clases i {
-        transition: transform 0.2s ease;
-    }
-    .toggle-clases i.fa-minus {
-        transform: rotate(180deg) scale(0.8);
-    }
-
-    /* Contenedor de detalles */
-    .detalles-container {
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        border-top: 1px solid rgba(0,0,0,0.06);
-        transition: all 0.25s ease;
-    }
-</style>
 {% endblock %}
 
 {% block scripts %}
@@ -1220,6 +1449,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Variables for filtering
@@ -1359,7 +1589,7 @@
                         btn.classList.remove('btn-dark');
                         btn.classList.add('btn-outline-dark');
                     } else { // TODOS
-                        btn.classList.remove('btn-secondary');
+                        btn.classList.remove('btn-outline-secondary');
                         btn.classList.add('btn-outline-secondary');
                     }
                 });
@@ -1464,6 +1694,381 @@
                 });
             });
         }
+
+        // Pie chart: Clases por tipo
+        const ctxClass = document.getElementById('classTypeChart').getContext('2d');
+        const clasesData = [
+            {{ conteo_tipos['MOVE'] if conteo_tipos is defined and 'MOVE' in conteo_tipos else 0 }},
+            {{ conteo_tipos['RIDE'] if conteo_tipos is defined and 'RIDE' in conteo_tipos else 0 }},
+            {{ conteo_tipos['BOX'] if conteo_tipos is defined and 'BOX' in conteo_tipos else 0 }},
+            {{ conteo_tipos['OTRO'] if conteo_tipos is defined and 'OTRO' in conteo_tipos else 0 }}
+        ];
+        
+        const clasesLabels = ['MOVE', 'RIDE', 'BOX', 'OTRO'];
+        const clasesColors = [
+            '#2ecc71', 
+            '#3498db', 
+            '#e74c3c', 
+            '#95a5a6'
+        ];
+        
+        const clasesHoverColors = [
+            '#27ae60', 
+            '#2980b9', 
+            '#c0392b', 
+            '#7f8c8d'
+        ];
+
+        // Gradientes para los gráficos
+        const moveGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
+        moveGradient.addColorStop(0, 'rgba(46, 204, 113, 0.9)');
+        moveGradient.addColorStop(1, 'rgba(39, 174, 96, 0.9)');
+        
+        const rideGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
+        rideGradient.addColorStop(0, 'rgba(52, 152, 219, 0.9)');
+        rideGradient.addColorStop(1, 'rgba(41, 128, 185, 0.9)');
+        
+        const boxGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
+        boxGradient.addColorStop(0, 'rgba(231, 76, 60, 0.9)');
+        boxGradient.addColorStop(1, 'rgba(192, 57, 43, 0.9)');
+        
+        const otroGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
+        otroGradient.addColorStop(0, 'rgba(149, 165, 166, 0.9)');
+        otroGradient.addColorStop(1, 'rgba(127, 140, 141, 0.9)');
+        
+        const gradientColors = [moveGradient, rideGradient, boxGradient, otroGradient];
+        
+        const classTypeChart = new Chart(ctxClass, {
+            type: 'pie',
+            data: {
+                labels: clasesLabels,
+                datasets: [{
+                    data: clasesData,
+                    backgroundColor: gradientColors,
+                    borderColor: clasesColors,
+                    borderWidth: 2,
+                    hoverBackgroundColor: clasesHoverColors,
+                    hoverBorderColor: clasesHoverColors,
+                    hoverBorderWidth: 4,
+                    borderRadius: 6,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1, // Forzar proporción 1:1 (circular)
+                radius: '80%', // Reducir radio para dejar espacio a las etiquetas
+                layout: {
+                    padding: {
+                        top: 40,
+                        bottom: 40,
+                        left: 40,
+                        right: 40
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#333',
+                        bodyColor: '#333',
+                        bodyFont: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        titleFont: {
+                            size: 18,
+                            weight: 'bold'
+                        },
+                        padding: 18,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 5,
+                        cornerRadius: 8,
+                        borderColor: 'rgba(0,0,0,0.1)',
+                        borderWidth: 1,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        formatter: function(value, ctx) {
+                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            let percentage = sum > 0 ? Math.round((value / sum) * 100) : 0;
+                            return percentage > 3 ? `${percentage}%` : ''; /* Mostrar etiquetas en segmentos más pequeños */
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 18 /* Tamaño mayor para mejor legibilidad */
+                        },
+                        textStrokeColor: 'rgba(0,0,0,0.4)',
+                        textStrokeWidth: 3, /* Mayor ancho del borde para mejorar legibilidad */
+                        textShadowBlur: 5,
+                        textShadowColor: 'rgba(0,0,0,0.4)',
+                        align: 'center',
+                        anchor: 'center'
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1500,
+                    easing: 'easeOutCirc',
+                    delay: function(context) {
+                        return context.dataIndex * 200;
+                    }
+                },
+                elements: {
+                    arc: {
+                        borderWidth: 0
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Crear leyenda personalizada para clases
+        const clasesLegend = document.getElementById('clasesLegend');
+        clasesLegend.innerHTML = '';
+        clasesLabels.forEach((label, i) => {
+            const sum = clasesData.reduce((a, b) => a + b, 0);
+            const percentage = sum > 0 ? Math.round((clasesData[i] / sum) * 100) : 0;
+            const item = document.createElement('div');
+            item.classList.add('legend-item');
+            
+            // Add specific class for the type
+            if (label === 'MOVE') {
+                item.classList.add('legend-move');
+            } else if (label === 'RIDE') {
+                item.classList.add('legend-ride');
+            } else if (label === 'BOX') {
+                item.classList.add('legend-box');
+            } else {
+                item.classList.add('legend-otro');
+            }
+            
+            const color = document.createElement('div');
+            color.classList.add('legend-color');
+            color.style.backgroundColor = clasesColors[i];
+            
+            const text = document.createElement('span');
+            text.classList.add('legend-label');
+            text.textContent = `${label}: ${clasesData[i]} (${percentage}%)`;
+            
+            item.appendChild(color);
+            item.appendChild(text);
+            clasesLegend.appendChild(item);
+            
+            // Añadir interactividad
+            item.addEventListener('mouseover', () => {
+                classTypeChart.setActiveElements([{datasetIndex: 0, index: i}]);
+                classTypeChart.update();
+            });
+            
+            item.addEventListener('mouseout', () => {
+                classTypeChart.setActiveElements([]);
+                classTypeChart.update();
+            });
+        });
+
+        // Pie chart: Alumnos por tipo
+        const ctxStudent = document.getElementById('studentTypeChart').getContext('2d');
+        const alumnosData = [
+            {{ alumnos_tipos['MOVE'] if alumnos_tipos is defined and 'MOVE' in alumnos_tipos else 0 }},
+            {{ alumnos_tipos['RIDE'] if alumnos_tipos is defined and 'RIDE' in alumnos_tipos else 0 }},
+            {{ alumnos_tipos['BOX'] if alumnos_tipos is defined and 'BOX' in alumnos_tipos else 0 }},
+            {{ alumnos_tipos['OTRO'] if alumnos_tipos is defined and 'OTRO' in alumnos_tipos else 0 }}
+        ];
+        
+        const studentTypeChart = new Chart(ctxStudent, {
+            type: 'pie',
+            data: {
+                labels: clasesLabels,
+                datasets: [{
+                    data: alumnosData,
+                    backgroundColor: gradientColors,
+                    borderColor: clasesColors,
+                    borderWidth: 2,
+                    hoverBackgroundColor: clasesHoverColors,
+                    hoverBorderColor: clasesHoverColors,
+                    hoverBorderWidth: 4,
+                    borderRadius: 6,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1, // Forzar proporción 1:1 (circular)
+                radius: '80%', // Reducir radio para dejar espacio a las etiquetas
+                layout: {
+                    padding: {
+                        top: 40,
+                        bottom: 40,
+                        left: 40,
+                        right: 40
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#333',
+                        bodyColor: '#333',
+                        bodyFont: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        titleFont: {
+                            size: 18,
+                            weight: 'bold'
+                        },
+                        padding: 18,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 5,
+                        cornerRadius: 8,
+                        borderColor: 'rgba(0,0,0,0.1)',
+                        borderWidth: 1,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        formatter: function(value, ctx) {
+                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            let percentage = sum > 0 ? Math.round((value / sum) * 100) : 0;
+                            return percentage > 3 ? `${percentage}%` : ''; /* Mostrar etiquetas en segmentos más pequeños */
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 18 /* Tamaño mayor para mejor legibilidad */
+                        },
+                        textStrokeColor: 'rgba(0,0,0,0.4)',
+                        textStrokeWidth: 3, /* Mayor ancho del borde para mejorar legibilidad */
+                        textShadowBlur: 5,
+                        textShadowColor: 'rgba(0,0,0,0.4)',
+                        align: 'center',
+                        anchor: 'center'
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1500,
+                    easing: 'easeOutCirc',
+                    delay: function(context) {
+                        return context.dataIndex * 200;
+                    }
+                },
+                elements: {
+                    arc: {
+                        borderWidth: 0
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Crear leyenda personalizada para alumnos
+        const alumnosLegend = document.getElementById('alumnosLegend');
+        alumnosLegend.innerHTML = '';
+        clasesLabels.forEach((label, i) => {
+            const sum = alumnosData.reduce((a, b) => a + b, 0);
+            const percentage = sum > 0 ? Math.round((alumnosData[i] / sum) * 100) : 0;
+            const item = document.createElement('div');
+            item.classList.add('legend-item');
+            
+            // Add specific class for the type
+            if (label === 'MOVE') {
+                item.classList.add('legend-move');
+            } else if (label === 'RIDE') {
+                item.classList.add('legend-ride');
+            } else if (label === 'BOX') {
+                item.classList.add('legend-box');
+            } else {
+                item.classList.add('legend-otro');
+            }
+            
+            const color = document.createElement('div');
+            color.classList.add('legend-color');
+            color.style.backgroundColor = clasesColors[i];
+            
+            const text = document.createElement('span');
+            text.classList.add('legend-label');
+            text.textContent = `${label}: ${alumnosData[i]} (${percentage}%)`;
+            
+            item.appendChild(color);
+            item.appendChild(text);
+            alumnosLegend.appendChild(item);
+            
+            // Añadir interactividad
+            item.addEventListener('mouseover', () => {
+                studentTypeChart.setActiveElements([{datasetIndex: 0, index: i}]);
+                studentTypeChart.update();
+            });
+            
+            item.addEventListener('mouseout', () => {
+                studentTypeChart.setActiveElements([]);
+                studentTypeChart.update();
+            });
+        });
+
+        // Función para asegurar que los gráficos sean perfectamente circulares
+        function enforceCircularCharts() {
+            // Obtener los canvas de los gráficos
+            const classCanvas = document.getElementById('classTypeChart');
+            const studentCanvas = document.getElementById('studentTypeChart');
+            
+            if (classCanvas && studentCanvas) {
+                // Forzar que sean cuadrados
+                [classCanvas, studentCanvas].forEach(canvas => {
+                    const container = canvas.parentElement;
+                    const width = container.offsetWidth;
+                    
+                    // Establecer dimensiones cuadradas exactas
+                    canvas.style.width = width + 'px';
+                    canvas.style.height = width + 'px';
+                    canvas.width = width;
+                    canvas.height = width;
+                });
+                
+                // Actualizar los gráficos para aplicar los cambios
+                if (classTypeChart) classTypeChart.update();
+                if (studentTypeChart) studentTypeChart.update();
+            }
+        }
+        
+        // Llamar después de que todo esté cargado
+        window.addEventListener('load', function() {
+            // Esperar un poco para que el DOM termine de renderizarse
+            setTimeout(enforceCircularCharts, 100);
+        });
+        
+        // Recalcular cuando cambie el tamaño de la ventana
+        window.addEventListener('resize', function() {
+            setTimeout(enforceCircularCharts, 200);
+        });
+
     });
 </script>
 

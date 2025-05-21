@@ -784,6 +784,42 @@ def informe_mensual():
             'OTRO': 0
         }
         
+        # --- NUEVO: Agregación por horario (mañana/tarde) ---
+        division_horario = {'mañana': 0, 'tarde': 0}
+        division_horario_alumnos = {'mañana': 0, 'tarde': 0}
+        conteo_tipos_manana = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        conteo_tipos_tarde = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        for clase in clases_realizadas:
+            hora_inicio = clase.horario.hora_inicio
+            if isinstance(hora_inicio, str):
+                try:
+                    hora_inicio = datetime.strptime(hora_inicio, '%H:%M:%S').time()
+                except Exception:
+                    try:
+                        hora_inicio = datetime.strptime(hora_inicio, '%H:%M').time()
+                    except Exception:
+                        hora_inicio = time(0, 0)
+            
+            # Ensure tipo_clase is one of our valid types
+            tipo_clase = clase.horario.tipo_clase
+            if tipo_clase not in ['MOVE', 'RIDE', 'BOX', 'OTRO']:
+                tipo_clase = 'OTRO'
+                
+            # Debug
+            print(f"Agregando clase a estadísticas por período: {clase.horario.nombre}, tipo={tipo_clase}, hora={hora_inicio}")
+                
+            if hora_inicio < time(13, 0):
+                division_horario['mañana'] += 1
+                division_horario_alumnos['mañana'] += clase.cantidad_alumnos
+                conteo_tipos_manana[tipo_clase] += 1
+                print(f"  → Contabilizada como MAÑANA, nuevo conteo: {conteo_tipos_manana}")
+            else:
+                division_horario['tarde'] += 1
+                division_horario_alumnos['tarde'] += clase.cantidad_alumnos
+                conteo_tipos_tarde[tipo_clase] += 1
+                print(f"  → Contabilizada como TARDE, nuevo conteo: {conteo_tipos_tarde}")
+        # --- FIN NUEVO ---
+        
         for clase in clases_realizadas:
             profesor = clase.profesor
             tipo_clase = clase.horario.tipo_clase
@@ -850,6 +886,15 @@ def informe_mensual():
             tipo_clase = clase['tipo_clase']
             conteo_no_registradas[tipo_clase] += 1
         
+        # Debug de los conteos para gráficos
+        print("\n========== DEBUG CONTEOS PARA GRÁFICOS ==========")
+        print(f"conteo_tipos = {conteo_tipos}")
+        print(f"conteo_tipos_manana = {conteo_tipos_manana}")
+        print(f"conteo_tipos_tarde = {conteo_tipos_tarde}")
+        print(f"Total mañana = {division_horario['mañana']}")
+        print(f"Total tarde = {division_horario['tarde']}")
+        print("===================================================\n")
+        
         return render_template('informes/mensual_resultado.html', 
                               mes=mes, 
                               anio=anio, 
@@ -860,6 +905,10 @@ def informe_mensual():
                               nombre_mes=calendar.month_name[mes],
                               conteo_tipos=conteo_tipos,
                               alumnos_tipos=alumnos_tipos,
+                              division_horario=division_horario,
+                              division_horario_alumnos=division_horario_alumnos,
+                              conteo_tipos_manana=conteo_tipos_manana,
+                              conteo_tipos_tarde=conteo_tipos_tarde,
                               total_clases=total_clases,
                               total_alumnos=total_alumnos,
                               total_retrasos=total_retrasos,

@@ -322,6 +322,13 @@ def clear_cache_metricas():
 def get_meses_disponibles_profesor(profesor_id):
     """Retorna la lista de meses para los que hay datos de clases para un profesor."""
     try:
+        # Diccionario de nombres de meses en español
+        MESES_ES = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        
         profesor = Profesor.query.get(profesor_id)
         if not profesor:
             return jsonify({'status': 'error', 'message': 'Profesor no encontrado'}), 404
@@ -336,7 +343,7 @@ def get_meses_disponibles_profesor(profesor_id):
             if clave not in meses:
                 meses[clave] = {
                     'valor': clave,  # Formato ISO YYYY-MM
-                    'etiqueta': f"{calendar.month_name[clase.fecha.month]} {clase.fecha.year}",
+                    'etiqueta': f"{MESES_ES[clase.fecha.month]} {clase.fecha.year}",
                     'anio': clase.fecha.year,
                     'mes': clase.fecha.month
                 }

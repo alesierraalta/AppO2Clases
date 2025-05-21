@@ -149,11 +149,18 @@ def calcular_tendencia_asistencia(clases, periodo_meses=3):
     
     # Calcular métricas por mes
     datos_mensuales = []
+    # Diccionario de nombres de meses en español
+    MESES_ES = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
     for clave_mes, clases_mes in sorted(clases_por_mes.items()):
         year, month = map(int, clave_mes.split('-'))
         
         # Obtener el nombre del mes en español
-        nombre_mes = calendar.month_name[month]
+        nombre_mes = MESES_ES[month]
         
         puntualidad = calcular_tasa_puntualidad(clases_mes)
         distribucion = calcular_distribucion_clases(clases_mes)
@@ -715,18 +722,23 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         # Actualizar el objeto de retorno con las métricas calculadas
         metricas['metricas_actual'] = metricas_actuales
         
+    # Diccionario de nombres de meses en español
+    MESES_ES = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
     # Añadir nombres de meses para mostrar en la UI
     if mes_actual:
         anio_actual, mes_actual_num = mes_actual
-        import calendar
-        metricas['mes_actual_nombre'] = f"{calendar.month_name[mes_actual_num]} {anio_actual}"
+        metricas['mes_actual_nombre'] = f"{MESES_ES[mes_actual_num]} {anio_actual}"
     else:
         metricas['mes_actual_nombre'] = "Todas las clases"
     
     if mes_comparacion:
         anio_comp, mes_comp_num = mes_comparacion
-        import calendar
-        metricas['mes_comparacion_nombre'] = f"{calendar.month_name[mes_comp_num]} {anio_comp}"
+        metricas['mes_comparacion_nombre'] = f"{MESES_ES[mes_comp_num]} {anio_comp}"
     else:
         metricas['mes_comparacion_nombre'] = "Sin comparación"
     

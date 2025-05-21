@@ -629,6 +629,13 @@ class ClaseRealizada(db.Model):
             dict: Estadísticas históricas por mes
         """
         try:
+            # Diccionario de nombres de meses en español
+            MESES_ES = {
+                1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+                5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+                9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+            }
+            
             # Fecha de inicio (hace X meses)
             fecha_fin = datetime.now().date()
             fecha_inicio = fecha_fin - timedelta(days=30 * periodo_meses)
@@ -680,7 +687,7 @@ class ClaseRealizada(db.Model):
                 resultados[clave_mes] = {
                     'anio': year,
                     'mes': month,
-                    'nombre_mes': calendar.month_name[month],
+                    'nombre_mes': MESES_ES[month],
                     'total_clases': total_clases,
                     'promedio_alumnos': promedio_alumnos,
                     'puntualidad': {
