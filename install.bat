@@ -166,8 +166,12 @@ echo ===============================
 echo INSTALACION COMPLETADA
 echo ===============================
 echo.
-echo Puede iniciar la aplicacion ejecutando start.bat
+echo La aplicacion ha sido instalada exitosamente.
 echo.
+echo Para iniciar la aplicacion, ejecute el archivo start.bat
+echo.
+echo Presione cualquier tecla para finalizar la instalacion...
+pause >nul
 
 deactivate
 endlocal 
