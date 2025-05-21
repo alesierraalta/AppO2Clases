@@ -78,8 +78,21 @@ def calcular_promedio_alumnos(clases):
     clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None]
     if not clases_con_alumnos:
         return 0.0
-        
-    total_alumnos = sum(c.cantidad_alumnos for c in clases_con_alumnos)
+    
+    # Asegurar que todos los valores sean enteros antes de sumar
+    total_alumnos = 0
+    for c in clases_con_alumnos:
+        try:
+            # Convertir a entero si es una cadena o cualquier otro tipo
+            if isinstance(c.cantidad_alumnos, str):
+                total_alumnos += int(c.cantidad_alumnos)
+            else:
+                total_alumnos += c.cantidad_alumnos
+        except (ValueError, TypeError):
+            # Si hay error en la conversión, ignorar este valor
+            print(f"Error al convertir cantidad_alumnos: {c.cantidad_alumnos} de tipo {type(c.cantidad_alumnos)}")
+            continue
+            
     return total_alumnos / len(clases_con_alumnos)
 
 
@@ -165,12 +178,29 @@ def calcular_tendencia_asistencia(clases, periodo_meses=3):
         puntualidad = calcular_tasa_puntualidad(clases_mes)
         distribucion = calcular_distribucion_clases(clases_mes)
         
+        # Calcular total de alumnos con manejo seguro de tipos
+        total_alumnos = 0
+        for c in clases_mes:
+            if c.cantidad_alumnos is not None:
+                try:
+                    # Convertir a entero si es una cadena o cualquier otro tipo
+                    if isinstance(c.cantidad_alumnos, str):
+                        total_alumnos += int(c.cantidad_alumnos)
+                    else:
+                        total_alumnos += c.cantidad_alumnos
+                except (ValueError, TypeError):
+                    # Si hay error en la conversión, ignorar este valor
+                    continue
+        
+        # Calcular promedio con total_alumnos calculado de forma segura
+        promedio_alumnos = total_alumnos / len(clases_mes) if clases_mes else 0
+        
         datos_mensuales.append({
             'anio': year,
             'mes': month,
             'etiqueta': f"{nombre_mes} {year}",
             'total_clases': len(clases_mes),
-            'promedio_alumnos': calcular_promedio_alumnos(clases_mes),
+            'promedio_alumnos': promedio_alumnos,
             'puntualidad': puntualidad['tasa'],
             'clases_por_tipo': distribucion['tipos']
         })
@@ -328,7 +358,7 @@ def calcular_costo_por_alumno(clases):
         return 0.0
         
     # Filtrar clases que tienen datos válidos de alumnos
-    clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None and c.cantidad_alumnos > 0]
+    clases_con_alumnos = [c for c in clases if c.cantidad_alumnos is not None]
     if not clases_con_alumnos:
         return 0.0
     
@@ -336,12 +366,26 @@ def calcular_costo_por_alumno(clases):
     total_alumnos = 0
     
     for clase in clases_con_alumnos:
-        # Obtener la tarifa del profesor por clase
-        tarifa = clase.profesor.tarifa_por_clase
-        
-        # Sumar al total
-        total_costo += tarifa
-        total_alumnos += clase.cantidad_alumnos
+        try:
+            # Obtener la tarifa del profesor por clase y asegurar que sea numérica
+            tarifa = clase.profesor.tarifa_por_clase
+            if isinstance(tarifa, str):
+                tarifa = float(tarifa)
+            
+            # Asegurar que cantidad_alumnos sea numérico
+            cantidad_alumnos = clase.cantidad_alumnos
+            if isinstance(cantidad_alumnos, str):
+                cantidad_alumnos = int(cantidad_alumnos)
+                
+            # Solo contabilizar si ambos valores son válidos y positivos
+            if tarifa > 0 and cantidad_alumnos > 0:
+                # Sumar al total
+                total_costo += tarifa
+                total_alumnos += cantidad_alumnos
+        except (ValueError, TypeError, AttributeError) as e:
+            # Si hay error en la conversión, ignorar esta clase
+            print(f"Error al procesar costo por alumno para clase ID {getattr(clase, 'id', 'desconocido')}: {str(e)}")
+            continue
     
     # Calcular costo promedio por alumno
     return total_costo / total_alumnos if total_alumnos > 0 else 0.0
@@ -425,7 +469,20 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             
             # Calcular métricas para el mes de comparación
             total_clases_comp = len(clases_mes_comparacion)
-            total_alumnos_comp = sum(c.cantidad_alumnos for c in clases_mes_comparacion if c.cantidad_alumnos is not None)
+            total_alumnos_comp = 0
+            for c in clases_mes_comparacion:
+                if c.cantidad_alumnos is not None:
+                    try:
+                        # Convertir a entero si es una cadena o cualquier otro tipo
+                        if isinstance(c.cantidad_alumnos, str):
+                            total_alumnos_comp += int(c.cantidad_alumnos)
+                        else:
+                            total_alumnos_comp += c.cantidad_alumnos
+                    except (ValueError, TypeError):
+                        # Si hay error en la conversión, ignorar este valor
+                        print(f"Error al calcular total_alumnos: {c.cantidad_alumnos} de tipo {type(c.cantidad_alumnos)}")
+                        continue
+            
             puntualidad_comp = calcular_tasa_puntualidad(clases_mes_comparacion)
             distribucion_comp = calcular_distribucion_clases(clases_mes_comparacion)
             tendencia_comp = calcular_tendencia_asistencia(clases_mes_comparacion)
@@ -475,16 +532,30 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
             
             # Normalizar costo por alumno de forma relativa (menor costo = mejor puntuación)
             costo_norm_comp = 0
-            if costo_por_alumno_comp > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
-                min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
-                max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
-                
-                if min_costo == max_costo:  # Evitar división por cero
-                    costo_norm_comp = 100 if costo_por_alumno_comp <= min_costo else 0
-                elif max_costo > min_costo:
-                    # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
-                    # el más alto recibe 0 puntos, y el resto se distribuye linealmente
-                    costo_norm_comp = max(0, 100 - ((costo_por_alumno_comp - min_costo) / (max_costo - min_costo)) * 100)
+            try:
+                # Asegurar que costo_por_alumno_comp sea numérico
+                if isinstance(costo_por_alumno_comp, str):
+                    costo_por_alumno_comp = float(costo_por_alumno_comp)
+                    
+                if costo_por_alumno_comp > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
+                    min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
+                    max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
+                    
+                    # Asegurar que min_costo y max_costo sean numéricos
+                    if isinstance(min_costo, str):
+                        min_costo = float(min_costo)
+                    if isinstance(max_costo, str):
+                        max_costo = float(max_costo)
+                    
+                    if min_costo == max_costo:  # Evitar división por cero
+                        costo_norm_comp = 100 if costo_por_alumno_comp <= min_costo else 0
+                    elif max_costo > min_costo:
+                        # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
+                        # el más alto recibe 0 puntos, y el resto se distribuye linealmente
+                        costo_norm_comp = max(0, 100 - ((costo_por_alumno_comp - min_costo) / (max_costo - min_costo)) * 100)
+            except (ValueError, TypeError) as e:
+                print(f"Error al normalizar costo por alumno: {str(e)}")
+                costo_norm_comp = 0
             
             # Calcular score global para comparación
             score_global_comp = (
@@ -607,7 +678,19 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
         tendencia = calcular_tendencia_asistencia(clases_a_procesar)
         
         # Calcular total de alumnos
-        total_alumnos = sum(c.cantidad_alumnos for c in clases_a_procesar if c.cantidad_alumnos is not None)
+        total_alumnos = 0
+        for c in clases_a_procesar:
+            if c.cantidad_alumnos is not None:
+                try:
+                    # Convertir a entero si es una cadena o cualquier otro tipo
+                    if isinstance(c.cantidad_alumnos, str):
+                        total_alumnos += int(c.cantidad_alumnos)
+                    else:
+                        total_alumnos += c.cantidad_alumnos
+                except (ValueError, TypeError):
+                    # Si hay error en la conversión, ignorar este valor
+                    print(f"Error al calcular total_alumnos: {c.cantidad_alumnos} de tipo {type(c.cantidad_alumnos)}")
+                    continue
         
         # Calcular promedio de alumnos por clase
         promedio_alumnos = calcular_promedio_alumnos(clases_a_procesar)
@@ -855,11 +938,18 @@ def comparar_metricas_mensuales(metricas_actual, metricas_comparacion):
         costo_comp = metricas_comparacion.get('costo_por_alumno', 0)
 
         try:
-            if costo_comp > 0:
-                diff_costo = ((costo_actual / costo_comp) - 1) * 100
+            # Asegurar que los valores sean numéricos
+            if isinstance(costo_actual, str):
+                costo_actual = float(costo_actual)
+            if isinstance(costo_comp, str):
+                costo_comp = float(costo_comp)
+            
+            # Ahora que ambos son numéricos, calcular la diferencia
+            if float(costo_comp) > 0:
+                diff_costo = ((float(costo_actual) / float(costo_comp)) - 1) * 100
             else:
                 diff_costo = 0
-        except (ZeroDivisionError, TypeError):
+        except (ZeroDivisionError, TypeError, ValueError):
             diff_costo = 0
         
         # Extraer nombres de meses para mostrar en la UI
@@ -1091,10 +1181,22 @@ def generar_resumen_rendimiento(metricas, nivel_detalle=1):
         
         # Normalizar costo por alumno (menor costo = mejor puntuación)
         costo_norm = 0
-        if 'costo_por_alumno' in m and m['costo_por_alumno'] > 0:
-            # Un costo menor es mejor, por lo que invertimos la normalización
-            # Usamos una escala donde $0 = 100% y $50+ = 0%
-            costo_norm = max(0, 100 - (m['costo_por_alumno'] / 50) * 100)
+        if 'costo_por_alumno' in m:
+            try:
+                costo_por_alumno = m['costo_por_alumno']
+                # Convertir a float si es un string
+                if isinstance(costo_por_alumno, str):
+                    costo_por_alumno = float(costo_por_alumno)
+                
+                # Verificar que sea un número positivo
+                if costo_por_alumno > 0:
+                    # Un costo menor es mejor, por lo que invertimos la normalización
+                    # Usamos una escala donde $0 = 100% y $50+ = 0%
+                    costo_norm = max(0, 100 - (costo_por_alumno / 50) * 100)
+            except (ValueError, TypeError):
+                # Si hay un error en la conversión, mantener costo_norm en 0
+                print(f"Error al normalizar costo por alumno: {m.get('costo_por_alumno')}")
+                costo_norm = 0
             
         # Calcular calificación global
         calificacion_global = (

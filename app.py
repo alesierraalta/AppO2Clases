@@ -4919,6 +4919,22 @@ def metricas_profesor(profesor_id):
         # Obtener datos del profesor
         profesor = Profesor.query.get_or_404(profesor_id)
         
+        # Manejar bases de datos que pueden no tener la columna fecha_desactivacion en HorarioClase
+        try:
+            # Verificar si podemos acceder a HorarioClase con todas las columnas
+            HorarioClase.query.filter_by(id=1).first()
+        except Exception as db_error:
+            # Si hay un error relacionado con columnas faltantes, ejecutar update_db.py
+            app.logger.error(f"Error al acceder a HorarioClase: {str(db_error)}")
+            if "no such column" in str(db_error).lower():
+                flash(f"Actualizando esquema de base de datos: {str(db_error)}", "warning")
+                import subprocess
+                try:
+                    subprocess.run(["python", "update_db.py"], check=True)
+                    flash("Base de datos actualizada correctamente", "success")
+                except subprocess.CalledProcessError:
+                    flash("Error al actualizar la base de datos", "danger")
+        
         # Verificar si se debe mostrar el modo de depuración
         debug_mode = request.args.get('debug', type=bool, default=False)
         
