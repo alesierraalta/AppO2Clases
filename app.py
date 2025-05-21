@@ -240,7 +240,13 @@ def index():
         dia_semana = hoy.weekday()  # 0 for Monday, 6 for Sunday
         
         # Get classes scheduled for today - ONLY ACTIVE
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).all()
+        try:
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).all()
+        except Exception as column_error:
+            # Si la columna activo no existe, considerar todos los horarios como activos
+            print(f"Error al filtrar por columna 'activo': {str(column_error)}")
+            print("Usando consulta alternativa sin columna 'activo'")
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).all()
         
         # Check which ones already have attendance recorded
         clases_registradas = {cr.horario_id: cr for cr in ClaseRealizada.query.filter_by(fecha=hoy).all()}
@@ -260,7 +266,13 @@ def index_simple():
         hoy = datetime.now().date()
         dia_semana = hoy.weekday()  # 0 es lunes, 6 es domingo
         
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+        try:
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
+        except Exception as column_error:
+            # Si la columna activo no existe, considerar todos los horarios como activos
+            print(f"Error al filtrar por columna 'activo': {str(column_error)}")
+            print("Usando consulta alternativa sin columna 'activo'")
+            horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
         
         return render_template('index_simple.html', 
                               horarios_hoy=horarios_hoy, 
