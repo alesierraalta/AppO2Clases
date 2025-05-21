@@ -103,13 +103,46 @@ set NOTIFICATION_HOUR_2=20:30
 echo Configuracion de notificaciones completada.
 
 echo Inicializando la base de datos...
-REM Usar script independiente fix_db.py que no requiere contexto de aplicación
+REM Secuencia completa de inicialización de base de datos con múltiples métodos
+echo Método 1: Usar fix_db.py (método recomendado)...
 python fix_db.py
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: El script independiente de base de datos falló.
-    echo Intentando con los scripts estándar...
+    echo ADVERTENCIA: El script principal de base de datos falló.
+    echo Método 2: Usando create_db.py...
     python create_db.py
-    python update_db.py
+    
+    if %errorlevel% neq 0 (
+        echo ADVERTENCIA: create_db.py falló.
+        echo Método 3: Usando create_tables.py...
+        python create_tables.py
+        
+        if %errorlevel% neq 0 (
+            echo ERROR: No se pudo inicializar la base de datos.
+            echo La aplicación no funcionará correctamente.
+            echo Por favor, contacte con soporte técnico.
+            pause
+            exit /b 1
+        )
+    )
+)
+
+echo Verificando actualización de estructura de base de datos...
+python update_db.py
+
+echo Verificando integridad final de la base de datos...
+python -c "import os, sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('SELECT count(name) FROM sqlite_master WHERE type=\"table\"'); count=c.fetchone()[0]; conn.close(); print(f'Tablas encontradas: {count}'); exit(0 if count >= 4 else 1)"
+if %errorlevel% neq 0 (
+    echo ADVERTENCIA: La base de datos no contiene todas las tablas necesarias.
+    echo Intentando un último método de recuperación...
+    python create_tables.py
+    if %errorlevel% neq 0 (
+        echo ERROR: No se pudo completar la inicialización de la base de datos.
+        echo Puede intentar ejecutar manualmente los scripts:
+        echo   python create_db.py
+        echo   python create_tables.py
+        echo   python update_db.py
+        pause
+    )
 )
 
 echo Verificando directorios necesarios...

@@ -39,14 +39,19 @@ if %errorlevel% neq 0 (
         python create_db.py
         
         if %errorlevel% neq 0 (
-            echo ERROR: No se pudo crear la base de datos.
-            echo Por favor, ejecute install.bat para una instalación completa.
-            pause
-            exit /b 1
+            echo 3. Último intento: creando tablas manualmente...
+            python create_tables.py
+            
+            if %errorlevel% neq 0 (
+                echo ERROR: No se pudo crear la base de datos tras múltiples intentos.
+                echo Por favor, ejecute install.bat para una instalación completa o contacte soporte.
+                pause
+                exit /b 1
+            )
         )
     )
     
-    echo 3. Actualizando estructura de la base de datos...
+    echo 4. Actualizando estructura de la base de datos...
     python update_db.py
 )
 
@@ -79,6 +84,19 @@ if not exist "static\uploads\audios\permanent" (
 )
 if not exist "logs" (
     mkdir "logs" 2>nul
+)
+
+:: Eliminar cualquier base de datos vacía que pueda haber quedado
+echo Verificando integridad final de la base de datos...
+python -c "import os, sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('SELECT count(name) FROM sqlite_master WHERE type=\"table\"'); count=c.fetchone()[0]; conn.close(); exit(0 if count > 0 else 1)"
+if %errorlevel% neq 0 (
+    echo ADVERTENCIA: La base de datos existe pero está vacía. Intentando un último método...
+    python create_tables.py
+    if %errorlevel% neq 0 (
+        echo ERROR: No se pudo inicializar la base de datos.
+        pause
+        exit /b 1
+    )
 )
 
 echo.
