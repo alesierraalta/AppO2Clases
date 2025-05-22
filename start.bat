@@ -55,15 +55,27 @@ if %errorlevel% neq 0 (
     python update_db.py
 )
 
-:: Verificar la columna 'activo' en la tabla horario_clase
-echo Verificando columna 'activo' en la base de datos...
-python add_activo_column.py
+:: Verificación CRÍTICA de la columna 'activo' en la tabla horario_clase
+echo Verificando columna 'activo' en la tabla horario_clase...
+echo Esta comprobacion es esencial para evitar el error: "no such column: horario_clase.activo"
+
+:: Verificar si la columna existe y crearla si no
+python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); cursor=conn.cursor(); print('Verificando columnas...'); cursor.execute('PRAGMA table_info(horario_clase)'); columns = cursor.fetchall(); column_names = [col[1] for col in columns]; activo_existe = 'activo' in column_names; desactivacion_existe = 'fecha_desactivacion' in column_names; print(f'Columna activo: {\"EXISTE\" if activo_existe else \"NO EXISTE\"}'); print(f'Columna fecha_desactivacion: {\"EXISTE\" if desactivacion_existe else \"NO EXISTE\"}'); if not activo_existe or not desactivacion_existe: print('Agregando columnas faltantes...'); if not activo_existe: cursor.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); print('Columna activo agregada.'); if not desactivacion_existe: cursor.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); print('Columna fecha_desactivacion agregada.'); conn.commit(); print('Columnas creadas correctamente.'); else: print('Las columnas ya existen. No se requieren cambios.'); conn.close(); exit(0 if 'activo' in column_names or activo_existe else 1)"
+
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: Fallo al verificar la columna 'activo'. Intento manual...
-    python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('PRAGMA table_info(horario_clase)'); cols=[col[1] for col in c.fetchall()]; print('Columnas en horario_clase:', cols); has_activo='activo' in [col[1] for col in cols]; conn.close(); exit(0 if has_activo else 1)"
+    echo ADVERTENCIA: La verificacion de columnas falló. Intentando método directo...
+    
+    :: Método de emergencia para agregar las columnas
+    python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); print('Ejecutando metodo de emergencia...'); try: c.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); conn.commit(); print('Columna activo agregada.'); except Exception as e: print(f'Error al agregar columna activo: {e}'); try: c.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); conn.commit(); print('Columna fecha_desactivacion agregada.'); except Exception as e: print(f'Error al agregar columna fecha_desactivacion: {e}'); conn.close()"
+    
+    :: Verificación final
+    python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('PRAGMA table_info(horario_clase)'); cols=[col[1] for col in c.fetchall()]; has_activo='activo' in cols; print('Verificacion final:'); print('La columna activo ' + ('EXISTE' if has_activo else 'NO EXISTE')); conn.close(); exit(0 if has_activo else 1)"
+    
     if %errorlevel% neq 0 (
-        echo ADVERTENCIA: La columna 'activo' no existe. Agregándola manualmente...
-        python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); try: c.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); except: pass; try: c.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); except: pass; conn.commit(); conn.close(); print('Columnas verificadas')"
+        echo ERROR CRITICO: No se pudo agregar la columna 'activo'. La aplicacion no funcionara correctamente.
+        echo Por favor, ejecute install.bat para reinstalar la aplicacion completamente.
+        pause
+        exit /b 1
     )
 )
 
