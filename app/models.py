@@ -30,6 +30,8 @@ class HorarioClase(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     capacidad_maxima = db.Column(db.Integer, default=20)
     tipo_clase = db.Column(db.String(20), default='OTRO')
+    activo = db.Column(db.Boolean, default=True)  # Columna para marcar si el horario está activo
+    fecha_desactivacion = db.Column(db.Date, nullable=True)  # Fecha en que se desactivó
     clases_realizadas = db.relationship('ClaseRealizada', backref='horario', lazy=True)
     
     def __repr__(self):

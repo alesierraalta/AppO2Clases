@@ -55,6 +55,39 @@ if %errorlevel% neq 0 (
     python update_db.py
 )
 
+:: Verificar la columna 'activo' en la tabla horario_clase
+echo Verificando columna 'activo' en la base de datos...
+python add_activo_column.py
+if %errorlevel% neq 0 (
+    echo ADVERTENCIA: Fallo al verificar la columna 'activo'. Intento manual...
+    python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('PRAGMA table_info(horario_clase)'); cols=[col[1] for col in c.fetchall()]; print('Columnas en horario_clase:', cols); has_activo='activo' in [col[1] for col in cols]; conn.close(); exit(0 if has_activo else 1)"
+    if %errorlevel% neq 0 (
+        echo ADVERTENCIA: La columna 'activo' no existe. Agregándola manualmente...
+        python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); try: c.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); except: pass; try: c.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); except: pass; conn.commit(); conn.close(); print('Columnas verificadas')"
+    )
+)
+
+:: Sincronizar archivos de modelos
+echo Sincronizando archivos de modelos...
+if exist models.py (
+    if exist app\ (
+        echo Verificando sincronizacion de modelos...
+        copy /y models.py app\models.py
+    ) else (
+        echo Creando carpeta app...
+        mkdir app
+        echo Copiando models.py a app...
+        copy /y models.py app\models.py
+    )
+    echo Modelos sincronizados correctamente.
+)
+
+:: Limpiar caché de Python
+echo Limpiando cache de Python...
+for /d /r %%d in (__pycache__) do (
+    rd /s /q "%%d" 2>nul
+)
+
 :: Establecer variables de entorno de Flask
 set FLASK_APP=app.py
 set FLASK_ENV=development

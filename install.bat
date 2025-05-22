@@ -145,6 +145,37 @@ if %errorlevel% neq 0 (
     )
 )
 
+echo Verificando columna 'activo' en la tabla horario_clase...
+python add_activo_column.py
+if %errorlevel% neq 0 (
+    echo ADVERTENCIA: Fallo al verificar la columna 'activo'. Intento manual...
+    python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('PRAGMA table_info(horario_clase)'); cols=[col[1] for col in c.fetchall()]; c.close(); conn.close(); exit(1 if 'activo' not in cols else 0)"
+    if %errorlevel% neq 0 (
+        echo ADVERTENCIA: La columna 'activo' no existe. Agregándola manualmente...
+        python -c "import sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); c.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); conn.commit(); conn.close(); print('Columnas agregadas correctamente')"
+    )
+)
+
+echo Sincronizando archivos de modelos...
+if exist app\models.py (
+    echo Verificando y sincronizando modelos entre raiz y carpeta app...
+    copy /y models.py app\models.py
+    echo Modelos sincronizados correctamente.
+) else (
+    echo Creando directorio app si no existe...
+    if not exist app (
+        mkdir app
+    )
+    echo Copiando models.py a la carpeta app...
+    copy /y models.py app\models.py
+)
+
+echo Limpiando archivos de caché Python...
+for /d /r %%d in (__pycache__) do (
+    echo Limpiando %%d
+    rd /s /q "%%d" 2>nul
+)
+
 echo Verificando directorios necesarios...
 if not exist "static\uploads\audio" (
     echo Creando directorios para archivos de audio...
