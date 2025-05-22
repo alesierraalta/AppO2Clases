@@ -1,20 +1,56 @@
 @echo off
-echo Restarting application to clear SQLAlchemy caching...
+echo ========================================================
+echo      REINICIO DE APLICACION DESPUES DE REPARACION
+echo ========================================================
+echo.
 
-echo 1. Stopping any running Flask instances...
+REM Detener cualquier proceso Python
+echo 1. Cerrando aplicaciones Python en ejecucion...
 taskkill /f /im python.exe 2>nul
+taskkill /f /im flask.exe 2>nul
+timeout /t 2 /nobreak >nul
 
-echo 2. Clearing any __pycache__ directories...
+REM Limpiar archivos de caché
+echo 2. Limpiando archivos de cache Python...
 for /d /r %%d in (__pycache__) do (
-    echo Removing %%d
     rd /s /q "%%d" 2>nul
 )
 
-echo 3. Confirming database schema has activo column...
-python check_db_activo.py
+REM Verificar el arreglo
+echo 3. Verificando reparacion...
+python check_column.py
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo ADVERTENCIA: La columna 'activo' todavia presenta problemas.
+    echo Ejecute fix_activo_column.bat antes de continuar.
+    pause
+    exit /b 1
+)
 
-echo 4. Starting application...
-start python app.py
+REM Sincronizar modelos
+echo 4. Sincronizando modelos...
+if exist models.py (
+    if not exist app\ mkdir app
+    copy /y models.py app\models.py
+    echo Modelos sincronizados correctamente.
+) else (
+    echo ADVERTENCIA: No se encontro models.py en la raiz.
+)
 
-echo Application restart complete. Please try your operation again.
-pause 
+REM Iniciar la aplicación
+echo.
+echo 5. Iniciando aplicacion...
+echo.
+echo ========================================================
+echo             APLICACION REINICIADA
+echo ========================================================
+echo.
+echo La aplicacion se iniciara en un momento.
+echo Si sigue viendo errores, ejecute:
+echo   fix_on_other_pc.bat
+echo.
+
+REM Iniciar la aplicación con el script original
+start cmd /c "start.bat"
+
+exit /b 0 

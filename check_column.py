@@ -1,71 +1,125 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Herramienta de diagnóstico para verificar la existencia y accesibilidad
+de la columna 'activo' en la tabla horario_clase.
+
+Este script realiza las siguientes comprobaciones:
+1. Verifica si la columna existe en el esquema
+2. Intenta hacer una consulta usando la columna
+3. Reporta el estado de la columna
+
+Uso:
+    python check_column.py
+
+También puede ser importado desde otros scripts:
+    from check_column import verificar_columna
+    ok, detalles = verificar_columna('activo')
+"""
+
 import sqlite3
-from sqlalchemy import create_engine, MetaData, Table, Column, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import sys
+import os
 
-print("Debugging 'activo' column issue...")
-
-# Check direct SQLite query
-conn = sqlite3.connect('gimnasio.db')
-cursor = conn.cursor()
-print("Testing direct SQLite query...")
-try:
-    cursor.execute("SELECT id, nombre, activo FROM horario_clase LIMIT 5")
-    rows = cursor.fetchall()
-    print(f"SUCCESS! Query returned {len(rows)} rows")
-    for row in rows:
-        print(f"ID: {row[0]}, Nombre: {row[1]}, Activo: {row[2]}")
-except Exception as e:
-    print(f"ERROR: {str(e)}")
-
-# Now try with SQLAlchemy
-print("\nTesting SQLAlchemy query...")
-engine = create_engine('sqlite:///gimnasio.db')
-try:
-    connection = engine.connect()
-    query = "SELECT horario_clase.id AS horario_clase_id, horario_clase.activo AS horario_clase_activo FROM horario_clase LIMIT 5"
-    result = connection.execute(query)
-    rows = result.fetchall()
-    print(f"SUCCESS! SQLAlchemy query returned {len(rows)} rows")
-    for row in rows:
-        print(f"ID: {row[0]}, Activo: {row[1]}")
-    connection.close()
-except Exception as e:
-    print(f"ERROR: {str(e)}")
-
-# Now try the exact query that's failing
-print("\nTesting the exact failing query...")
-try:
-    connection = engine.connect()
-    query = """
-    SELECT horario_clase.id AS horario_clase_id, 
-           horario_clase.nombre AS horario_clase_nombre, 
-           horario_clase.dia_semana AS horario_clase_dia_semana, 
-           horario_clase.hora_inicio AS horario_clase_hora_inicio, 
-           horario_clase.duracion AS horario_clase_duracion, 
-           horario_clase.profesor_id AS horario_clase_profesor_id, 
-           horario_clase.fecha_creacion AS horario_clase_fecha_creacion, 
-           horario_clase.capacidad_maxima AS horario_clase_capacidad_maxima, 
-           horario_clase.tipo_clase AS horario_clase_tipo_clase, 
-           horario_clase.activo AS horario_clase_activo, 
-           horario_clase.fecha_desactivacion AS horario_clase_fecha_desactivacion 
-    FROM horario_clase 
-    WHERE horario_clase.dia_semana = 2 
-    ORDER BY horario_clase.hora_inicio
+def verificar_columna(nombre_columna, tabla="horario_clase", db_file="gimnasio.db"):
     """
-    result = connection.execute(query)
-    rows = result.fetchall()
-    print(f"SUCCESS! Exact failing query returned {len(rows)} rows")
-    connection.close()
-except Exception as e:
-    print(f"ERROR with exact failing query: {str(e)}")
+    Verifica si una columna existe en una tabla de la base de datos.
+    
+    Args:
+        nombre_columna (str): Nombre de la columna a verificar
+        tabla (str): Nombre de la tabla donde se busca la columna
+        db_file (str): Ruta al archivo de base de datos
+        
+    Returns:
+        (bool, dict): Tupla con resultado (True si existe y es accesible) y diccionario con detalles
+    """
+    resultados = {
+        "existe_esquema": False,
+        "accesible_query": False,
+        "tipo_columna": None,
+        "valores_muestra": [],
+        "errores": []
+    }
+    
+    # Verificar que el archivo existe
+    if not os.path.exists(db_file):
+        resultados["errores"].append(f"No se encontró el archivo de base de datos: {db_file}")
+        return False, resultados
+    
+    # Comprobar si la columna existe en el esquema
+    try:
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+        
+        # Verificar si la tabla existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (tabla,))
+        if not cursor.fetchone():
+            resultados["errores"].append(f"La tabla {tabla} no existe en la base de datos")
+            conn.close()
+            return False, resultados
+        
+        # Verificar si la columna existe
+        cursor.execute(f"PRAGMA table_info({tabla})")
+        columns = cursor.fetchall()
+        
+        for col in columns:
+            if col[1] == nombre_columna:
+                resultados["existe_esquema"] = True
+                resultados["tipo_columna"] = col[2]
+                break
+        
+        # Intentar realizar una consulta usando la columna
+        if resultados["existe_esquema"]:
+            try:
+                query = f"SELECT id, {nombre_columna} FROM {tabla} LIMIT 5"
+                cursor.execute(query)
+                resultados["valores_muestra"] = cursor.fetchall()
+                resultados["accesible_query"] = True
+            except sqlite3.OperationalError as e:
+                resultados["errores"].append(f"Error al consultar la columna: {str(e)}")
+        
+        conn.close()
+        
+        # Resultado final
+        return resultados["existe_esquema"] and resultados["accesible_query"], resultados
+    except Exception as e:
+        resultados["errores"].append(f"Error general: {str(e)}")
+        return False, resultados
 
-# Close connections
-cursor.close()
-conn.close()
+def main():
+    """Función principal para ejecutar las verificaciones y mostrar resultados"""
+    print("="*60)
+    print("VERIFICACIÓN DE COLUMNA 'activo' EN TABLA 'horario_clase'")
+    print("="*60)
+    print()
+    
+    ok, resultados = verificar_columna('activo')
+    
+    # Mostrar resultados
+    print(f"La columna 'activo' existe en el esquema: {'✓' if resultados['existe_esquema'] else '✗'}")
+    print(f"La columna 'activo' es accesible en consultas: {'✓' if resultados['accesible_query'] else '✗'}")
+    
+    if resultados["tipo_columna"]:
+        print(f"Tipo de columna: {resultados['tipo_columna']}")
+    
+    if resultados["valores_muestra"]:
+        print("\nValores de muestra (primeros 5 registros):")
+        for idx, valor in enumerate(resultados["valores_muestra"]):
+            print(f"  {idx+1}. ID: {valor[0]}, activo: {valor[1]}")
+    
+    if resultados["errores"]:
+        print("\nErrores encontrados:")
+        for error in resultados["errores"]:
+            print(f"  - {error}")
+    
+    print("\nDiagnóstico final:")
+    if ok:
+        print("✓ La columna 'activo' existe y es accesible. No se detectaron problemas.")
+    else:
+        print("✗ Se detectaron problemas con la columna 'activo'.")
+        print("  Recomendación: Ejecute fix_activo_column.bat para solucionar el problema.")
+    
+    return 0 if ok else 1
 
-print("\nProviding potential solutions for SQLAlchemy issues:")
-print("1. Make sure your models.py HorarioClase model includes: activo = db.Column(db.Boolean, default=True)")
-print("2. Make sure you're not using two different instances of the database or stale model instances")
-print("3. Try restarting the application to clear any caching or stale model information")
-print("4. Run 'python app.py' with no command line arguments to let SQLAlchemy reinitialize the models") 
+if __name__ == "__main__":
+    sys.exit(main()) 
