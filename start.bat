@@ -45,8 +45,8 @@ if %errorlevel% neq 0 (
             if %errorlevel% neq 0 (
                 echo ERROR: No se pudo crear la base de datos tras múltiples intentos.
                 echo Por favor, ejecute install.bat para una instalación completa o contacte soporte.
-                pause
-                exit /b 1
+            pause
+            exit /b 1
             )
         )
     )
@@ -59,8 +59,8 @@ if %errorlevel% neq 0 (
 echo Verificando columna 'activo' en la tabla horario_clase...
 echo Esta comprobacion es esencial para evitar el error: "no such column: horario_clase.activo"
 
-:: Verificar si la columna existe y crearla si no existe usando una sola línea de Python
-python -c "import sqlite3, sys; conn=None; try: conn=sqlite3.connect('gimnasio.db'); cursor=conn.cursor(); cursor.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='horario_clase'\"); if not cursor.fetchone(): print('ERROR: La tabla horario_clase no existe.'); sys.exit(1); cursor.execute('PRAGMA table_info(horario_clase)'); columns=cursor.fetchall(); column_names=[col[1] for col in columns]; print(f\"Columnas actuales: {', '.join(column_names)}\"); activo_exists='activo' in column_names; desactivacion_exists='fecha_desactivacion' in column_names; print(f\"Columna activo: {'EXISTE' if activo_exists else 'NO EXISTE'}\"); print(f\"Columna fecha_desactivacion: {'EXISTE' if desactivacion_exists else 'NO EXISTE'}\"); if not activo_exists or not desactivacion_exists: print('Agregando columnas faltantes...'); if not activo_exists: cursor.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1'); print('Columna activo agregada.'); if not desactivacion_exists: cursor.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE'); print('Columna fecha_desactivacion agregada.'); conn.commit(); cursor.execute('PRAGMA table_info(horario_clase)'); new_columns=cursor.fetchall(); new_column_names=[col[1] for col in new_columns]; if 'activo' not in new_column_names: print('ERROR: No se pudo agregar la columna activo.'); sys.exit(1); else: print('Columnas verificadas correctamente.'); sys.exit(0); except Exception as e: print(f'Error: {e}'); sys.exit(1); finally: if conn: conn.close()"
+:: Verificar si la columna existe y crearla si no existe usando el script dedicado
+python verify_columns.py
 
 if %errorlevel% neq 0 (
     echo ERROR CRITICO: No se pudo agregar la columna 'activo'. La aplicacion no funcionara correctamente.

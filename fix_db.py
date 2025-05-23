@@ -1,144 +1,143 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script para corregir y crear la base de datos de forma independiente,
-sin necesidad de contexto de Flask. Utiliza SQLite directamente.
+Script para reparar y verificar la base de datos SQLite
+Maneja la creación y reparación de tablas de forma robusta
 """
 
 import sqlite3
-import os
-import sys
 import subprocess
-from datetime import datetime
-from sqlalchemy import create_engine, MetaData, Table, Column, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import sys
+import os
+from sqlalchemy import create_engine, MetaData, Table
 
 def run_script(script_name):
-    """Ejecuta un script de Python y devuelve el código de salida"""
+    """Ejecuta un script Python y retorna el código de salida"""
     try:
-        result = subprocess.run(['python', script_name], capture_output=True, text=True)
-        print(f"Salida de {script_name}:\n{result.stdout}")
-        if result.stderr:
-            print(f"Errores de {script_name}:\n{result.stderr}")
+        result = subprocess.run([sys.executable, script_name], 
+                               capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            print(f"✓ {script_name} ejecutado exitosamente")
+        else:
+            print(f"✗ {script_name} falló: {result.stderr}")
         return result.returncode
     except Exception as e:
-        print(f"Error al ejecutar {script_name}: {str(e)}")
+        print(f"Error ejecutando {script_name}: {str(e)}")
         return 1
 
 def create_tables_directly():
-    """Crear las tablas directamente en SQLite sin depender de otros scripts"""
-    print("Creando tablas directamente con SQLite...")
+    """Crear las tablas directamente usando SQL sin depender de SQLAlchemy"""
     try:
+        print("Método directo: Creando tablas con SQLite...")
         conn = sqlite3.connect('gimnasio.db')
         cursor = conn.cursor()
         
         # Crear tabla profesor
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS profesor (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            apellido TEXT NOT NULL,
-            tarifa_por_clase REAL NOT NULL,
-            telefono TEXT,
-            email TEXT
-        )
+            CREATE TABLE IF NOT EXISTS profesor (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre VARCHAR(100) NOT NULL,
+                apellido VARCHAR(100) NOT NULL,
+                telefono VARCHAR(20),
+                email VARCHAR(120),
+                fecha_contratacion DATE,
+                activo BOOLEAN DEFAULT 1
+            )
         ''')
+        print("✓ Tabla 'profesor' creada")
         
-        # Crear tabla horario_clase
+        # Crear tabla horario_clase con todas las columnas necesarias
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS horario_clase (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            dia_semana INTEGER NOT NULL,
-            hora_inicio TEXT NOT NULL,
-            duracion INTEGER DEFAULT 60,
-            profesor_id INTEGER NOT NULL,
-            fecha_creacion TEXT DEFAULT CURRENT_TIMESTAMP,
-            capacidad_maxima INTEGER DEFAULT 20,
-            tipo_clase TEXT DEFAULT 'OTRO',
-            activo INTEGER DEFAULT 1,
-            fecha_desactivacion DATE,
-            FOREIGN KEY (profesor_id) REFERENCES profesor (id)
-        )
+            CREATE TABLE IF NOT EXISTS horario_clase (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre VARCHAR(100) NOT NULL,
+                dia_semana INTEGER NOT NULL,
+                hora_inicio TIME NOT NULL,
+                duracion INTEGER NOT NULL,
+                profesor_id INTEGER,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                capacidad_maxima INTEGER DEFAULT 20,
+                tipo_clase VARCHAR(50) DEFAULT 'Spinning',
+                activo BOOLEAN DEFAULT 1,
+                fecha_desactivacion DATE,
+                FOREIGN KEY (profesor_id) REFERENCES profesor (id)
+            )
         ''')
+        print("✓ Tabla 'horario_clase' creada")
         
         # Crear tabla clase_realizada
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS clase_realizada (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha DATE NOT NULL,
-            horario_id INTEGER NOT NULL,
-            profesor_id INTEGER NOT NULL,
-            hora_llegada_profesor TEXT,
-            cantidad_alumnos INTEGER DEFAULT 0,
-            observaciones TEXT,
-            fecha_registro TEXT DEFAULT CURRENT_TIMESTAMP,
-            audio_file TEXT,
-            FOREIGN KEY (horario_id) REFERENCES horario_clase (id),
-            FOREIGN KEY (profesor_id) REFERENCES profesor (id)
-        )
+            CREATE TABLE IF NOT EXISTS clase_realizada (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                horario_clase_id INTEGER NOT NULL,
+                fecha DATE NOT NULL,
+                cantidad_alumnos INTEGER DEFAULT 0,
+                observaciones TEXT,
+                fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (horario_clase_id) REFERENCES horario_clase (id)
+            )
         ''')
+        print("✓ Tabla 'clase_realizada' creada")
         
         # Crear tabla evento_horario
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS evento_horario (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            horario_id INTEGER NOT NULL,
-            tipo TEXT NOT NULL,
-            fecha TEXT DEFAULT CURRENT_TIMESTAMP,
-            fecha_aplicacion DATE,
-            motivo TEXT,
-            datos_adicionales TEXT,
-            FOREIGN KEY (horario_id) REFERENCES horario_clase (id)
-        )
+            CREATE TABLE IF NOT EXISTS evento_horario (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                horario_clase_id INTEGER NOT NULL,
+                tipo_evento VARCHAR(50) NOT NULL,
+                fecha_evento DATE NOT NULL,
+                descripcion TEXT,
+                creado_por VARCHAR(100),
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (horario_clase_id) REFERENCES horario_clase (id)
+            )
         ''')
+        print("✓ Tabla 'evento_horario' creada")
         
-        # Crear tabla notificacion (si no existe ya)
+        # Crear tabla notificacion
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS notificacion (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo TEXT NOT NULL,
-            mensaje TEXT NOT NULL,
-            destinatario TEXT,
-            fecha_programada DATETIME,
-            estado TEXT DEFAULT 'pendiente',
-            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-            fecha_envio DATETIME,
-            datos_adicionales TEXT
-        )
+            CREATE TABLE IF NOT EXISTS notificacion (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo VARCHAR(50) NOT NULL,
+                titulo VARCHAR(200) NOT NULL,
+                mensaje TEXT NOT NULL,
+                enviado BOOLEAN DEFAULT 0,
+                fecha_envio DATETIME,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                destinatario VARCHAR(100),
+                horario_clase_id INTEGER,
+                FOREIGN KEY (horario_clase_id) REFERENCES horario_clase (id)
+            )
         ''')
+        print("✓ Tabla 'notificacion' creada")
         
         conn.commit()
         conn.close()
-        print("Tablas creadas directamente con éxito")
+        print("Base de datos creada correctamente (método directo)")
         return True
+        
     except Exception as e:
-        print(f"Error al crear tablas directamente: {str(e)}")
+        print(f"Error creando tablas directamente: {str(e)}")
         return False
 
 def check_database(db_path="gimnasio.db"):
-    """
-    Verifica la base de datos SQLite directamente, sin necesidad de contexto Flask.
-    Comprueba si la base de datos existe, si tiene las tablas necesarias y su estructura.
-    """
-    print(f"Inicializando base de datos en: {db_path}")
+    """Función principal para verificar y reparar la base de datos"""
     
-    # Verificar si el archivo de la base de datos existe
+    # Si la base de datos no existe, crearla
     if not os.path.exists(db_path):
-        print("Base de datos no encontrada. Creando nueva base de datos...")
+        print(f"La base de datos {db_path} no existe. Intentando crearla...")
         
-        # Método 1: Crear la base de datos y tablas directamente (más confiable)
+        # Método 1: Crear directamente con SQLite (más confiable)
         if create_tables_directly():
-            print("Base de datos y tablas creadas directamente con éxito")
+            print("Base de datos creada con método directo")
             return True
         
-        # Método 2: Ejecutar create_tables.py que también tiene método directo
+        # Método 2: Ejecutar create_tables.py
         print("Método 2: Ejecutando create_tables.py...")
         if run_script('create_tables.py') == 0:
             return True
         
-        # Método 3: Ejecutar create_db.py (requiere contexto Flask)
+        # Método 3: Ejecutar create_db.py
         print("Método 3: Ejecutando create_db.py...")
         if run_script('create_db.py') == 0:
             return True
@@ -209,7 +208,7 @@ def check_database(db_path="gimnasio.db"):
                     print("Columna 'activo' añadida correctamente")
                 except Exception as e:
                     print(f"Error al añadir columna 'activo': {str(e)}")
-            
+                
             if 'fecha_desactivacion' not in column_names:
                 print("La columna 'fecha_desactivacion' no existe en la tabla horario_clase. Añadiendo...")
                 try:
@@ -234,113 +233,4 @@ if __name__ == "__main__":
     if check_database():
         sys.exit(0)  # Éxito
     else:
-        sys.exit(1)  # Error
-
-print("Starting database validation...")
-
-# Step 1: Check the SQLite database schema directly
-print("Step 1: Checking SQLite schema directly")
-conn = sqlite3.connect('gimnasio.db')
-cursor = conn.cursor()
-cursor.execute("PRAGMA table_info(horario_clase)")
-columns = cursor.fetchall()
-
-has_activo = any(col[1] == 'activo' for col in columns)
-print(f"Database has 'activo' column: {has_activo}")
-
-# Print the schema
-print("Current database schema for horario_clase:")
-for col in columns:
-    print(f"  {col[0]}: {col[1]} ({col[2]})")
-
-# Step 2: Set up SQLAlchemy engine and inspect
-print("\nStep 2: Checking with SQLAlchemy...")
-engine = create_engine('sqlite:///gimnasio.db')
-metadata = MetaData()
-metadata.reflect(bind=engine)
-
-if 'horario_clase' in metadata.tables:
-    horario_clase = metadata.tables['horario_clase']
-    sa_has_activo = 'activo' in horario_clase.columns
-    print(f"SQLAlchemy sees 'activo' column: {sa_has_activo}")
-    
-    if sa_has_activo:
-        print("SQLAlchemy schema for horario_clase:")
-        for col_name, col in horario_clase.columns.items():
-            print(f"  {col_name}: {col.type}")
-    else:
-        print("ERROR: SQLAlchemy doesn't see the 'activo' column even though it exists in the database.")
-        print("This could be due to SQLAlchemy caching or reflection issues.")
-        
-        # Step 3: Fix the schema if needed
-        print("\nStep 3: Attempting to fix the schema...")
-        
-        # Add the column to the table if it doesn't exist in SQLAlchemy's view
-        if not sa_has_activo and has_activo:
-            # Create a new metadata object
-            print("Rebuilding the SQLAlchemy metadata...")
-            new_metadata = MetaData()
-            new_metadata.reflect(bind=engine)
-            
-            # Get the table
-            horario_clase = Table('horario_clase', new_metadata)
-            
-            # Create a temporary connection and transaction to test
-            connection = engine.connect()
-            trans = connection.begin()
-            
-            try:
-                # If for some reason the column is visible to SQLAlchemy now, abort
-                if 'activo' in horario_clase.columns:
-                    print("Column 'activo' is now visible to SQLAlchemy")
-                else:
-                    print("Column still not visible to SQLAlchemy. This is likely a caching issue.")
-                
-                # Perform a query using the column to test if it's accessible
-                print("\nTesting if we can query using the 'activo' column...")
-                result = connection.execute("SELECT id, nombre, activo FROM horario_clase LIMIT 5")
-                rows = result.fetchall()
-                print(f"Query successful! Found {len(rows)} rows:")
-                for row in rows:
-                    print(f"  ID: {row[0]}, Nombre: {row[1]}, Activo: {row[2]}")
-                
-                print("\nThe database structure is correct, but SQLAlchemy might have cached metadata.")
-                print("Potential solutions:")
-                print("1. Restart your application")
-                print("2. Create a fresh SQLAlchemy engine when starting your app")
-                print("3. If using Flask-SQLAlchemy, try clearing the session and reattaching")
-                
-                trans.commit()
-            except Exception as e:
-                trans.rollback()
-                print(f"Error during test: {str(e)}")
-            finally:
-                connection.close()
-
-# Create a small test to simulate what might be failing
-print("\nSimulating the query that's failing...")
-try:
-    connection = engine.connect()
-    query = "SELECT horario_clase.id AS horario_clase_id, horario_clase.nombre AS horario_clase_nombre, " \
-            "horario_clase.dia_semana AS horario_clase_dia_semana, horario_clase.hora_inicio AS horario_clase_hora_inicio, " \
-            "horario_clase.duracion AS horario_clase_duracion, horario_clase.profesor_id AS horario_clase_profesor_id, " \
-            "horario_clase.fecha_creacion AS horario_clase_fecha_creacion, horario_clase.capacidad_maxima AS horario_clase_capacidad_maxima, " \
-            "horario_clase.tipo_clase AS horario_clase_tipo_clase, horario_clase.activo AS horario_clase_activo, " \
-            "horario_clase.fecha_desactivacion AS horario_clase_fecha_desactivacion " \
-            "FROM horario_clase WHERE horario_clase.dia_semana = 2 ORDER BY horario_clase.hora_inicio"
-    result = connection.execute(query)
-    rows = result.fetchall()
-    print(f"Test query successful! Found {len(rows)} rows")
-    connection.close()
-    
-    print("\nThe issue is likely with SQLAlchemy's model definition rather than the database itself.")
-    print("Make sure your models.py definition of HorarioClase includes the 'activo' column.")
-except Exception as e:
-    print(f"Error during test query: {str(e)}")
-    print("\nThere appears to be a discrepancy between the database schema and the SQLAlchemy model.")
-
-# Close connections
-cursor.close()
-conn.close()
-
-print("\nDatabase validation complete!") 
+        sys.exit(1)  # Error 
