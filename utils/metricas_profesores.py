@@ -368,7 +368,7 @@ def calcular_costo_por_alumno(clases):
     for clase in clases_con_alumnos:
         try:
             # Obtener la tarifa del profesor por clase y asegurar que sea numérica
-        tarifa = clase.profesor.tarifa_por_clase
+            tarifa = clase.profesor.tarifa_por_clase
             if isinstance(tarifa, str):
                 tarifa = float(tarifa)
             
@@ -379,8 +379,8 @@ def calcular_costo_por_alumno(clases):
                 
             # Solo contabilizar si ambos valores son válidos y positivos
             if tarifa > 0 and cantidad_alumnos > 0:
-        # Sumar al total
-        total_costo += tarifa
+                # Sumar al total
+                total_costo += tarifa
                 total_alumnos += cantidad_alumnos
         except (ValueError, TypeError, AttributeError) as e:
             # Si hay error en la conversión, ignorar esta clase
@@ -537,22 +537,22 @@ def calcular_metricas_profesor(profesor_id, clases=None, mes_actual=None, mes_co
                 if isinstance(costo_por_alumno_comp, str):
                     costo_por_alumno_comp = float(costo_por_alumno_comp)
                     
-            if costo_por_alumno_comp > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
-                min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
-                max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
-                
+                if costo_por_alumno_comp > 0 and promedios_profesores and 'costo_por_alumno' in promedios_profesores:
+                    min_costo = promedios_profesores['costo_por_alumno'].get('minimo', 0)
+                    max_costo = promedios_profesores['costo_por_alumno'].get('maximo', 50)
+                    
                     # Asegurar que min_costo y max_costo sean numéricos
                     if isinstance(min_costo, str):
                         min_costo = float(min_costo)
                     if isinstance(max_costo, str):
                         max_costo = float(max_costo)
                     
-                if min_costo == max_costo:  # Evitar división por cero
-                    costo_norm_comp = 100 if costo_por_alumno_comp <= min_costo else 0
-                elif max_costo > min_costo:
-                    # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
-                    # el más alto recibe 0 puntos, y el resto se distribuye linealmente
-                    costo_norm_comp = max(0, 100 - ((costo_por_alumno_comp - min_costo) / (max_costo - min_costo)) * 100)
+                    if min_costo == max_costo:  # Evitar división por cero
+                        costo_norm_comp = 100 if costo_por_alumno_comp <= min_costo else 0
+                    elif max_costo > min_costo:
+                        # Normalización relativa: el costo más bajo (mejor) recibe 100 puntos,
+                        # el más alto recibe 0 puntos, y el resto se distribuye linealmente
+                        costo_norm_comp = max(0, 100 - ((costo_por_alumno_comp - min_costo) / (max_costo - min_costo)) * 100)
             except (ValueError, TypeError) as e:
                 print(f"Error al normalizar costo por alumno: {str(e)}")
                 costo_norm_comp = 0
@@ -1190,8 +1190,8 @@ def generar_resumen_rendimiento(metricas, nivel_detalle=1):
                 
                 # Verificar que sea un número positivo
                 if costo_por_alumno > 0:
-            # Un costo menor es mejor, por lo que invertimos la normalización
-            # Usamos una escala donde $0 = 100% y $50+ = 0%
+                    # Un costo menor es mejor, por lo que invertimos la normalización
+                    # Usamos una escala donde $0 = 100% y $50+ = 0%
                     costo_norm = max(0, 100 - (costo_por_alumno / 50) * 100)
             except (ValueError, TypeError):
                 # Si hay un error en la conversión, mantener costo_norm en 0

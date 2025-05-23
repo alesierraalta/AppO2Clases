@@ -69,12 +69,16 @@ def create_tables_directly():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS clase_realizada (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                horario_clase_id INTEGER NOT NULL,
                 fecha DATE NOT NULL,
+                horario_id INTEGER NOT NULL,
+                profesor_id INTEGER NOT NULL,
+                hora_llegada_profesor TIME,
                 cantidad_alumnos INTEGER DEFAULT 0,
                 observaciones TEXT,
                 fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (horario_clase_id) REFERENCES horario_clase (id)
+                audio_file VARCHAR(255),
+                FOREIGN KEY (horario_id) REFERENCES horario_clase (id),
+                FOREIGN KEY (profesor_id) REFERENCES profesor (id)
             )
         ''')
         print("✓ Tabla 'clase_realizada' creada")
