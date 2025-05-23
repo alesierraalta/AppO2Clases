@@ -166,7 +166,11 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-primary">{{ horario.tipo_clase }}</span>
+                                    <span class="badge 
+                                    {% if horario.tipo_clase == 'MOVE' %}bg-move
+                                    {% elif horario.tipo_clase == 'RIDE' %}bg-ride
+                                    {% elif horario.tipo_clase == 'BOX' %}bg-box
+                                    {% else %}bg-secondary{% endif %}">{{ horario.tipo_clase }}</span>
                                 </td>
                                 <td>{{ horario.nombre_dia }}</td>
                                 <td>{{ horario.hora_inicio.strftime('%H:%M') }}</td>
@@ -656,14 +660,12 @@ document.addEventListener('DOMContentLoaded', function() {
     filtroTexto.addEventListener('input', aplicarFiltros);
     filtroDia.addEventListener('change', aplicarFiltros);
     filtroTipo.addEventListener('change', aplicarFiltros);
-    filtroEstado.addEventListener('change', aplicarFiltros);
     
     // Resetear filtros
     resetFiltros.addEventListener('click', function() {
         filtroTexto.value = '';
         filtroDia.value = '';
         filtroTipo.value = '';
-        filtroEstado.value = '';
         aplicarFiltros();
     });
     
