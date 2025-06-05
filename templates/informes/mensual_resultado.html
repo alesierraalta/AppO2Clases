@@ -618,6 +618,25 @@
         background-color: rgba(255, 193, 7, 0.15);
         color: #ffffff;
     }
+    /* Estilos para columnas ordenables */
+    th.sortable {
+        cursor: pointer !important;
+        position: relative;
+    }
+    th.sortable i {
+        margin-left: 5px;
+        transition: color 0.2s;
+    }
+    th.sortable:hover {
+        background-color: #32383e !important;
+    }
+    th.sortable.active-sort {
+        background-color: #3e454d !important;
+        border-bottom: 2px solid #ffc107 !important;
+    }
+    th.sortable.active-sort i {
+        color: #ffc107;
+    }
 </style>
 {% endblock %}
 
@@ -810,7 +829,7 @@
                                 <thead>
                                     <tr class="table-light">
                                         <th scope="col" class="text-center" style="width: 40px;"></th>
-                                        <th scope="col">Profesor</th>
+                                        <th scope="col" class="sortable" data-sort="profesor">Profesor <i class="fas fa-sort"></i></th>
                                         <th scope="col" class="text-center">Total Clases</th>
                                         <th scope="col" class="text-center">Promedio Alumnos/Clase</th>
                                         <th scope="col" class="text-center">Clases con Retraso</th>
@@ -1459,6 +1478,40 @@
         
         // Set active class for initial "Todos" button
         document.querySelector('.filter-tipo-clase[data-tipo="TODOS"]').classList.add('active');
+
+        // Sorting for professor column
+        let profesorHeader = document.querySelector('th[data-sort="profesor"]');
+        let sortDirection = 'asc';
+        if (profesorHeader) {
+            profesorHeader.addEventListener('click', function() {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                profesorHeader.classList.add('active-sort');
+                profesorHeader.querySelector('i').className = sortDirection === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up';
+                sortProfesores();
+            });
+        }
+
+        function sortProfesores() {
+            let tbody = document.querySelector('#resumenProfesores tbody');
+            if (!tbody) return;
+            let rows = Array.from(tbody.querySelectorAll('tr.profesor-row'));
+            rows.sort(function(a, b) {
+                let nameA = a.getAttribute('data-profesor-nombre');
+                let nameB = b.getAttribute('data-profesor-nombre');
+                if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
+                if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            rows.forEach(row => {
+                let professorId = row.querySelector('.toggle-clases').getAttribute('data-profesor-id');
+                let detailRow = document.getElementById(`clases-profesor-${professorId}`);
+                tbody.appendChild(row);
+                if (detailRow) tbody.appendChild(detailRow);
+            });
+        }
+
+        // Initial sort
+        sortProfesores();
         
         // Search functionality for professors
         if (searchInput) {
