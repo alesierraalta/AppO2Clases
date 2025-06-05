@@ -3,6 +3,7 @@ import logging
 import traceback
 import re  # para expresiones regulares
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory
+from weasyprint import HTML
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, date, time
 from werkzeug.utils import secure_filename
@@ -704,9 +705,16 @@ def informes():
 
 @app.route('/informes/mensual', methods=['GET', 'POST'])
 def informe_mensual():
-    if request.method == 'POST':
-        mes = int(request.form['mes'])
-        anio = int(request.form['anio'])
+    pdf_requested = False
+    if request.method == 'POST' or (request.method == 'GET' and request.args.get('pdf')):
+        if request.method == 'POST':
+            mes = int(request.form['mes'])
+            anio = int(request.form['anio'])
+            pdf_requested = 'pdf' in request.form
+        else:
+            mes = int(request.args.get('mes'))
+            anio = int(request.args.get('anio'))
+            pdf_requested = True
         
         # Obtener el primer y último día del mes
         primer_dia = date(anio, mes, 1)
@@ -895,9 +903,9 @@ def informe_mensual():
         print(f"Total tarde = {division_horario['tarde']}")
         print("===================================================\n")
         
-        return render_template('informes/mensual_resultado.html', 
-                              mes=mes, 
-                              anio=anio, 
+        html = render_template('informes/mensual_resultado.html',
+                              mes=mes,
+                              anio=anio,
                               clases_realizadas=clases_realizadas,
                               clases_no_registradas=clases_no_registradas,
                               conteo_no_registradas=conteo_no_registradas,
@@ -913,8 +921,13 @@ def informe_mensual():
                               total_alumnos=total_alumnos,
                               total_retrasos=total_retrasos,
                               total_pagos=total_pagos)
+
+        if pdf_requested:
+            pdf = HTML(string=html, base_url=request.base_url).write_pdf()
+            return send_file(io.BytesIO(pdf), download_name=f"informe_mensual_{mes}_{anio}.pdf", mimetype='application/pdf')
+        return html
     
-    # Si es GET, mostrar formulario para seleccionar mes y año
+    # Si es GET normal, mostrar formulario para seleccionar mes y año
     mes_actual = datetime.now().month
     anio_actual = datetime.now().year
     return render_template('informes/mensual.html', mes_actual=mes_actual, anio_actual=anio_actual)

@@ -3,6 +3,7 @@ import logging
 import traceback
 import re  # para expresiones regulares
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory
+from weasyprint import HTML
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import datetime, timedelta, date, time
@@ -1324,10 +1325,12 @@ def informe_mensual():
         
         return resultado
 
+    pdf_requested = False
     # Para peticiones GET con parámetros
     if request.method == 'GET' and request.args.get('mes') and request.args.get('anio'):
         mes = int(request.args.get('mes'))
         anio = int(request.args.get('anio'))
+        pdf_requested = 'pdf' in request.args
         
         # Obtener el primer y último día del mes
         primer_dia = date(anio, mes, 1)
@@ -1336,6 +1339,7 @@ def informe_mensual():
     elif request.method == 'POST':
         mes = int(request.form['mes'])
         anio = int(request.form['anio'])
+        pdf_requested = 'pdf' in request.form
         
         # Obtener el primer y último día del mes
         primer_dia = date(anio, mes, 1)
@@ -1889,9 +1893,9 @@ def informe_mensual():
     
     # The morning/afternoon classification logic has been removed
     
-    return render_template('informes/mensual_resultado.html', 
-                          mes=mes, 
-                          anio=anio, 
+    html = render_template('informes/mensual_resultado.html',
+                          mes=mes,
+                          anio=anio,
                           clases_realizadas=clases_realizadas,
                           clases_no_registradas=clases_no_registradas,
                           conteo_no_registradas=conteo_no_registradas,
@@ -1903,6 +1907,11 @@ def informe_mensual():
                           total_alumnos=total_alumnos,
                           total_retrasos=total_retrasos,
                           total_pagos=total_pagos)
+
+    if pdf_requested:
+        pdf = HTML(string=html, base_url=request.base_url).write_pdf()
+        return send_file(io.BytesIO(pdf), download_name=f"informe_mensual_{mes}_{anio}.pdf", mimetype='application/pdf')
+    return html
 
 # Rutas para la importación de Excel
 
@@ -4949,6 +4958,7 @@ def metricas_profesor(profesor_id):
         
         # Verificar si se debe mostrar el modo de depuración
         debug_mode = request.args.get('debug', type=bool, default=False)
+        pdf_requested = 'pdf' in request.args
         
         # Obtener parámetros de filtro opcional
         tipo_clase = request.args.get('tipo_clase', default=None)
@@ -5069,9 +5079,9 @@ def metricas_profesor(profesor_id):
             else:
                 metricas['ranking_profesores'] = Profesor.obtener_ranking_profesores()
         
-        return render_template(
-            'informes/metricas_profesor.html', 
-            profesor=profesor, 
+        html = render_template(
+            'informes/metricas_profesor.html',
+            profesor=profesor,
             metricas=metricas if 'metricas_actual' not in metricas else metricas['metricas_actual'],
             metricas_comparacion=metricas.get('metricas_comparacion'),
             comparacion=metricas.get('comparacion'),
@@ -5087,6 +5097,11 @@ def metricas_profesor(profesor_id):
             comparar_meses='comparar' in request.args,  # Indicar si estamos en modo comparación
             error=error  # Pasar el error de validación a la plantilla
         )
+
+        if pdf_requested:
+            pdf = HTML(string=html, base_url=request.base_url).write_pdf()
+            return send_file(io.BytesIO(pdf), download_name=f"metricas_profesor_{profesor_id}.pdf", mimetype='application/pdf')
+        return html
     except Exception as e:
         app.logger.error(f"Error en metricas_profesor: {str(e)}")
         flash(f"Error al cargar métricas del profesor: {str(e)}", "danger")
