@@ -57,11 +57,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
-# Inicializar la base de datos
-db = SQLAlchemy(app)
+# Importar el objeto de base de datos y los modelos
+from models import db, Profesor, HorarioClase, ClaseRealizada, EventoHorario, TipoEventoHorario, setup_date_handling
 
-# Importar modelos después de inicializar db y app
-from models import Profesor, HorarioClase, ClaseRealizada, EventoHorario, TipoEventoHorario, setup_date_handling
+# Inicializar la base de datos con la aplicación
+db.init_app(app)
 
 # Configurar el manejo de fechas para la aplicación
 setup_date_handling(app)
