@@ -640,6 +640,9 @@
                     <button class="btn btn-outline-success" onclick="exportToExcel()">
                         <i class="fas fa-file-excel me-1"></i> Exportar a Excel
                     </button>
+                    <a class="btn btn-outline-danger" href="{{ url_for('informe_mensual', mes=mes, anio=anio, pdf=1) }}">
+                        <i class="fas fa-file-pdf me-1"></i> PDF
+                    </a>
                     <button class="btn btn-outline-primary" onclick="window.print()">
                         <i class="fas fa-print me-1"></i> Imprimir
                     </button>

@@ -16,3 +16,4 @@ numpy
 pandas
 matplotlib==3.10.1
 librosa==0.11.0
+WeasyPrint==65.1
