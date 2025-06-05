@@ -3,7 +3,12 @@ import logging
 import time as time_module
 from datetime import datetime, time, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-import pywhatkit
+try:
+    import pywhatkit as pywhatkit_module
+    _pywhatkit_error = None
+except Exception as err:
+    pywhatkit_module = None
+    _pywhatkit_error = err
 from flask import current_app
 from sqlalchemy import and_, func
 
@@ -39,6 +44,21 @@ def setup_logger():
 
 # Inicialización
 logger = setup_logger()
+
+# Usar un stub de pywhatkit si la importación falló
+if pywhatkit_module is None:
+    logger.warning(f"pywhatkit could not be imported: {_pywhatkit_error}")
+
+    class _DummyPywhatkit:
+        def sendwhatmsg(*args, **kwargs):
+            raise RuntimeError("pywhatkit is not available")
+
+        def sendwhatmsg_instantly(*args, **kwargs):
+            raise RuntimeError("pywhatkit is not available")
+
+    pywhatkit = _DummyPywhatkit()
+else:
+    pywhatkit = pywhatkit_module
 
 # Variable para almacenar el número de teléfono para notificaciones
 NOTIFICATION_PHONE_NUMBER = None  # Será obtenido dinámicamente de la configuración
@@ -266,54 +286,29 @@ def send_whatsapp_notification(message, phone_number=None):
         # Registro detallado para depuración
         logger.info(f"Enviando mensaje WhatsApp al número: +{formatted_phone}")
         
-        # Intentar importar pyautogui para automatizar la pulsación de Enter
+        # Configuración de espera para la carga de WhatsApp Web
+        wait_time = 20
+
         try:
-            import pyautogui
-            have_pyautogui = True
-            logger.info("Módulo pyautogui disponible para automatizar el envío")
-        except ImportError:
-            have_pyautogui = False
-            logger.warning("Módulo pyautogui no disponible. El mensaje podría quedar pendiente de enviar.")
-        
-        # Configuración específica para asegurar el envío
-        wait_time = 25  # Tiempo de espera para que cargue WhatsApp Web (aumentado)
-        
-        # Método alternativo: usar directamente pywhatkit.sendwhatmsg_instantly
-        try:
-            # Usamos el método instantáneo pero sin cerrar la pestaña
-            logger.info("Usando método instantáneo con pestaña abierta...")
-            pywhatkit.sendwhatmsg_instantly(
-                f"+{formatted_phone}", 
+            # Calcular la hora de envío (un minuto en el futuro)
+            send_time = datetime.now() + timedelta(minutes=1)
+            send_hour = send_time.hour
+            send_minute = send_time.minute
+
+            logger.info("Enviando mensaje mediante pywhatkit.sendwhatmsg ...")
+            pywhatkit.sendwhatmsg(
+                f"+{formatted_phone}",
                 message,
-                wait_time=wait_time,  # Tiempo de espera mayor para carga
-                tab_close=False,  # No cerrar la pestaña para poder presionar Enter
-                close_time=5
+                send_hour,
+                send_minute,
+                wait_time=wait_time,
+                tab_close=True,
+                close_time=3,
             )
-            logger.info("Mensaje preparado correctamente en WhatsApp Web")
-            
-            # Esperar unos segundos adicionales para asegurar que la interfaz esté lista
-            logger.info("Esperando 5 segundos adicionales...")
-            time_module.sleep(5)
-            
-            # Presionar Enter para enviar el mensaje si tenemos pyautogui
-            if have_pyautogui:
-                logger.info("Presionando Enter para enviar el mensaje...")
-                pyautogui.press('enter')
-                time_module.sleep(3)  # Esperar confirmación de envío
-                logger.info("Tecla Enter presionada correctamente")
-            else:
-                # Si no tenemos pyautogui, esperar más tiempo con la esperanza de que el usuario vea el mensaje
-                logger.warning("No se puede presionar Enter automáticamente. El mensaje está pendiente de envío manual.")
-                time_module.sleep(30)  # Esperar 30 segundos para dar tiempo al usuario a ver el mensaje
-            
-            # Presionar Alt+F4 para cerrar la ventana si tenemos pyautogui
-            if have_pyautogui:
-                logger.info("Cerrando ventana de WhatsApp Web...")
-                pyautogui.hotkey('alt', 'f4')
-                time_module.sleep(1)
-                
+            logger.info("Mensaje enviado correctamente")
+
         except Exception as e:
-            logger.error(f"Error al enviar mensaje instantáneo: {str(e)}")
+            logger.error(f"Error al enviar mensaje: {str(e)}")
             return False
         
         # Actualizar el último tiempo de envío
