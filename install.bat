@@ -48,19 +48,8 @@ if %errorlevel% neq 0 (
 echo Actualizando pip...
 python -m pip install --upgrade pip
 
-echo Instalando dependencias principales...
-pip install Flask==2.0.1
-pip install Flask-SQLAlchemy==2.5.1
-pip install Jinja2==3.0.1
-pip install SQLAlchemy==1.4.23
-pip install Werkzeug==2.0.1
-pip install WTForms==2.3.3
-pip install flask-wtf==0.15.1
-pip install click==8.0.1
-pip install cryptography==3.4.8
-pip install Flask-Login==0.5.0
-pip install openpyxl==3.0.9
-pip install APScheduler==3.9.1
+echo Instalando dependencias desde requirements.txt...
+pip install -r requirements.txt
 
 echo Verificando instalacion de flask-wtf...
 python -c "import flask_wtf; print('flask-wtf instalado correctamente')" 2>nul
