@@ -1,6 +1,13 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+:: Configurar codificación UTF-8
+chcp 65001 >nul 2>&1
+set PYTHONIOENCODING=utf-8
+set PYTHONUTF8=1
+set LC_ALL=es_ES.UTF-8
+set LANG=es_ES.UTF-8
+
 echo ===============================
 echo INSTALADOR CLASES O2 - COMPLETO
 echo ===============================

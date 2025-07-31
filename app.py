@@ -2,6 +2,18 @@ import os
 import logging
 import traceback
 import re  # para expresiones regulares
+
+# Configurar codificación UTF-8 por defecto
+import sys
+if sys.version_info >= (3, 7):
+    import locale
+    try:
+        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+    except locale.Error:
+        try:
+            locale.setlocale(locale.LC_ALL, 'Spanish_Spain.1252')
+        except locale.Error:
+            pass  # Usar configuración por defecto
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
@@ -58,6 +70,11 @@ TIPOS_CLASE = [
 
 # Inicializar la aplicación Flask
 app = Flask(__name__, static_folder='static', template_folder='templates')
+
+# Configurar codificación UTF-8
+app.config['JSON_AS_ASCII'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+
 # Configurar Flask para aceptar URLs con o sin barra final
 app.url_map.strict_slashes = False
 app.config['SECRET_KEY'] = 'tu-clave-secreta'
@@ -66,8 +83,20 @@ csrf = CSRFProtect(app)
 # Registrar csrf_token como función global de Jinja2
 app.jinja_env.globals['csrf_token'] = generate_csrf
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db')
+# Configurar Jinja2 para UTF-8
+app.jinja_env.finalize = lambda x: x if x is not None else ''
+app.jinja_options = {
+    'extensions': ['jinja2.ext.autoescape'],
+    'autoescape': True
+}
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db') + '?charset=utf8'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'connect_args': {'check_same_thread': False}
+}
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
@@ -151,6 +180,21 @@ def ruta_inaccesible(f):
 @app.template_filter('divmod')
 def divmod_filter(value, arg):
     return divmod(value, arg)
+
+# Configurar respuestas para UTF-8
+@app.after_request
+def after_request(response):
+    """Asegurar que todas las respuestas usen UTF-8"""
+    if response.content_type.startswith('text/html'):
+        response.content_type = 'text/html; charset=utf-8'
+    elif response.content_type.startswith('application/json'):
+        response.content_type = 'application/json; charset=utf-8'
+    elif response.content_type.startswith('text/'):
+        response.content_type = response.content_type + '; charset=utf-8'
+    
+    # Agregar headers adicionales para UTF-8
+    response.headers['Content-Language'] = 'es-ES'
+    return response
 
 # Filtro para obtener el timestamp actual
 @app.template_filter('now')
@@ -2004,6 +2048,11 @@ def informe_mensual():
             total_retrasos['value'] += datos['total_retrasos']
             total_pagos['value'] += datos['pago_total']
     
+    # Calcular promedio de alumnos por clase
+    promedio_alumnos = {
+        'value': round(total_alumnos['value'] / total_clases['value'], 1) if total_clases['value'] > 0 else 0
+    }
+    
     # Contadores de clases no registradas por tipo
     conteo_no_registradas = {
         'MOVE': 0,
@@ -2032,6 +2081,7 @@ def informe_mensual():
         'alumnos_tipos': alumnos_tipos,
         'total_clases': total_clases,
         'total_alumnos': total_alumnos,
+        'promedio_alumnos': promedio_alumnos,
         'total_retrasos': total_retrasos,
         'total_pagos': total_pagos
     }
@@ -2049,6 +2099,7 @@ def informe_mensual():
                 'nombre_mes': MESES_ES[mes],
                 'total_clases': total_clases,
                 'total_alumnos': total_alumnos,
+                'promedio_alumnos': promedio_alumnos,
                 'total_pagos': total_pagos,
                 'clases_con_retraso': total_retrasos,
                 'profesores_stats': [],  # Will be populated from resumen_profesores
@@ -2165,6 +2216,11 @@ def informe_mensual_pdf_with_charts():
                     conteo_tipos['OTRO'] += 1
                     alumnos_tipos['OTRO'] += clase.cantidad_alumnos or 0
         
+        # Calcular promedio de alumnos por clase
+        promedio_alumnos_pdf = {
+            'value': round(total_alumnos / total_clases, 1) if total_clases > 0 else 0
+        }
+        
         # Preparar variables para el template
         template_vars = {
             'mes': mes,
@@ -2173,6 +2229,7 @@ def informe_mensual_pdf_with_charts():
             'clases_realizadas': clases_realizadas,
             'total_clases': total_clases,
             'total_alumnos': total_alumnos,
+            'promedio_alumnos': promedio_alumnos_pdf,
             'total_pagos': total_pagos,
             'conteo_tipos': conteo_tipos,
             'alumnos_tipos': alumnos_tipos,
@@ -2191,6 +2248,7 @@ def informe_mensual_pdf_with_charts():
             'nombre_mes': MESES_ES[mes],
             'total_clases': total_clases,
             'total_alumnos': total_alumnos,
+            'promedio_alumnos': promedio_alumnos_pdf,
             'total_pagos': total_pagos,
             'clases_con_retraso': 0,  # Calculate if needed
             'chart_images': chart_images,

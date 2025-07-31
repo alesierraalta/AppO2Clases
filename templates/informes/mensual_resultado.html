@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Resultados Informe Mensual - Sistema de GestiÃ³n de Clases{% endblock %}
+{% block title %}Resultados Informe Mensual - Sistema de Gestión de Clases{% endblock %}
 
 {% block styles %}
 <style media="print">
@@ -68,7 +68,7 @@
         background-color: #dc3545 !important;
     }
     
-    /* Estilos para la secciÃ³n de clases no registradas */
+    /* Estilos para la sección de clases no registradas */
     #clases-no-registradas .badge {
         font-size: 0.85rem;
         padding: 0.4em 0.8em;
@@ -169,7 +169,7 @@
         }
     }
 
-    /* Estilos para subtÃ­tulos de grÃ¡ficos */
+    /* Estilos para subtítulos de gráficos */
     .chart-subtitle {
         font-size: 0.8rem;
         color: #6c757d;
@@ -224,7 +224,7 @@
         border: none !important;
     }
 
-    /* Ajuste normalizado para grÃ¡ficos de pastel */
+    /* Ajuste normalizado para gráficos de pastel */
     .card .card-body canvas {
         height: 300px !important; /* Increased from 240px */
         width: 100% !important;
@@ -276,10 +276,10 @@
         overflow: hidden;
         height: auto !important; /* Auto-altura para mantener proporciones */
         width: 100%;
-        aspect-ratio: 1/1; /* Forzar proporciÃ³n cuadrada para el contenedor */
+        aspect-ratio: 1/1; /* Forzar proporción cuadrada para el contenedor */
         border: 1px solid rgba(var(--bs-primary-rgb), 0.1);
         margin-bottom: 20px; /* Added margin between charts */
-        max-width: 500px; /* Limitar el ancho mÃ¡ximo */
+        max-width: 500px; /* Limitar el ancho máximo */
         margin-left: auto;
         margin-right: auto;
     }
@@ -326,7 +326,7 @@
     
     @media (min-width: 992px) {
         .chart-body {
-            padding: 25px 10px 35px 10px; /* MÃ¡s espacio abajo para las leyendas */
+            padding: 25px 10px 35px 10px; /* Más espacio abajo para las leyendas */
         }
     }
     
@@ -1412,7 +1412,7 @@
         }
     }
     
-    /* ESTILOS LIMPIOS PARA GRÃFICOS */
+    /* ESTILOS LIMPIOS PARA GRÍFICOS */
     .analytics-card {
         border-radius: 12px;
         transition: all 0.3s ease;
@@ -1635,7 +1635,7 @@
         </div>
     </div>
 
-    <!-- GuÃ­a de navegaciÃ³n del informe -->
+    <!-- Guía de navegación del informe -->
     {% if not is_pdf %}
     <div class="row mb-4">
         <div class="col-12">
@@ -1659,7 +1659,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#graficos">
-                                <i class="fas fa-chart-pie me-1"></i> GrÃ¡ficos
+                                <i class="fas fa-chart-pie me-1"></i> Gráficos
                             </a>
                         </li>
                     </ul>
@@ -1670,7 +1670,7 @@
     {% endif %}
 
     {% if resumen_profesores %}
-    <!-- CÃ¡lculos para resumen general -->
+    <!-- Cálculos para resumen general -->
     {% set total_clases = namespace(value=0) %}
     {% set total_alumnos = namespace(value=0) %}
     
@@ -1703,10 +1703,10 @@
                             <div class="card border-0 shadow-sm h-100 text-center">
                                 <div class="card-body">
                                     <div class="display-4 text-info mb-2">
-                                        <i class="fas fa-users"></i>
+                                        <i class="fas fa-user-friends"></i>
                                     </div>
-                                    <h1 class="display-5 fw-bold mb-0">{{ total_alumnos.value }}</h1>
-                                    <p class="mb-0 text-muted">Total de alumnos</p>
+                                    <h1 class="display-5 fw-bold mb-0">{{ promedio_alumnos.value }}</h1>
+                                    <p class="mb-0 text-muted">Promedio alumnos/clase</p>
                                 </div>
                             </div>
                         </div>
@@ -1734,7 +1734,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center bg-white">
                     <div class="d-flex align-items-center">
                         <h2 class="h5 mb-0 me-3"><i class="fas fa-users me-2"></i> Resumen por Profesor</h2>
-                        <button id="sort-profesores" class="btn btn-sm btn-outline-primary" title="Ordenar alfabÃ©ticamente">
+                        <button id="sort-profesores" class="btn btn-sm btn-outline-primary" title="Ordenar alfabéticamente">
                             <i class="fas fa-sort-alpha-down"></i>
                         </button>
                     </div>
@@ -1830,7 +1830,7 @@
                                             {% if datos.total_clases > 0 %}
                                                 {{ (datos.total_alumnos / datos.total_clases)|round(1) }}
                                                 <div class="progress mt-1" style="height: 5px;">
-                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (datos.total_alumnos / datos.total_clases / 20 * 100)|round }}%;" title="Promedio respecto a capacidad tÃ­pica"></div>
+                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (datos.total_alumnos / datos.total_clases / 20 * 100)|round }}%;" title="Promedio respecto a capacidad típica"></div>
                                                 </div>
                                             {% else %}
                                                 0
@@ -1839,7 +1839,7 @@
                                         <td class="text-center align-middle">${{ datos.profesor.tarifa_por_clase|round(2) }}</td>
                                         <td class="text-center align-middle">
                                             <a href="{{ url_for('metricas_profesor', profesor_id=profesor_id) }}" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-chart-line me-1"></i> MÃ©tricas
+                                                <i class="fas fa-chart-line me-1"></i> Métricas
                                             </a>
                                         </td>
                                     </tr>
@@ -1907,7 +1907,7 @@
                                                                     {% elif clase.profesor_suplente %}
                                                                         <span class="text-muted fst-italic">Suplente</span>
                                                                     {% elif clase.ausencia_profesor %}
-                                                                        <span class="text-muted fst-italic">No asistiÃ³</span>
+                                                                        <span class="text-muted fst-italic">No asistió</span>
                                                                     {% else %}
                                                                         <span class="text-danger fw-bold">SIN REGISTRO DE ASISTENCIA</span>
                                                                     {% endif %}
@@ -1950,7 +1950,7 @@
                                                 </div>
                                                 {% else %}
                                                 <div class="alert alert-info mb-0">
-                                                    No hay clases registradas para este profesor en el perÃ­odo seleccionado.
+                                                    No hay clases registradas para este profesor en el período seleccionado.
                                                 </div>
                                                 {% endif %}
                                             </div>
@@ -1966,7 +1966,7 @@
         </div>
     </div>
 
-    <!-- SecciÃ³n: Clases detalladas -->
+    <!-- Sección: Clases detalladas -->
     <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -2099,7 +2099,7 @@
                         </div>
                         {% else %}
                         <div class="alert alert-info m-3">
-                            <i class="fas fa-info-circle me-2"></i> No hay clases registradas para este perÃ­odo.
+                            <i class="fas fa-info-circle me-2"></i> No hay clases registradas para este período.
                         </div>
                         {% endif %}
                     </div>
@@ -2108,7 +2108,7 @@
         </div>
     </div>
     
-    <!-- NUEVA SECCIÃ“N: Clases no registradas -->
+    <!-- NUEVA SECCIÍ“N: Clases no registradas -->
     <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -2128,7 +2128,7 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning mb-3">
-                        <i class="fas fa-info-circle me-2"></i> Las siguientes clases estaban programadas pero no tienen registros de asistencia en el sistema. Puede que las clases se hayan realizado pero no se hayan registrado, o que se hayan cancelado sin notificaciÃ³n.
+                        <i class="fas fa-info-circle me-2"></i> Las siguientes clases estaban programadas pero no tienen registros de asistencia en el sistema. Puede que las clases se hayan realizado pero no se hayan registrado, o que se hayan cancelado sin notificación.
                     </div>
                     
                     <!-- Filtros y acciones para clases no registradas -->
@@ -2166,7 +2166,7 @@
                                         <th scope="col">Tipo</th>
                                         <th scope="col">Horario</th>
                                         <th scope="col">Profesor</th>
-                                        <th scope="col">AcciÃ³n</th>
+                                        <th scope="col">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2216,7 +2216,7 @@
                         </form>
                         {% else %}
                         <div class="alert alert-success m-3">
-                            <i class="fas fa-check-circle me-2"></i> Todas las clases programadas para este perÃ­odo han sido registradas correctamente.
+                            <i class="fas fa-check-circle me-2"></i> Todas las clases programadas para este período han sido registradas correctamente.
                         </div>
                         {% endif %}
                     </div>
@@ -2225,7 +2225,7 @@
         </div>
     </div>
     
-    <!-- Modal de confirmaciÃ³n para registro masivo -->
+    <!-- Modal de confirmación para registro masivo -->
     <div class="modal fade" id="modalConfirmacionRegistro" tabindex="-1" aria-labelledby="modalConfirmacionRegistroLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -2234,11 +2234,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>EstÃ¡ a punto de registrar <strong id="numClasesARegistrar">0</strong> clases no registradas.</p>
+                    <p>Está a punto de registrar <strong id="numClasesARegistrar">0</strong> clases no registradas.</p>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> Estas clases se crearÃ¡n con <strong>0 alumnos</strong> y se marcarÃ¡n como registradas automÃ¡ticamente. Puede editar los detalles mÃ¡s tarde.
+                        <i class="fas fa-info-circle me-2"></i> Estas clases se crearán con <strong>0 alumnos</strong> y se marcarán como registradas automáticamente. Puede editar los detalles más tarde.
                     </div>
-                    <p>Â¿EstÃ¡ seguro de continuar?</p>
+                    <p>¿Está seguro de continuar?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -2248,7 +2248,7 @@
         </div>
     </div>
     
-    <!-- SecciÃ³n: AnÃ¡lisis Visual Mejorado -->
+    <!-- Sección: Análisis Visual Mejorado -->
     <div class="row mb-5" id="graficos">
         <div class="col-12">
             <div class="card border-0 shadow-lg analytics-card-modern">
@@ -2471,7 +2471,7 @@
                         <h4 class="alert-heading">No hay datos disponibles</h4>
                         <p>No se encontraron datos para mostrar en el informe del mes de {{ nombre_mes }} de {{ anio }}.</p>
                         <hr>
-                        <p class="mb-0">Verifica que existan registros de clases para este perÃ­odo o selecciona un mes diferente.</p>
+                        <p class="mb-0">Verifica que existan registros de clases para este período o selecciona un mes diferente.</p>
                         <a href="{{ url_for('informe_mensual') }}" class="btn btn-info mt-3">
                             <i class="fas fa-calendar-alt me-1"></i> Seleccionar otro mes
                         </a>
@@ -2482,7 +2482,7 @@
     </div>
     {% endif %}
 
-    <!-- BotÃ³n volver flotante -->
+    <!-- Botón volver flotante -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
         <a href="#" class="btn btn-primary btn-lg rounded-circle shadow" id="btn-back-to-top">
             <i class="fas fa-arrow-up"></i>
@@ -2492,9 +2492,9 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Asegurar que Bootstrap estÃ© disponible -->
+<!-- Asegurar que Bootstrap esté disponible -->
 <script>
-    // Verificar si bootstrap ya estÃ¡ definido
+    // Verificar si bootstrap ya está definido
     if (typeof bootstrap === 'undefined') {
         console.log('Bootstrap no detectado, cargando...');
         // Crear un elemento script para cargar Bootstrap
@@ -2506,7 +2506,7 @@
         // Esperar a que cargue antes de inicializar los componentes de Bootstrap
         bootstrapScript.onload = function() {
             console.log('Bootstrap cargado correctamente');
-            // Disparar un evento personalizado para que otro cÃ³digo sepa que bootstrap estÃ¡ listo
+            // Disparar un evento personalizado para que otro código sepa que bootstrap está listo
             document.dispatchEvent(new Event('bootstrap:loaded'));
         };
         
@@ -2640,13 +2640,13 @@
                 
                 if (detailRow) {
                     if (nameMatches && typeMatches) {
-                        // Solo mostrar si el Ã­cono del botÃ³n tiene la clase fa-minus (detalles expandidos)
+                        // Solo mostrar si el ícono del botón tiene la clase fa-minus (detalles expandidos)
                         let isExpanded = row.querySelector('.toggle-clases i').classList.contains('fa-minus');
                         
                         if (isExpanded) {
-                            // Si ya estaba expandido, mantenerlo expandido con la animaciÃ³n
+                            // Si ya estaba expandido, mantenerlo expandido con la animación
                             detailRow.style.display = 'table-row';
-                            // Si no tiene la clase slide-down, aÃ±adirla para animar
+                            // Si no tiene la clase slide-down, añadirla para animar
                             if (!detailRow.classList.contains('slide-down')) {
                                 detailRow.classList.remove('slide-up');
                                 void detailRow.offsetWidth; // Forzar reflow
@@ -2656,7 +2656,7 @@
                             detailRow.style.display = 'none';
                         }
                     } else {
-                        // Si no coincide con el filtro, ocultar sin animaciÃ³n
+                        // Si no coincide con el filtro, ocultar sin animación
                         detailRow.style.display = 'none';
                         detailRow.classList.remove('slide-down', 'slide-up');
                     }
@@ -2768,17 +2768,17 @@
                 const icon = this.querySelector('i');
                 
                 if (detailRow) {
-                    // Limpiar clases de animaciÃ³n previas
+                    // Limpiar clases de animación previas
                     detailRow.classList.remove('slide-down', 'slide-up');
                     
                     if (detailRow.style.display === 'none' || detailRow.style.display === '') {
                         // Cambiar estilo de display antes de animar
                         detailRow.style.display = 'table-row';
                         
-                        // Forzar un reflow del DOM para asegurar que la animaciÃ³n se inicie correctamente
+                        // Forzar un reflow del DOM para asegurar que la animación se inicie correctamente
                         void detailRow.offsetWidth;
                         
-                        // Aplicar animaciÃ³n de despliegue
+                        // Aplicar animación de despliegue
                         detailRow.classList.add('slide-down');
                         
                         // Cambiar el icono
@@ -2792,13 +2792,13 @@
                         icon.classList.remove('fa-minus');
                         icon.classList.add('fa-plus');
                         
-                        // Esperar a que termine la animaciÃ³n para ocultar la fila
+                        // Esperar a que termine la animación para ocultar la fila
                         setTimeout(() => {
                             detailRow.style.display = 'none';
-                        }, 180); // Ligeramente menor que la duraciÃ³n de la animaciÃ³n (0.2s)
+                        }, 180); // Ligeramente menor que la duración de la animación (0.2s)
                     }
                 } else {
-                    console.error('No se encontrÃ³ la fila de detalles:', `clases-profesor-${profesorId}`);
+                    console.error('No se encontró la fila de detalles:', `clases-profesor-${profesorId}`);
                 }
             });
         });
