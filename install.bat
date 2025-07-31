@@ -80,6 +80,9 @@ if %errorlevel% neq 0 (
     pip install pywhatkit==5.4
     pip install pyautogui==0.9.54
     
+    echo Verificando que flask-wtf se instalo correctamente...
+    python -c "import flask_wtf; print('flask-wtf OK')" || echo ERROR: flask-wtf no se instalo correctamente
+    
     echo Instalando dependencias para procesamiento de datos y audio...
     pip install numpy
     pip install pandas
