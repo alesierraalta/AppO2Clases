@@ -1,7 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: Configurar codificación UTF-8
 chcp 65001 >nul 2>&1
 set PYTHONIOENCODING=utf-8
 set PYTHONUTF8=1
@@ -13,7 +12,6 @@ echo INICIANDO CLASES O2
 echo ===============================
 echo.
 
-:: Verificar si el entorno virtual existe
 if not exist venv\Scripts\activate.bat (
     echo ERROR: Entorno virtual no encontrado. 
     echo Por favor, ejecute install.bat primero para configurar el entorno.
@@ -21,7 +19,6 @@ if not exist venv\Scripts\activate.bat (
     exit /b 1
 )
 
-:: Activar el entorno virtual
 echo Activando entorno virtual...
 call venv\Scripts\activate.bat
 if %errorlevel% neq 0 (
@@ -31,12 +28,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Verificar y reparar base de datos (sin depender de Flask)
 echo Verificando base de datos directamente...
 python fix_db.py
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: El script independiente de base de datos falló.
-    echo Intentando métodos alternativos...
+    echo ADVERTENCIA: El script independiente de base de datos fallo.
+    echo Intentando metodos alternativos...
     
     echo 1. Verificando si la base de datos existe...
     python check_db.py
@@ -46,12 +42,12 @@ if %errorlevel% neq 0 (
         python create_db.py
         
         if %errorlevel% neq 0 (
-            echo 3. Último intento: creando tablas manualmente...
+            echo 3. Ultimo intento: creando tablas manualmente...
             python create_tables.py
             
             if %errorlevel% neq 0 (
-                echo ERROR: No se pudo crear la base de datos tras múltiples intentos.
-                echo Por favor, ejecute install.bat para una instalación completa o contacte soporte.
+                echo ERROR: No se pudo crear la base de datos tras multiples intentos.
+                echo Por favor, ejecute install.bat para una instalacion completa o contacte soporte.
             pause
             exit /b 1
             )
@@ -62,21 +58,18 @@ if %errorlevel% neq 0 (
     python update_db.py
 )
 
-:: Verificación CRÍTICA de la columna 'activo' en la tabla horario_clase
-echo Verificando columna 'activo' en la tabla horario_clase...
-echo Esta comprobacion es esencial para evitar el error: "no such column: horario_clase.activo"
+echo Verificando columna activo en la tabla horario_clase...
+echo Esta comprobacion es esencial para evitar el error: no such column: horario_clase.activo
 
-:: Verificar si la columna existe y crearla si no existe usando el script dedicado
 python verify_columns.py
 
 if %errorlevel% neq 0 (
-    echo ERROR CRITICO: No se pudo agregar la columna 'activo'. La aplicacion no funcionara correctamente.
+    echo ERROR CRITICO: No se pudo agregar la columna activo. La aplicacion no funcionara correctamente.
     echo Por favor, ejecute install.bat para reinstalar la aplicacion completamente.
     pause
     exit /b 1
 )
 
-:: Sincronizar archivos de modelos
 echo Sincronizando archivos de modelos...
 if exist models.py (
     if exist app\ (
@@ -91,17 +84,14 @@ if exist models.py (
     echo Modelos sincronizados correctamente.
 )
 
-:: Limpiar caché de Python
 echo Limpiando cache de Python...
 for /d /r %%d in (__pycache__) do (
     rd /s /q "%%d" 2>nul
 )
 
-:: Establecer variables de entorno de Flask
 set FLASK_APP=app.py
 set FLASK_ENV=development
 
-:: Configuración de notificaciones
 echo Configurando notificaciones...
 if not defined NOTIFICATION_PHONE_NUMBER (
     set NOTIFICATION_PHONE_NUMBER=+584244461682
@@ -116,7 +106,6 @@ if not defined NOTIFICATION_HOUR_2 (
 echo Notificaciones configuradas para el numero: %NOTIFICATION_PHONE_NUMBER%
 echo a las horas: %NOTIFICATION_HOUR_1% y %NOTIFICATION_HOUR_2%
 
-:: Verificar directorios necesarios
 echo Verificando directorios necesarios...
 if not exist "static\uploads\audio" (
     mkdir "static\uploads\audio" 2>nul
@@ -128,11 +117,10 @@ if not exist "logs" (
     mkdir "logs" 2>nul
 )
 
-:: Eliminar cualquier base de datos vacía que pueda haber quedado
 echo Verificando integridad final de la base de datos...
 python -c "import os, sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('SELECT count(name) FROM sqlite_master WHERE type=\"table\"'); count=c.fetchone()[0]; conn.close(); exit(0 if count > 0 else 1)"
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: La base de datos existe pero está vacía. Intentando un último método...
+    echo ADVERTENCIA: La base de datos existe pero esta vacia. Intentando un ultimo metodo...
     python create_tables.py
     if %errorlevel% neq 0 (
         echo ERROR: No se pudo inicializar la base de datos.
@@ -147,18 +135,15 @@ echo INICIANDO APLICACION
 echo ===============================
 echo Puede acceder a la aplicacion en: http://127.0.0.1:5000
 echo.
-echo NOTA: Los mensajes "Error setting up date handling" son advertencias
+echo NOTA: Los mensajes Error setting up date handling son advertencias
 echo       inofensivas y no afectan el funcionamiento de la aplicacion.
 echo.
 
-:: Intentar abrir el navegador automáticamente
 start "" http://127.0.0.1:5000
 
-:: Iniciar la aplicación Flask
 echo Iniciando servidor...
 flask run --host=0.0.0.0 --port=5000
 
-:: Si falla, intentar métodos alternativos
 if %errorlevel% neq 0 (
     echo ADVERTENCIA: Fallo al iniciar con flask run. Intentando metodo alternativo...
     echo.
@@ -177,4 +162,4 @@ if %errorlevel% neq 0 (
 )
 
 deactivate
-endlocal 
+endlocal
