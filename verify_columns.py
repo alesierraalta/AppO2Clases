@@ -1,109 +1,98 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Script para verificar y añadir columnas necesarias en la base de datos
-Reemplaza la línea compleja de código que está causando errores de sintaxis en los batch files
+Verificador de columnas para la base de datos O2 Fitness
+Verifica y agrega columnas faltantes en las tablas necesarias
 """
 
 import sqlite3
 import sys
 import os
+from pathlib import Path
 
-def verify_and_add_columns():
-    """
-    Verifica que las columnas necesarias existan en la tabla horario_clase
-    y las crea si no existen
-    """
-    db_path = 'gimnasio.db'
+def verify_and_add_activo_column():
+    """Verifica y agrega la columna 'activo' a la tabla horario_clase si no existe"""
     
-    if not os.path.exists(db_path):
-        print(f"ERROR: La base de datos {db_path} no existe.")
+    # Buscar la base de datos
+    db_paths = ['gimnasio.db', 'instance/gimnasio.db']
+    db_path = None
+    
+    for path in db_paths:
+        if os.path.exists(path):
+            db_path = path
+            break
+    
+    if not db_path:
+        print("ERROR: No se encontró la base de datos gimnasio.db")
         return False
     
-    conn = None
     try:
-        # Conectar a la base de datos
+        print(f"Conectando a la base de datos: {db_path}")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Verificar que la tabla horario_clase existe
-        cursor.execute("""
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name='horario_clase'
-        """)
-        
+        # Verificar si la tabla horario_clase existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='horario_clase'")
         if not cursor.fetchone():
-            print('ERROR: La tabla horario_clase no existe.')
+            print("ERROR: La tabla horario_clase no existe")
+            conn.close()
             return False
         
-        # Obtener información de las columnas actuales
-        cursor.execute('PRAGMA table_info(horario_clase)')
-        columns = cursor.fetchall()
-        column_names = [col[1] for col in columns]
+        # Verificar si la columna 'activo' existe
+        cursor.execute("PRAGMA table_info(horario_clase)")
+        columns = [column[1] for column in cursor.fetchall()]
         
-        print(f"Columnas actuales: {', '.join(column_names)}")
-        
-        # Verificar columnas específicas
-        activo_exists = 'activo' in column_names
-        desactivacion_exists = 'fecha_desactivacion' in column_names
-        
-        print(f"Columna activo: {'EXISTE' if activo_exists else 'NO EXISTE'}")
-        print(f"Columna fecha_desactivacion: {'EXISTE' if desactivacion_exists else 'NO EXISTE'}")
-        
-        # Agregar columnas faltantes
-        changes_made = False
-        
-        if not activo_exists:
-            print('Agregando columna activo...')
-            cursor.execute('ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1')
-            changes_made = True
-            print('Columna activo agregada.')
-        
-        if not desactivacion_exists:
-            print('Agregando columna fecha_desactivacion...')
-            cursor.execute('ALTER TABLE horario_clase ADD COLUMN fecha_desactivacion DATE')
-            changes_made = True
-            print('Columna fecha_desactivacion agregada.')
-        
-        # Confirmar cambios si se realizaron
-        if changes_made:
+        if 'activo' not in columns:
+            print("Agregando columna 'activo' a la tabla horario_clase...")
+            cursor.execute("ALTER TABLE horario_clase ADD COLUMN activo BOOLEAN DEFAULT 1")
             conn.commit()
-            print('Cambios guardados en la base de datos.')
+            print("✓ Columna 'activo' agregada exitosamente!")
+        else:
+            print("✓ La columna 'activo' ya existe en la tabla horario_clase")
         
-        # Verificación final
-        cursor.execute('PRAGMA table_info(horario_clase)')
-        new_columns = cursor.fetchall()
-        new_column_names = [col[1] for col in new_columns]
+        # Verificar el esquema final
+        cursor.execute("PRAGMA table_info(horario_clase)")
+        columns = cursor.fetchall()
+        print(f"\nEsquema actual de la tabla horario_clase ({len(columns)} columnas):")
+        for column in columns:
+            column_info = f"  {column[1]} ({column[2]})"
+            if column[3]:  # NOT NULL
+                column_info += " NOT NULL"
+            if column[4] is not None:  # DEFAULT value
+                column_info += f" DEFAULT {column[4]}"
+            if column[5]:  # PRIMARY KEY
+                column_info += " PRIMARY KEY"
+            print(column_info)
         
-        if 'activo' not in new_column_names:
-            print('ERROR: No se pudo agregar la columna activo.')
-            return False
+        # Verificar que la columna activo funcione
+        cursor.execute("SELECT COUNT(*) FROM horario_clase WHERE activo IS NOT NULL")
+        count = cursor.fetchone()[0]
+        print(f"✓ Verificación exitosa: {count} registros con columna 'activo' válida")
         
-        if 'fecha_desactivacion' not in new_column_names:
-            print('ERROR: No se pudo agregar la columna fecha_desactivacion.')
-            return False
-        
-        print('✅ Columnas verificadas correctamente.')
+        conn.close()
         return True
         
-    except Exception as e:
-        print(f'Error: {e}')
+    except sqlite3.Error as e:
+        print(f"ERROR de SQLite: {e}")
         return False
-        
-    finally:
-        if conn:
-            conn.close()
+    except Exception as e:
+        print(f"ERROR inesperado: {e}")
+        return False
 
 def main():
     """Función principal"""
-    print("Verificando columnas de la base de datos...")
+    print("=" * 50)
+    print("VERIFICADOR DE COLUMNAS - O2 FITNESS")
+    print("=" * 50)
     
-    if verify_and_add_columns():
-        print("Verificación completada exitosamente.")
-        sys.exit(0)
+    success = verify_and_add_activo_column()
+    
+    if success:
+        print("\n✓ Verificación de columnas completada exitosamente")
+        return 0
     else:
-        print("Verificación falló.")
-        sys.exit(1)
+        print("\n✗ Error en la verificación de columnas")
+        return 1
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    exit_code = main()
+    sys.exit(exit_code)

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Informe Mensual Simple - Sistema de Gestión de Clases{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header con acciones principales -->
+    <div class="card bg-light mb-4 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-primary">
+                        <i class="fas fa-file-alt me-2"></i> Informe Simple
+                    </h1>
+                    <p class="lead text-muted mb-0">{{ nombre_mes }} {{ anio }}</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Imprimir
+                    </button>
+
+                    <a href="{{ url_for('informe_mensual') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync me-1"></i> Nuevo informe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Mensuales Básicas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Métricas Mensuales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h3 class="text-primary mb-1">{{ total_clases }}</h3>
+                                <p class="text-muted mb-0 small">Total Clases</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h3 class="text-success mb-1">{{ total_alumnos }}</h3>
+                                <p class="text-muted mb-0 small">Total Alumnos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h3 class="text-info mb-1">${{ "%.0f"|format(total_pagos) }}</h3>
+                                <p class="text-muted mb-0 small">Total Pagos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h3 class="text-warning mb-1">{{ total_retrasos }}</h3>
+                                <p class="text-muted mb-0 small">Retrasos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Métricas adicionales -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Promedio por Clase</h6>
+                                <span class="h5">{{ "%.1f"|format((total_alumnos|int) / (total_clases|int) if total_clases > 0 else 0) }} alumnos</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Puntualidad</h6>
+                                <span class="h5">{{ "%.1f"|format((((total_clases|int) - (total_retrasos|int)) / (total_clases|int) * 100) if total_clases > 0 else 0) }}%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Pago Promedio</h6>
+                                <span class="h5">${{ "%.0f"|format(total_pagos / total_clases if total_clases > 0 else 0) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Profesores -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Métricas por Profesor</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Profesor</th>
+                                    <th class="text-center">Clases</th>
+                                    <th class="text-center">Alumnos</th>
+                                    <th class="text-center">Pago Total</th>
+                                    <th class="text-center">Promedio/Clase</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profesor_id, datos in resumen_profesores.items() %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ datos.profesor.nombre }} {{ datos.profesor.apellido }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ datos.total_clases }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ datos.total_alumnos }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>${{ "%.0f"|format(datos.pago_total) }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        {{ "%.1f"|format(datos.total_alumnos / datos.total_clases if datos.total_clases > 0 else 0) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen por Tipos de Clase -->
+    {% if conteo_tipos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-dumbbell me-2"></i>Tipos de Clase</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for tipo, cantidad in conteo_tipos.items() %}
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-primary">{{ cantidad }}</h4>
+                                <p class="mb-1"><strong>{{ tipo }}</strong></p>
+                                <small class="text-muted">{{ alumnos_tipos[tipo] if alumnos_tipos else 0 }} alumnos</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript para PDF con gráficos -->
+<script>
+// Variables globales
+window.currentMonth = {{ mes }};
+window.currentYear = {{ anio }};
+
+// Objeto ModernCharts simplificado para la vista simple
+const ModernCharts = {
+    generatePDFWithCharts: function() {
+        console.log('🔄 Generando PDF completo desde vista simple...');
+        
+        // Preparar datos básicos para el PDF
+        const pdfData = {
+            charts: {}, // Sin gráficos en vista simple
+            month: window.currentMonth,
+            year: window.currentYear,
+            includeCharts: false
+        };
+        
+        // Enviar al servidor
+        fetch('/informes/mensual/pdf-with-charts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(pdfData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Descargar el PDF
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `informe_completo_${window.currentYear}_${window.currentMonth}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            console.log('✅ PDF completo descargado exitosamente');
+        })
+        .catch(error => {
+            console.error('❌ Error generating PDF:', error);
+            alert('Error al generar PDF: ' + error.message);
+        });
+    }
+};
+</script>
+{% endblock %}

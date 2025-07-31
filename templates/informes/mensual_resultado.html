@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Resultados Informe Mensual - Sistema de Gestión de Clases{% endblock %}
+{% block title %}Resultados Informe Mensual - Sistema de GestiÃ³n de Clases{% endblock %}
 
 {% block styles %}
 <style media="print">
@@ -68,7 +68,7 @@
         background-color: #dc3545 !important;
     }
     
-    /* Estilos para la sección de clases no registradas */
+    /* Estilos para la secciÃ³n de clases no registradas */
     #clases-no-registradas .badge {
         font-size: 0.85rem;
         padding: 0.4em 0.8em;
@@ -169,7 +169,7 @@
         }
     }
 
-    /* Estilos para subtítulos de gráficos */
+    /* Estilos para subtÃ­tulos de grÃ¡ficos */
     .chart-subtitle {
         font-size: 0.8rem;
         color: #6c757d;
@@ -224,7 +224,7 @@
         border: none !important;
     }
 
-    /* Ajuste normalizado para gráficos de pastel */
+    /* Ajuste normalizado para grÃ¡ficos de pastel */
     .card .card-body canvas {
         height: 300px !important; /* Increased from 240px */
         width: 100% !important;
@@ -276,10 +276,10 @@
         overflow: hidden;
         height: auto !important; /* Auto-altura para mantener proporciones */
         width: 100%;
-        aspect-ratio: 1/1; /* Forzar proporción cuadrada para el contenedor */
+        aspect-ratio: 1/1; /* Forzar proporciÃ³n cuadrada para el contenedor */
         border: 1px solid rgba(var(--bs-primary-rgb), 0.1);
         margin-bottom: 20px; /* Added margin between charts */
-        max-width: 500px; /* Limitar el ancho máximo */
+        max-width: 500px; /* Limitar el ancho mÃ¡ximo */
         margin-left: auto;
         margin-right: auto;
     }
@@ -326,7 +326,7 @@
     
     @media (min-width: 992px) {
         .chart-body {
-            padding: 25px 10px 35px 10px; /* Más espacio abajo para las leyendas */
+            padding: 25px 10px 35px 10px; /* MÃ¡s espacio abajo para las leyendas */
         }
     }
     
@@ -511,6 +511,868 @@
         background-clip: text;
         -webkit-text-fill-color: transparent;
     }
+    
+    /* ESTILOS MODERNOS PARA ANÁLISIS VISUAL */
+    
+    /* Header moderno con gradiente */
+    .analytics-card-modern {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .analytics-header-modern {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        animation: slideInUp var(--animation-speed-slow) var(--animation-easing-smooth);
+    }
+    
+    .analytics-header-modern::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            45deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent
+        );
+        transform: rotate(45deg);
+        animation: shimmerGlow 3s ease-in-out infinite;
+    }
+    
+    .analytics-header-modern::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    /* Panel KPIs */
+    .kpi-dashboard {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .kpi-card {
+        padding: 2rem 1.5rem;
+        border-right: 1px solid rgba(255,255,255,0.2);
+        transition: all var(--animation-speed-normal) var(--animation-easing-elastic);
+        position: relative;
+        overflow: hidden;
+        animation: slideInLeft var(--animation-speed-slow) var(--animation-easing-bounce);
+        will-change: transform, opacity;
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        transition: all 0.3s ease;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-12px) scale(1.05);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        background: rgba(255,255,255,0.15);
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    .kpi-card:hover .kpi-icon {
+        transform: scale(1.2) rotate(10deg);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.25);
+        animation: float 2s ease-in-out infinite;
+    }
+    
+    .kpi-card:hover .kpi-value {
+        transform: scale(1.08);
+        text-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: wave 1.5s ease-in-out infinite;
+    }
+    
+    .kpi-primary::before { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+    .kpi-success::before { background: linear-gradient(90deg, #10b981, #047857); }
+    .kpi-warning::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .kpi-info::before { background: linear-gradient(90deg, #06b6d4, #0891b2); }
+    
+    .kpi-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .kpi-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .kpi-primary .kpi-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .kpi-success .kpi-icon { background: linear-gradient(135deg, #10b981, #047857); }
+    .kpi-warning .kpi-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .kpi-info .kpi-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    
+    .kpi-data {
+        flex: 1;
+    }
+    
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(45deg, #1f2937, #374151);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .kpi-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .kpi-trend {
+        font-size: 0.75rem;
+        color: #10b981;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    /* Tarjetas de gráficos modernos */
+    .charts-modern-container {
+        background: #f8fafc;
+    }
+    
+    .chart-card-modern {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all var(--animation-speed-normal) var(--animation-easing-elastic);
+        height: 100%;
+        border: 1px solid rgba(0,0,0,0.05);
+        animation: fadeInScale var(--animation-speed-slow) var(--animation-easing-smooth);
+        will-change: transform, opacity;
+    }
+    
+    .chart-card-modern:hover {
+        transform: translateY(-12px) scale(1.03);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        border-color: rgba(102, 126, 234, 0.7);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .chart-card-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 16px;
+        pointer-events: none;
+    }
+    
+    .chart-card-modern:hover::before {
+        opacity: 1;
+    }
+    
+    .chart-header-modern {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .chart-title-modern {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .chart-subtitle-modern {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
+    }
+    
+    .chart-body-modern {
+        position: relative;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .chart-body-bar {
+        height: 250px;
+    }
+    
+    .chart-legend-modern {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+    
+    .legend-item-modern {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #f1f5f9;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all var(--animation-speed-fast) var(--animation-easing-elastic);
+        animation: slideInRight var(--animation-speed-normal) var(--animation-easing-smooth);
+        will-change: transform, background-color;
+    }
+    
+    .legend-item-modern:hover {
+        background: #e2e8f0;
+        transform: scale(1.12) translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        animation: pulseGlow 1.5s ease-in-out infinite;
+    }
+    
+    .legend-item-modern:hover .legend-color-modern {
+        transform: scale(1.4) rotate(10deg);
+        box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        animation: float 2s ease-in-out infinite;
+    }
+    
+    .legend-color-modern {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    /* Estadísticas detalladas */
+    .stats-summary-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .stats-header h5 {
+        color: #1f2937;
+        font-weight: 700;
+    }
+    
+    .stats-body {
+        padding: 0;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all var(--animation-speed-normal) var(--animation-easing-elastic);
+        border: 1px solid rgba(0,0,0,0.05);
+        height: 100%;
+        animation: bounceIn var(--animation-speed-slow) var(--animation-easing-bounce);
+        will-change: transform, opacity;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-6px) scale(1.05);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+        animation: float 2.5s ease-in-out infinite;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.25rem;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        color: #1f2937;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-description {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        line-height: 1.4;
+    }
+    
+    .stat-move .stat-icon { background: linear-gradient(135deg, #10b981, #047857); }
+    .stat-ride .stat-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .stat-box .stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .stat-general .stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    
+    /* Responsive design */
+    @media (max-width: 1200px) {
+        .analytics-header-modern {
+            padding: 1.5rem;
+        }
+        
+        .kpi-card {
+            padding: 1.5rem 1rem;
+        }
+        
+        .kpi-value {
+            font-size: 2rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .analytics-header-modern {
+            padding: 1rem;
+        }
+        
+        .kpi-card {
+            padding: 1rem;
+            border-right: none;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .kpi-card:last-child {
+            border-bottom: none;
+        }
+        
+        .kpi-content {
+            gap: 0.75rem;
+        }
+        
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+        
+        .kpi-value {
+            font-size: 1.75rem;
+        }
+        
+        .chart-body-modern {
+            height: 250px;
+        }
+        
+        .metric-circle {
+            width: 60px;
+            height: 60px;
+            font-size: 1rem;
+        }
+    }
+    
+    /* Dark mode support */
+    [data-bs-theme="dark"] .analytics-card-modern {
+        background-color: #1e1e1e;
+    }
+    
+    [data-bs-theme="dark"] .kpi-dashboard {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    }
+    
+    [data-bs-theme="dark"] .charts-modern-container {
+        background: #1a202c;
+    }
+    
+    [data-bs-theme="dark"] .chart-card-modern,
+    [data-bs-theme="dark"] .performance-metrics-card {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    [data-bs-theme="dark"] .chart-title-modern,
+    [data-bs-theme="dark"] .performance-header h5,
+    [data-bs-theme="dark"] .metric-label {
+        color: #ffffff;
+    }
+    
+    [data-bs-theme="dark"] .chart-subtitle-modern,
+    [data-bs-theme="dark"] .kpi-label,
+    [data-bs-theme="dark"] .metric-desc {
+        color: #a0aec0;
+    }
+    
+    [data-bs-theme="dark"] .kpi-value {
+        background: linear-gradient(45deg, #ffffff, #e2e8f0);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    [data-bs-theme="dark"] .legend-item-modern {
+        background: #4a5568;
+        color: #ffffff;
+    }
+    
+    [data-bs-theme="dark"] .legend-item-modern:hover {
+        background: #2d3748;
+    }
+    
+    /* ========================================
+       SISTEMA DE ANIMACIONES FLUIDAS
+    ======================================== */
+    
+    /* Variables CSS para animaciones consistentes */
+    :root {
+        --animation-speed-fast: 0.2s;
+        --animation-speed-normal: 0.3s;
+        --animation-speed-slow: 0.6s;
+        --animation-easing-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        --animation-easing-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        --animation-easing-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Animación base para todos los elementos */
+    * {
+        transition: transform var(--animation-speed-normal) var(--animation-easing-smooth),
+                   opacity var(--animation-speed-normal) var(--animation-easing-smooth),
+                   box-shadow var(--animation-speed-normal) var(--animation-easing-smooth),
+                   background-color var(--animation-speed-normal) var(--animation-easing-smooth),
+                   border-color var(--animation-speed-normal) var(--animation-easing-smooth);
+    }
+    
+    /* Animaciones de entrada mejoradas */
+    @keyframes slideInUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideInLeft {
+        from {
+            transform: translateX(-30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeInScale {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes bounceIn {
+        0% {
+            transform: scale(0.3);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        70% {
+            transform: scale(0.9);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    /* Efecto de pulso mejorado */
+    @keyframes pulseGlow {
+        0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+        }
+        50% { 
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+        }
+    }
+    
+    /* Efecto de brillo mejorado */
+    @keyframes shimmerGlow {
+        0% { 
+            background-position: -200% 0;
+            transform: translateX(-100%);
+        }
+        100% { 
+            background-position: 200% 0;
+            transform: translateX(100%);
+        }
+    }
+    
+    /* Animación de carga */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes wave {
+        0%, 60%, 100% {
+            transform: initial;
+        }
+        30% {
+            transform: translateY(-15px);
+        }
+    }
+    
+    /* Animación de flotación */
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    /* Animaciones de carga */
+    @keyframes skeletonLoading {
+        0% {
+            background-position: -200px 0;
+        }
+        100% {
+            background-position: calc(200px + 100%) 0;
+        }
+    }
+    
+    @keyframes dotPulse {
+        0%, 80%, 100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
+    }
+    
+    /* Componente de carga */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all var(--animation-speed-normal) var(--animation-easing-smooth);
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .loading-spinner {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .loading-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        animation: dotPulse 1.4s ease-in-out infinite both;
+    }
+    
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+    .loading-dot:nth-child(3) { animation-delay: 0s; }
+    
+    .loading-text {
+        margin-left: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #4a5568;
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    /* Skeleton loading para gráficos */
+    .chart-skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200px 100%;
+        animation: skeletonLoading 1.5s infinite;
+        border-radius: 8px;
+        height: 300px;
+        width: 100%;
+    }
+    
+    /* Micro-interacciones */
+    .micro-feedback {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .micro-feedback::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(102, 126, 234, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+    
+    .micro-feedback:active::after {
+        width: 200px;
+        height: 200px;
+    }
+    
+    /* Animaciones de feedback visual */
+    .success-feedback {
+        animation: pulseGlow 0.6s ease-out;
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        border-color: #10b981 !important;
+    }
+    
+    .error-feedback {
+        animation: shake 0.6s ease-out;
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        border-color: #ef4444 !important;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    @keyframes ripple {
+        0% {
+            transform: scale(0);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    /* Optimizaciones de performance */
+    .will-change-transform {
+        will-change: transform;
+    }
+    
+    .will-change-opacity {
+        will-change: opacity;
+    }
+    
+    .gpu-accelerated {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+    }
+    
+    /* Mejoras para dispositivos con reducción de movimiento */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+    
+    .kpi-card:hover::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s ease-in-out;
+        pointer-events: none;
+        border-radius: inherit;
+    }
+    
+    /* Efecto de ondas en gráficos */
+    @keyframes ripple {
+        0% {
+            transform: scale(0);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+    
+    .chart-card-modern:hover::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.3);
+        transform: translate(-50%, -50%);
+        animation: ripple 0.6s ease-out;
+        pointer-events: none;
+    }
+    
+    /* Transiciones suaves para todos los canvas */
+    canvas {
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    /* Efecto de glow en hover de leyendas */
+    .legend-item-modern:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 0 20px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Mejoras para el modo oscuro */
+    [data-bs-theme="dark"] .chart-card-modern:hover::before {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    }
+    
+    [data-bs-theme="dark"] .kpi-card:hover::after {
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent
+        );
+    }
 
     /* Estilos para el panel lateral de referencia de colores */
     @media (min-width: 992px) {
@@ -547,6 +1409,110 @@
         
         .mobile-reference-panel {
             display: block;
+        }
+    }
+    
+    /* ESTILOS LIMPIOS PARA GRÃFICOS */
+    .analytics-card {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .analytics-card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .chart-container {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .chart-container:hover {
+        border-color: #dee2e6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .chart-subtitle {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .chart-wrapper {
+        height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1rem 0;
+    }
+    
+    .chart-wrapper canvas {
+        max-height: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .chart-stats {
+        border-top: 1px solid #f1f3f4;
+        padding-top: 1rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+    
+    .summary-section {
+        border: 1px solid #e9ecef;
+    }
+    
+    .summary-stat {
+        padding: 0.5rem;
+    }
+    
+    .summary-stat .fw-bold {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .chart-container {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-wrapper {
+            height: 240px;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+        }
+        
+        .summary-stat .fw-bold {
+            font-size: 1.1rem;
         }
     }
 </style>
@@ -618,29 +1584,20 @@
         background-color: rgba(255, 193, 7, 0.15);
         color: #ffffff;
     }
-    /* Estilos para columnas ordenables */
-    th.sortable {
-        cursor: pointer !important;
-        position: relative;
-    }
-    th.sortable i {
-        margin-left: 5px;
-        transition: color 0.2s;
-    }
-    th.sortable:hover {
-        background-color: #32383e !important;
-    }
-    th.sortable.active-sort {
-        background-color: #3e454d !important;
-        border-bottom: 2px solid #ffc107 !important;
-    }
-    th.sortable.active-sort i {
-        color: #ffc107;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-text">Cargando gráficos...</div>
+    </div>
+</div>
+
 <h1 class="mb-4">Informe Mensual: {{ nombre_mes }} {{ anio }}</h1>
 
 <!-- Display the action buttons -->
@@ -656,24 +1613,30 @@
                     <p class="lead text-muted mb-0">{{ nombre_mes }} {{ anio }}</p>
                 </div>
                 <div class="btn-group">
+                    {% if not is_pdf %}
                     <button class="btn btn-outline-success" onclick="exportToExcel()">
                         <i class="fas fa-file-excel me-1"></i> Exportar a Excel
                     </button>
-                    <a class="btn btn-outline-danger" href="{{ url_for('informe_mensual', mes=mes, anio=anio, pdf=1) }}">
-                        <i class="fas fa-file-pdf me-1"></i> PDF
-                    </a>
                     <button class="btn btn-outline-primary" onclick="window.print()">
                         <i class="fas fa-print me-1"></i> Imprimir
                     </button>
+
                     <a href="{{ url_for('informe_mensual') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-sync me-1"></i> Nuevo informe
                     </a>
+                    {% endif %}
+                    {% if is_pdf %}
+                    <p class="text-muted mb-0">
+                        <i class="far fa-clock me-1"></i> Generado el: {{ pdf_generation_time }}
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Guía de navegación del informe -->
+    <!-- GuÃ­a de navegaciÃ³n del informe -->
+    {% if not is_pdf %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -696,7 +1659,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#graficos">
-                                <i class="fas fa-chart-pie me-1"></i> Gráficos
+                                <i class="fas fa-chart-pie me-1"></i> GrÃ¡ficos
                             </a>
                         </li>
                     </ul>
@@ -704,19 +1667,16 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     {% if resumen_profesores %}
-    <!-- Cálculos para resumen general -->
+    <!-- CÃ¡lculos para resumen general -->
     {% set total_clases = namespace(value=0) %}
     {% set total_alumnos = namespace(value=0) %}
-    {% set total_retrasos = namespace(value=0) %}
-    {% set total_pagos = namespace(value=0) %}
     
     {% for profesor_id, datos in resumen_profesores.items() %}
         {% set total_clases.value = total_clases.value + datos.total_clases %}
         {% set total_alumnos.value = total_alumnos.value + datos.total_alumnos %}
-        {% set total_retrasos.value = total_retrasos.value + datos.total_retrasos %}
-        {% set total_pagos.value = total_pagos.value + datos.pago_total %}
     {% endfor %}
 
     <!-- Resumen general en tarjetas -->
@@ -742,24 +1702,19 @@
                         <div class="col-md-4">
                             <div class="card border-0 shadow-sm h-100 text-center">
                                 <div class="card-body">
-                                    <div class="display-4 {% if total_retrasos.value > 0 %}text-warning{% else %}text-info{% endif %} mb-2">
-                                        <i class="fas fa-stopwatch"></i>
+                                    <div class="display-4 text-info mb-2">
+                                        <i class="fas fa-users"></i>
                                     </div>
-                                    <h1 class="display-5 fw-bold mb-0">{{ total_retrasos.value }}</h1>
-                                    <p class="mb-0 text-muted">
-                                        Clases con retraso
-                                        {% if total_retrasos.value > 0 and total_clases.value > 0 %}
-                                            <span class="badge bg-warning text-dark ms-1">{{ (total_retrasos.value / total_clases.value * 100)|round(1) }}%</span>
-                                        {% endif %}
-                                    </p>
+                                    <h1 class="display-5 fw-bold mb-0">{{ total_alumnos.value }}</h1>
+                                    <p class="mb-0 text-muted">Total de alumnos</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="card border-0 shadow-sm h-100 text-center">
                                 <div class="card-body">
-                                    <div class="display-4 text-danger mb-2">
-                                        <i class="fas fa-money-bill-wave"></i>
+                                    <div class="display-4 text-success mb-2">
+                                        <i class="fas fa-dollar-sign"></i>
                                     </div>
                                     <h1 class="display-5 fw-bold mb-0">${{ total_pagos.value|round(2) }}</h1>
                                     <p class="mb-0 text-muted">Total a pagar</p>
@@ -777,7 +1732,12 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center bg-white">
-                    <h2 class="h5 mb-0"><i class="fas fa-users me-2"></i> Resumen por Profesor</h2>
+                    <div class="d-flex align-items-center">
+                        <h2 class="h5 mb-0 me-3"><i class="fas fa-users me-2"></i> Resumen por Profesor</h2>
+                        <button id="sort-profesores" class="btn btn-sm btn-outline-primary" title="Ordenar alfabÃ©ticamente">
+                            <i class="fas fa-sort-alpha-down"></i>
+                        </button>
+                    </div>
                     <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#resumenProfesores" aria-expanded="true">
                         <i class="fas fa-angle-up"></i>
                     </button>
@@ -832,12 +1792,10 @@
                                 <thead>
                                     <tr class="table-light">
                                         <th scope="col" class="text-center" style="width: 40px;"></th>
-                                        <th scope="col" class="sortable" data-sort="profesor">Profesor <i class="fas fa-sort"></i></th>
+                                        <th scope="col">Profesor</th>
                                         <th scope="col" class="text-center">Total Clases</th>
                                         <th scope="col" class="text-center">Promedio Alumnos/Clase</th>
-                                        <th scope="col" class="text-center">Clases con Retraso</th>
                                         <th scope="col" class="text-center">Tarifa por Clase</th>
-                                        <th scope="col" class="text-center">Pago Total</th>
                                         <th scope="col" class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -872,34 +1830,21 @@
                                             {% if datos.total_clases > 0 %}
                                                 {{ (datos.total_alumnos / datos.total_clases)|round(1) }}
                                                 <div class="progress mt-1" style="height: 5px;">
-                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (datos.total_alumnos / datos.total_clases / 20 * 100)|round }}%;" title="Promedio respecto a capacidad típica"></div>
+                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (datos.total_alumnos / datos.total_clases / 20 * 100)|round }}%;" title="Promedio respecto a capacidad tÃ­pica"></div>
                                                 </div>
                                             {% else %}
                                                 0
                                             {% endif %}
                                         </td>
-                                        <td class="text-center align-middle">
-                                            {% if datos.total_retrasos > 0 %}
-                                                <div class="position-relative">
-                                                    <span class="badge rounded-pill bg-warning text-dark">{{ datos.total_retrasos }}</span>
-                                                    <small class="d-block mt-1">{{ (datos.total_retrasos / datos.total_clases * 100)|round(1) }}%</small>
-                                                </div>
-                                            {% else %}
-                                                <span class="badge rounded-pill bg-success"><i class="fas fa-check"></i> 0</span>
-                                            {% endif %}
-                                        </td>
                                         <td class="text-center align-middle">${{ datos.profesor.tarifa_por_clase|round(2) }}</td>
                                         <td class="text-center align-middle">
-                                            <span class="badge rounded-pill bg-danger fs-6">${{ datos.pago_total|round(2) }}</span>
-                                        </td>
-                                        <td class="text-center align-middle">
                                             <a href="{{ url_for('metricas_profesor', profesor_id=profesor_id) }}" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-chart-line me-1"></i> Métricas
+                                                <i class="fas fa-chart-line me-1"></i> MÃ©tricas
                                             </a>
                                         </td>
                                     </tr>
                                     <tr class="clases-detalle" id="clases-profesor-{{ profesor_id }}" style="display: none;">
-                                        <td colspan="8" class="p-0">
+                                        <td colspan="6" class="p-0">
                                             <div class="bg-light p-3 shadow-sm border-top detalles-container">
                                                 <h6 class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-center">
                                                     <span>
@@ -962,7 +1907,7 @@
                                                                     {% elif clase.profesor_suplente %}
                                                                         <span class="text-muted fst-italic">Suplente</span>
                                                                     {% elif clase.ausencia_profesor %}
-                                                                        <span class="text-muted fst-italic">No asistió</span>
+                                                                        <span class="text-muted fst-italic">No asistiÃ³</span>
                                                                     {% else %}
                                                                         <span class="text-danger fw-bold">SIN REGISTRO DE ASISTENCIA</span>
                                                                     {% endif %}
@@ -1005,7 +1950,7 @@
                                                 </div>
                                                 {% else %}
                                                 <div class="alert alert-info mb-0">
-                                                    No hay clases registradas para este profesor en el período seleccionado.
+                                                    No hay clases registradas para este profesor en el perÃ­odo seleccionado.
                                                 </div>
                                                 {% endif %}
                                             </div>
@@ -1021,7 +1966,7 @@
         </div>
     </div>
 
-    <!-- Sección: Clases detalladas -->
+    <!-- SecciÃ³n: Clases detalladas -->
     <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -1154,7 +2099,7 @@
                         </div>
                         {% else %}
                         <div class="alert alert-info m-3">
-                            <i class="fas fa-info-circle me-2"></i> No hay clases registradas para este período.
+                            <i class="fas fa-info-circle me-2"></i> No hay clases registradas para este perÃ­odo.
                         </div>
                         {% endif %}
                     </div>
@@ -1163,7 +2108,7 @@
         </div>
     </div>
     
-    <!-- NUEVA SECCIÓN: Clases no registradas -->
+    <!-- NUEVA SECCIÃ“N: Clases no registradas -->
     <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -1183,7 +2128,7 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning mb-3">
-                        <i class="fas fa-info-circle me-2"></i> Las siguientes clases estaban programadas pero no tienen registros de asistencia en el sistema. Puede que las clases se hayan realizado pero no se hayan registrado, o que se hayan cancelado sin notificación.
+                        <i class="fas fa-info-circle me-2"></i> Las siguientes clases estaban programadas pero no tienen registros de asistencia en el sistema. Puede que las clases se hayan realizado pero no se hayan registrado, o que se hayan cancelado sin notificaciÃ³n.
                     </div>
                     
                     <!-- Filtros y acciones para clases no registradas -->
@@ -1221,7 +2166,7 @@
                                         <th scope="col">Tipo</th>
                                         <th scope="col">Horario</th>
                                         <th scope="col">Profesor</th>
-                                        <th scope="col">Acción</th>
+                                        <th scope="col">AcciÃ³n</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1271,7 +2216,7 @@
                         </form>
                         {% else %}
                         <div class="alert alert-success m-3">
-                            <i class="fas fa-check-circle me-2"></i> Todas las clases programadas para este período han sido registradas correctamente.
+                            <i class="fas fa-check-circle me-2"></i> Todas las clases programadas para este perÃ­odo han sido registradas correctamente.
                         </div>
                         {% endif %}
                     </div>
@@ -1280,7 +2225,7 @@
         </div>
     </div>
     
-    <!-- Modal de confirmación para registro masivo -->
+    <!-- Modal de confirmaciÃ³n para registro masivo -->
     <div class="modal fade" id="modalConfirmacionRegistro" tabindex="-1" aria-labelledby="modalConfirmacionRegistroLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1289,11 +2234,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Está a punto de registrar <strong id="numClasesARegistrar">0</strong> clases no registradas.</p>
+                    <p>EstÃ¡ a punto de registrar <strong id="numClasesARegistrar">0</strong> clases no registradas.</p>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> Estas clases se crearán con <strong>0 alumnos</strong> y se marcarán como registradas automáticamente. Puede editar los detalles más tarde.
+                        <i class="fas fa-info-circle me-2"></i> Estas clases se crearÃ¡n con <strong>0 alumnos</strong> y se marcarÃ¡n como registradas automÃ¡ticamente. Puede editar los detalles mÃ¡s tarde.
                     </div>
-                    <p>¿Está seguro de continuar?</p>
+                    <p>Â¿EstÃ¡ seguro de continuar?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -1303,111 +2248,210 @@
         </div>
     </div>
     
-    <!-- Sección: Gráficos -->
-    <div class="row mb-5">
+    <!-- SecciÃ³n: AnÃ¡lisis Visual Mejorado -->
+    <div class="row mb-5" id="graficos">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white" id="graficos">
-                    <h3 class="mb-0">
-                        <i class="fas fa-chart-pie me-2"></i> Análisis Visual 
-                    </h3>
+            <div class="card border-0 shadow-lg analytics-card-modern">
+                <!-- Header moderno con gradiente -->
+                <div class="card-header analytics-header-modern">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="mb-1 fw-bold text-white">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Análisis Visual Avanzado
+                            </h3>
+                            <p class="text-white-50 mb-0">{{ nombre_mes }} {{ anio }} • Datos en tiempo real</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-white bg-opacity-20 text-white border-0">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Actualizado
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body p-md-4">
-                    <div class="analytics-header">
-                        <h4 class="analytics-title">
-                            <i class="fas fa-chart-line"></i> Distribución por tipos de clase
-                        </h4>
-                        <span class="badge bg-info">Período: {{ nombre_mes }} {{ anio }}</span>
-                    </div>
-                    
-                    <!-- Panel de referencia de colores móvil -->
-                    <div class="mb-4 p-3 border rounded shadow-sm mobile-reference-panel" style="background-color: rgba(var(--bs-light-rgb), 0.7);">
-                        <h5 class="mb-3 text-center border-bottom pb-2"><i class="fas fa-palette me-2"></i>Referencia de Tipos de Clase</h5>
-                        <div class="d-flex flex-wrap justify-content-center gap-4">
-                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);">
-                                <div style="width: 24px; height: 24px; background-color: #2ecc71; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                <span class="fw-bold">MOVE</span>
-                            </div>
-                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3);">
-                                <div style="width: 24px; height: 24px; background-color: #3498db; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                <span class="fw-bold">RIDE</span>
-                            </div>
-                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3);">
-                                <div style="width: 24px; height: 24px; background-color: #e74c3c; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                <span class="fw-bold">BOX</span>
-                            </div>
-                            <div class="d-flex align-items-center px-3 py-2 rounded-pill" style="background-color: rgba(149, 165, 166, 0.1); border: 1px solid rgba(149, 165, 166, 0.3);">
-                                <div style="width: 24px; height: 24px; background-color: #95a5a6; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                <span class="fw-bold">OTRO</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row chart-row charts-container">
-                        <!-- Panel de referencia de colores lateral (para escritorio) -->
-                        <div class="color-reference-panel p-3 border rounded shadow" style="background-color: rgba(var(--bs-light-rgb), 0.9);">
-                            <h6 class="mb-3 text-center pb-2 border-bottom"><i class="fas fa-palette me-2"></i>Tipos de Clase</h6>
-                            <div class="d-flex flex-column">
-                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);">
-                                    <div style="width: 18px; height: 18px; background-color: #2ecc71; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                    <span class="fw-bold small">MOVE</span>
+
+                <!-- Panel de KPIs Principal -->
+                <div class="card-body p-0">
+                    <div class="kpi-dashboard">
+                        <div class="row g-0">
+                            <div class="col-lg-3 col-md-6">
+                                <div class="kpi-card kpi-primary micro-feedback">
+                                    <div class="kpi-content">
+                                        <div class="kpi-icon">
+                                            <i class="fas fa-calendar-check"></i>
                                 </div>
-                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3);">
-                                    <div style="width: 18px; height: 18px; background-color: #3498db; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                    <span class="fw-bold small">RIDE</span>
+                                        <div class="kpi-data">
+                                            <div class="kpi-value" id="totalClasesKPI">{{ clases_realizadas|length }}</div>
+                                            <div class="kpi-label">Total Clases</div>
+                                            <div class="kpi-trend">
+                                                <i class="fas fa-arrow-up"></i>
+                                                <span>100%</span>
                                 </div>
-                                <div class="color-type-item d-flex align-items-center p-2 rounded mb-2" style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3);">
-                                    <div style="width: 18px; height: 18px; background-color: #e74c3c; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                    <span class="fw-bold small">BOX</span>
-                                </div>
-                                <div class="color-type-item d-flex align-items-center p-2 rounded" style="background-color: rgba(149, 165, 166, 0.1); border: 1px solid rgba(149, 165, 166, 0.3);">
-                                    <div style="width: 18px; height: 18px; background-color: #95a5a6; border-radius: 50%; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                    <span class="fw-bold small">OTRO</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Hacemos que ambos gráficos ocupen más espacio horizontal -->
-                        <div class="col-lg-5 offset-lg-1 mb-4">
-                            <div class="chart-container h-100 position-relative shadow-sm">
-                                <div class="chart-info-badge">
-                                    <i class="fas fa-info-circle me-1"></i> Distribución de clases
-                                </div>
-                                <div class="chart-header">
-                                    <h4 class="chart-title">
-                                        <i class="fas fa-calendar-check"></i>
-                                        Clases por Tipo
-                                    </h4>
-                                </div>
-                                <div class="chart-body pt-4 pb-4">
-                                    <div class="pie-chart-container">
-                                        <div class="chart-actual">
-                                            <canvas id="classTypeChart"></canvas>
+                                            </div>
+                                        </div>
+                                            </div>
+                                        </div>
+                            <div class="col-lg-3 col-md-6">
+                                <div class="kpi-card kpi-success micro-feedback">
+                                    <div class="kpi-content">
+                                        <div class="kpi-icon">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <div class="kpi-data">
+                                            <div class="kpi-value" id="totalAlumnosKPI">{{ total_alumnos.value }}</div>
+                                            <div class="kpi-label">Total Alumnos</div>
+                                            <div class="kpi-trend">
+                                                <i class="fas fa-arrow-up"></i>
+                                                <span id="avgAlumnosKPI">{{ "%.1f"|format(total_alumnos.value / clases_realizadas|length) if clases_realizadas|length > 0 else "0" }}</span> promedio
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="chart-legend pb-4" id="clasesLegend"></div>
                             </div>
-                        </div>
-                        <div class="col-lg-5 mb-4">
-                            <div class="chart-container h-100 position-relative shadow-sm">
-                                <div class="chart-info-badge">
-                                    <i class="fas fa-info-circle me-1"></i> Distribución de alumnos
-                                </div>
-                                <div class="chart-header">
-                                    <h4 class="chart-title">
-                                        <i class="fas fa-users"></i>
-                                        Alumnos por Tipo
-                                    </h4>
-                                </div>
-                                <div class="chart-body pt-4 pb-4">
-                                    <div class="pie-chart-container">
-                                        <div class="chart-actual">
-                                            <canvas id="studentTypeChart"></canvas>
+                            <div class="col-lg-3 col-md-6">
+                                <div class="kpi-card kpi-warning micro-feedback">
+                                    <div class="kpi-content">
+                                        <div class="kpi-icon">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </div>
+                                        <div class="kpi-data">
+                                            <div class="kpi-value" id="totalPagosKPI">${{ total_pagos.value|round(2) }}</div>
+                                            <div class="kpi-label">Total Pagos</div>
+                                            <div class="kpi-trend">
+                                                <i class="fas fa-calculator"></i>
+                                                <span>Calculado</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="chart-legend pb-4" id="alumnosLegend"></div>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <div class="kpi-card kpi-info micro-feedback">
+                                    <div class="kpi-content">
+                                        <div class="kpi-icon">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div class="kpi-data">
+                                            <div class="kpi-value" id="topTipoKPI">-</div>
+                                            <div class="kpi-label">Tipo Más Popular</div>
+                                            <div class="kpi-trend">
+                                                <i class="fas fa-star"></i>
+                                                <span id="topTipoPercent">0%</span>
+                                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Gráficos Modernos -->
+                    <div class="charts-modern-container p-4">
+                        <div class="row g-4">
+                            <!-- Gráfico de Distribución Mejorado -->
+                            <div class="col-xl-4 col-lg-6">
+                                <div class="chart-card-modern micro-feedback">
+                                    <div class="chart-header-modern">
+                                        <h5 class="chart-title-modern">
+                                            <i class="fas fa-chart-pie me-2"></i>
+                                            Distribución de Clases
+                                        </h5>
+                                        <p class="chart-subtitle-modern">Por tipo de actividad</p>
+                                </div>
+                                    <div class="chart-body-modern">
+                                        <canvas id="classDistributionChart" width="300" height="300"></canvas>
+                                </div>
+                                    <div class="chart-legend-modern" id="classLegend"></div>
+                                            </div>
+                                        </div>
+
+                            <!-- Gráfico de Participación -->
+                            <div class="col-xl-4 col-lg-6">
+                                <div class="chart-card-modern micro-feedback">
+                                    <div class="chart-header-modern">
+                                        <h5 class="chart-title-modern">
+                                            <i class="fas fa-users me-2"></i>
+                                            Participación de Alumnos
+                                        </h5>
+                                        <p class="chart-subtitle-modern">Por tipo de actividad</p>
+                                            </div>
+                                    <div class="chart-body-modern">
+                                        <canvas id="studentParticipationChart" width="300" height="300"></canvas>
+                                        </div>
+                                    <div class="chart-legend-modern" id="studentLegend"></div>
+                                            </div>
+                                        </div>
+
+                            <!-- Gráfico de Comparación -->
+                            <div class="col-xl-4 col-lg-12">
+                                <div class="chart-card-modern micro-feedback">
+                                    <div class="chart-header-modern">
+                                        <h5 class="chart-title-modern">
+                                            <i class="fas fa-chart-bar me-2"></i>
+                                            Comparación de Rendimiento
+                                        </h5>
+                                        <p class="chart-subtitle-modern">Clases vs Alumnos por tipo</p>
+                                    </div>
+                                    <div class="chart-body-modern chart-body-bar">
+                                        <canvas id="performanceComparisonChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                        <!-- Gráficos Adicionales con Valor -->
+                    <div class="row mt-4">
+                            <!-- Gráfico de Promedio de Alumnos por Tipo -->
+                            <div class="col-xl-6 col-lg-12">
+                                <div class="chart-card-modern micro-feedback">
+                                    <div class="chart-header-modern">
+                                        <h5 class="chart-title-modern">
+                                            <i class="fas fa-chart-line me-2"></i>
+                                            Promedio de Alumnos por Clase
+                                        </h5>
+                                        <p class="chart-subtitle-modern">Por tipo de actividad</p>
+                                        </div>
+                                    <div class="chart-body-modern chart-body-bar">
+                                        <canvas id="averageStudentsChart" width="400" height="300"></canvas>
+                                    </div>
+                                        </div>
+                                    </div>
+
+                            <!-- Gráfico de Ocupación -->
+                            <div class="col-xl-6 col-lg-12">
+                                <div class="chart-card-modern micro-feedback">
+                                    <div class="chart-header-modern">
+                                        <h5 class="chart-title-modern">
+                                            <i class="fas fa-percentage me-2"></i>
+                                            Nivel de Ocupación
+                                        </h5>
+                                        <p class="chart-subtitle-modern">Basado en capacidad típica de 20 alumnos</p>
+                                        </div>
+                                    <div class="chart-body-modern">
+                                        <canvas id="occupancyChart" width="300" height="300"></canvas>
+                                    </div>
+                                    <div class="chart-legend-modern" id="occupancyLegend"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                        <!-- Estadísticas Detalladas -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="stats-summary-card">
+                                    <div class="stats-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-chart-area me-2"></i>
+                                            Estadísticas Detalladas
+                                        </h5>
+                                    </div>
+                                    <div class="stats-body">
+                                        <div class="row" id="detailedStats">
+                                            <!-- Se llenarán dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1427,7 +2471,7 @@
                         <h4 class="alert-heading">No hay datos disponibles</h4>
                         <p>No se encontraron datos para mostrar en el informe del mes de {{ nombre_mes }} de {{ anio }}.</p>
                         <hr>
-                        <p class="mb-0">Verifica que existan registros de clases para este período o selecciona un mes diferente.</p>
+                        <p class="mb-0">Verifica que existan registros de clases para este perÃ­odo o selecciona un mes diferente.</p>
                         <a href="{{ url_for('informe_mensual') }}" class="btn btn-info mt-3">
                             <i class="fas fa-calendar-alt me-1"></i> Seleccionar otro mes
                         </a>
@@ -1438,7 +2482,7 @@
     </div>
     {% endif %}
 
-    <!-- Botón volver flotante -->
+    <!-- BotÃ³n volver flotante -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
         <a href="#" class="btn btn-primary btn-lg rounded-circle shadow" id="btn-back-to-top">
             <i class="fas fa-arrow-up"></i>
@@ -1448,9 +2492,9 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Asegurar que Bootstrap esté disponible -->
+<!-- Asegurar que Bootstrap estÃ© disponible -->
 <script>
-    // Verificar si bootstrap ya está definido
+    // Verificar si bootstrap ya estÃ¡ definido
     if (typeof bootstrap === 'undefined') {
         console.log('Bootstrap no detectado, cargando...');
         // Crear un elemento script para cargar Bootstrap
@@ -1462,7 +2506,7 @@
         // Esperar a que cargue antes de inicializar los componentes de Bootstrap
         bootstrapScript.onload = function() {
             console.log('Bootstrap cargado correctamente');
-            // Disparar un evento personalizado para que otro código sepa que bootstrap está listo
+            // Disparar un evento personalizado para que otro cÃ³digo sepa que bootstrap estÃ¡ listo
             document.dispatchEvent(new Event('bootstrap:loaded'));
         };
         
@@ -1478,47 +2522,74 @@
         let searchInput = document.getElementById('search-profesor');
         let filterButtons = document.querySelectorAll('.filter-tipo-clase');
         let currentFilter = 'TODOS';
+        let sortDirection = 'asc'; // Default sort direction
         
         // Set active class for initial "Todos" button
         document.querySelector('.filter-tipo-clase[data-tipo="TODOS"]').classList.add('active');
-
-        // Sorting for professor column
-        let profesorHeader = document.querySelector('th[data-sort="profesor"]');
-        let sortDirection = 'asc';
-        if (profesorHeader) {
-            profesorHeader.addEventListener('click', function() {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                profesorHeader.classList.add('active-sort');
-                profesorHeader.querySelector('i').className = sortDirection === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up';
-                sortProfesores();
-            });
-        }
-
-        function sortProfesores() {
-            let tbody = document.querySelector('#resumenProfesores tbody');
-            if (!tbody) return;
-            let rows = Array.from(tbody.querySelectorAll('tr.profesor-row'));
-            rows.sort(function(a, b) {
-                let nameA = a.getAttribute('data-profesor-nombre');
-                let nameB = b.getAttribute('data-profesor-nombre');
-                if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
-                if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-            rows.forEach(row => {
-                let professorId = row.querySelector('.toggle-clases').getAttribute('data-profesor-id');
-                let detailRow = document.getElementById(`clases-profesor-${professorId}`);
-                tbody.appendChild(row);
-                if (detailRow) tbody.appendChild(detailRow);
-            });
-        }
-
-        // Initial sort
-        sortProfesores();
         
         // Search functionality for professors
         if (searchInput) {
             searchInput.addEventListener('input', filterProfessors);
+        }
+        
+        // Function to sort professor rows alphabetically
+        function sortProfessors(direction = 'asc') {
+            const tbody = document.querySelector('#resumenProfesores tbody');
+            if (!tbody) return;
+            
+            const rows = Array.from(document.querySelectorAll('.profesor-row'));
+            const sortedRows = rows.sort((a, b) => {
+                const nameA = a.getAttribute('data-profesor-nombre').toLowerCase();
+                const nameB = b.getAttribute('data-profesor-nombre').toLowerCase();
+                
+                return direction === 'asc' 
+                    ? nameA.localeCompare(nameB) 
+                    : nameB.localeCompare(nameA);
+            });
+            
+            // Clear the tbody and append sorted rows
+            sortedRows.forEach(row => {
+                // Get the corresponding detail row if it exists
+                const profesorId = row.querySelector('.toggle-clases').getAttribute('data-profesor-id');
+                const detailRow = document.getElementById(`clases-profesor-${profesorId}`);
+                
+                // Append the main row
+                tbody.appendChild(row);
+                
+                // If there's a detail row, append it next
+                if (detailRow) {
+                    tbody.appendChild(detailRow);
+                }
+            });
+            
+            // Update the sort button icon
+            const sortButton = document.getElementById('sort-profesores');
+            if (sortButton) {
+                const icon = sortButton.querySelector('i');
+                if (direction === 'asc') {
+                    icon.className = 'fas fa-sort-alpha-down';
+                    sortButton.title = 'Ordenado A-Z (clic para ordenar Z-A)';
+                } else {
+                    icon.className = 'fas fa-sort-alpha-up';
+                    sortButton.title = 'Ordenado Z-A (clic para ordenar A-Z)';
+                }
+            }
+        }
+        
+        // Add event listener to sort button
+        const sortButton = document.getElementById('sort-profesores');
+        if (sortButton) {
+            sortButton.addEventListener('click', function() {
+                // Toggle sort direction
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                sortProfessors(sortDirection);
+                
+                // Apply current filters after sorting
+                filterProfessors();
+            });
+            
+            // Initial sort when the page loads
+            sortProfessors('asc');
         }
         
         // Function that applies both search and class type filters
@@ -1569,13 +2640,13 @@
                 
                 if (detailRow) {
                     if (nameMatches && typeMatches) {
-                        // Solo mostrar si el ícono del botón tiene la clase fa-minus (detalles expandidos)
+                        // Solo mostrar si el Ã­cono del botÃ³n tiene la clase fa-minus (detalles expandidos)
                         let isExpanded = row.querySelector('.toggle-clases i').classList.contains('fa-minus');
                         
                         if (isExpanded) {
-                            // Si ya estaba expandido, mantenerlo expandido con la animación
+                            // Si ya estaba expandido, mantenerlo expandido con la animaciÃ³n
                             detailRow.style.display = 'table-row';
-                            // Si no tiene la clase slide-down, añadirla para animar
+                            // Si no tiene la clase slide-down, aÃ±adirla para animar
                             if (!detailRow.classList.contains('slide-down')) {
                                 detailRow.classList.remove('slide-up');
                                 void detailRow.offsetWidth; // Forzar reflow
@@ -1585,7 +2656,7 @@
                             detailRow.style.display = 'none';
                         }
                     } else {
-                        // Si no coincide con el filtro, ocultar sin animación
+                        // Si no coincide con el filtro, ocultar sin animaciÃ³n
                         detailRow.style.display = 'none';
                         detailRow.classList.remove('slide-down', 'slide-up');
                     }
@@ -1697,17 +2768,17 @@
                 const icon = this.querySelector('i');
                 
                 if (detailRow) {
-                    // Limpiar clases de animación previas
+                    // Limpiar clases de animaciÃ³n previas
                     detailRow.classList.remove('slide-down', 'slide-up');
                     
                     if (detailRow.style.display === 'none' || detailRow.style.display === '') {
                         // Cambiar estilo de display antes de animar
                         detailRow.style.display = 'table-row';
                         
-                        // Forzar un reflow del DOM para asegurar que la animación se inicie correctamente
+                        // Forzar un reflow del DOM para asegurar que la animaciÃ³n se inicie correctamente
                         void detailRow.offsetWidth;
                         
-                        // Aplicar animación de despliegue
+                        // Aplicar animaciÃ³n de despliegue
                         detailRow.classList.add('slide-down');
                         
                         // Cambiar el icono
@@ -1721,13 +2792,13 @@
                         icon.classList.remove('fa-minus');
                         icon.classList.add('fa-plus');
                         
-                        // Esperar a que termine la animación para ocultar la fila
+                        // Esperar a que termine la animaciÃ³n para ocultar la fila
                         setTimeout(() => {
                             detailRow.style.display = 'none';
-                        }, 180); // Ligeramente menor que la duración de la animación (0.2s)
+                        }, 180); // Ligeramente menor que la duraciÃ³n de la animaciÃ³n (0.2s)
                     }
                 } else {
-                    console.error('No se encontró la fila de detalles:', `clases-profesor-${profesorId}`);
+                    console.error('No se encontrÃ³ la fila de detalles:', `clases-profesor-${profesorId}`);
                 }
             });
         });
@@ -1751,383 +2822,1113 @@
             });
         }
 
-        // Pie chart: Clases por tipo
-        const ctxClass = document.getElementById('classTypeChart').getContext('2d');
-        const clasesData = [
-            {{ conteo_tipos['MOVE'] if conteo_tipos is defined and 'MOVE' in conteo_tipos else 0 }},
-            {{ conteo_tipos['RIDE'] if conteo_tipos is defined and 'RIDE' in conteo_tipos else 0 }},
-            {{ conteo_tipos['BOX'] if conteo_tipos is defined and 'BOX' in conteo_tipos else 0 }},
-            {{ conteo_tipos['OTRO'] if conteo_tipos is defined and 'OTRO' in conteo_tipos else 0 }}
-        ];
-        
-        const clasesLabels = ['MOVE', 'RIDE', 'BOX', 'OTRO'];
-        const clasesColors = [
-            '#2ecc71', 
-            '#3498db', 
-            '#e74c3c', 
-            '#95a5a6'
-        ];
-        
-        const clasesHoverColors = [
-            '#27ae60', 
-            '#2980b9', 
-            '#c0392b', 
-            '#7f8c8d'
-        ];
-
-        // Gradientes para los gráficos
-        const moveGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
-        moveGradient.addColorStop(0, 'rgba(46, 204, 113, 0.9)');
-        moveGradient.addColorStop(1, 'rgba(39, 174, 96, 0.9)');
-        
-        const rideGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
-        rideGradient.addColorStop(0, 'rgba(52, 152, 219, 0.9)');
-        rideGradient.addColorStop(1, 'rgba(41, 128, 185, 0.9)');
-        
-        const boxGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
-        boxGradient.addColorStop(0, 'rgba(231, 76, 60, 0.9)');
-        boxGradient.addColorStop(1, 'rgba(192, 57, 43, 0.9)');
-        
-        const otroGradient = ctxClass.createLinearGradient(0, 0, 0, 400);
-        otroGradient.addColorStop(0, 'rgba(149, 165, 166, 0.9)');
-        otroGradient.addColorStop(1, 'rgba(127, 140, 141, 0.9)');
-        
-        const gradientColors = [moveGradient, rideGradient, boxGradient, otroGradient];
-        
-        const classTypeChart = new Chart(ctxClass, {
-            type: 'pie',
-            data: {
-                labels: clasesLabels,
-                datasets: [{
-                    data: clasesData,
-                    backgroundColor: gradientColors,
-                    borderColor: clasesColors,
-                    borderWidth: 2,
-                    hoverBackgroundColor: clasesHoverColors,
-                    hoverBorderColor: clasesHoverColors,
-                    hoverBorderWidth: 4,
-                    borderRadius: 6,
-                    spacing: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1, // Forzar proporción 1:1 (circular)
-                radius: '80%', // Reducir radio para dejar espacio a las etiquetas
-                layout: {
-                    padding: {
-                        top: 40,
-                        bottom: 40,
-                        left: 40,
-                        right: 40
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
+        // CONFIGURACIÓN MODERNA DE GRÁFICOS
+        const ModernCharts = {
+            // Configuración centralizada
+            config: {
+                colors: {
+                    MOVE: { 
+                        primary: '#10b981', 
+                        gradient: ['#10b981', '#047857'],
+                        light: 'rgba(16, 185, 129, 0.1)'
                     },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#333',
-                        bodyColor: '#333',
-                        bodyFont: {
-                            size: 16,
-                            weight: 'bold'
-                        },
-                        titleFont: {
-                            size: 18,
-                            weight: 'bold'
-                        },
-                        padding: 18,
-                        boxWidth: 12,
-                        boxHeight: 12,
-                        boxPadding: 5,
-                        cornerRadius: 8,
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        borderWidth: 1,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return `${context.label}: ${value} (${percentage}%)`;
-                            }
-                        }
+                    RIDE: { 
+                        primary: '#3b82f6', 
+                        gradient: ['#3b82f6', '#1d4ed8'],
+                        light: 'rgba(59, 130, 246, 0.1)'
                     },
-                    datalabels: {
-                        formatter: function(value, ctx) {
-                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            let percentage = sum > 0 ? Math.round((value / sum) * 100) : 0;
-                            return percentage > 3 ? `${percentage}%` : ''; /* Mostrar etiquetas en segmentos más pequeños */
-                        },
-                        color: '#fff',
-                        font: {
-                            weight: 'bold',
-                            size: 18 /* Tamaño mayor para mejor legibilidad */
-                        },
-                        textStrokeColor: 'rgba(0,0,0,0.4)',
-                        textStrokeWidth: 3, /* Mayor ancho del borde para mejorar legibilidad */
-                        textShadowBlur: 5,
-                        textShadowColor: 'rgba(0,0,0,0.4)',
-                        align: 'center',
-                        anchor: 'center'
+                    BOX: { 
+                        primary: '#ef4444', 
+                        gradient: ['#ef4444', '#dc2626'],
+                        light: 'rgba(239, 68, 68, 0.1)'
+                    },
+                    OTRO: { 
+                        primary: '#6b7280', 
+                        gradient: ['#6b7280', '#4b5563'],
+                        light: 'rgba(107, 114, 128, 0.1)'
                     }
                 },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true,
-                    duration: 1500,
-                    easing: 'easeOutCirc',
-                    delay: function(context) {
-                        return context.dataIndex * 200;
-                    }
-                },
-                elements: {
-                    arc: {
-                        borderWidth: 0
-                    }
+                labels: ['MOVE', 'RIDE', 'BOX', 'OTRO'],
+                animations: {
+                    duration: 1200,
+                    easing: 'easeOutCubic'
                 }
             },
-            plugins: [ChartDataLabels]
-        });
 
-        // Crear leyenda personalizada para clases
-        const clasesLegend = document.getElementById('clasesLegend');
-        clasesLegend.innerHTML = '';
-        clasesLabels.forEach((label, i) => {
-            const sum = clasesData.reduce((a, b) => a + b, 0);
-            const percentage = sum > 0 ? Math.round((clasesData[i] / sum) * 100) : 0;
-            const item = document.createElement('div');
-            item.classList.add('legend-item');
-            
-            // Add specific class for the type
-            if (label === 'MOVE') {
-                item.classList.add('legend-move');
-            } else if (label === 'RIDE') {
-                item.classList.add('legend-ride');
-            } else if (label === 'BOX') {
-                item.classList.add('legend-box');
-            } else {
-                item.classList.add('legend-otro');
-            }
-            
-            const color = document.createElement('div');
-            color.classList.add('legend-color');
-            color.style.backgroundColor = clasesColors[i];
-            
-            const text = document.createElement('span');
-            text.classList.add('legend-label');
-            text.textContent = `${label}: ${clasesData[i]} (${percentage}%)`;
-            
-            item.appendChild(color);
-            item.appendChild(text);
-            clasesLegend.appendChild(item);
-            
-            // Añadir interactividad
-            item.addEventListener('mouseover', () => {
-                classTypeChart.setActiveElements([{datasetIndex: 0, index: i}]);
-                classTypeChart.update();
-            });
-            
-            item.addEventListener('mouseout', () => {
-                classTypeChart.setActiveElements([]);
-                classTypeChart.update();
-            });
-        });
-
-        // Pie chart: Alumnos por tipo
-        const ctxStudent = document.getElementById('studentTypeChart').getContext('2d');
-        const alumnosData = [
-            {{ alumnos_tipos['MOVE'] if alumnos_tipos is defined and 'MOVE' in alumnos_tipos else 0 }},
-            {{ alumnos_tipos['RIDE'] if alumnos_tipos is defined and 'RIDE' in alumnos_tipos else 0 }},
-            {{ alumnos_tipos['BOX'] if alumnos_tipos is defined and 'BOX' in alumnos_tipos else 0 }},
-            {{ alumnos_tipos['OTRO'] if alumnos_tipos is defined and 'OTRO' in alumnos_tipos else 0 }}
-        ];
-        
-        const studentTypeChart = new Chart(ctxStudent, {
-            type: 'pie',
-            data: {
-                labels: clasesLabels,
-                datasets: [{
-                    data: alumnosData,
-                    backgroundColor: gradientColors,
-                    borderColor: clasesColors,
-                    borderWidth: 2,
-                    hoverBackgroundColor: clasesHoverColors,
-                    hoverBorderColor: clasesHoverColors,
-                    hoverBorderWidth: 4,
-                    borderRadius: 6,
-                    spacing: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1, // Forzar proporción 1:1 (circular)
-                radius: '80%', // Reducir radio para dejar espacio a las etiquetas
-                layout: {
-                    padding: {
-                        top: 40,
-                        bottom: 40,
-                        left: 40,
-                        right: 40
-                    }
+            // Datos del servidor - asegurar orden consistente
+            rawData: {
+                conteo_tipos: {
+                    'MOVE': {{ conteo_tipos['MOVE'] if conteo_tipos is defined and 'MOVE' in conteo_tipos else 0 }},
+                    'RIDE': {{ conteo_tipos['RIDE'] if conteo_tipos is defined and 'RIDE' in conteo_tipos else 0 }},
+                    'BOX': {{ conteo_tipos['BOX'] if conteo_tipos is defined and 'BOX' in conteo_tipos else 0 }},
+                    'OTRO': {{ conteo_tipos['OTRO'] if conteo_tipos is defined and 'OTRO' in conteo_tipos else 0 }}
                 },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#333',
-                        bodyColor: '#333',
-                        bodyFont: {
-                            size: 16,
-                            weight: 'bold'
-                        },
-                        titleFont: {
-                            size: 18,
-                            weight: 'bold'
-                        },
-                        padding: 18,
-                        boxWidth: 12,
-                        boxHeight: 12,
-                        boxPadding: 5,
-                        cornerRadius: 8,
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        borderWidth: 1,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return `${context.label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        formatter: function(value, ctx) {
-                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            let percentage = sum > 0 ? Math.round((value / sum) * 100) : 0;
-                            return percentage > 3 ? `${percentage}%` : ''; /* Mostrar etiquetas en segmentos más pequeños */
-                        },
-                        color: '#fff',
-                        font: {
-                            weight: 'bold',
-                            size: 18 /* Tamaño mayor para mejor legibilidad */
-                        },
-                        textStrokeColor: 'rgba(0,0,0,0.4)',
-                        textStrokeWidth: 3, /* Mayor ancho del borde para mejorar legibilidad */
-                        textShadowBlur: 5,
-                        textShadowColor: 'rgba(0,0,0,0.4)',
-                        align: 'center',
-                        anchor: 'center'
-                    }
-                },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true,
-                    duration: 1500,
-                    easing: 'easeOutCirc',
-                    delay: function(context) {
-                        return context.dataIndex * 200;
-                    }
-                },
-                elements: {
-                    arc: {
-                        borderWidth: 0
-                    }
+                alumnos_tipos: {
+                    'MOVE': {{ alumnos_tipos['MOVE'] if alumnos_tipos is defined and 'MOVE' in alumnos_tipos else 0 }},
+                    'RIDE': {{ alumnos_tipos['RIDE'] if alumnos_tipos is defined and 'RIDE' in alumnos_tipos else 0 }},
+                    'BOX': {{ alumnos_tipos['BOX'] if alumnos_tipos is defined and 'BOX' in alumnos_tipos else 0 }},
+                    'OTRO': {{ alumnos_tipos['OTRO'] if alumnos_tipos is defined and 'OTRO' in alumnos_tipos else 0 }}
                 }
             },
-            plugins: [ChartDataLabels]
-        });
 
-        // Crear leyenda personalizada para alumnos
-        const alumnosLegend = document.getElementById('alumnosLegend');
-        alumnosLegend.innerHTML = '';
-        clasesLabels.forEach((label, i) => {
-            const sum = alumnosData.reduce((a, b) => a + b, 0);
-            const percentage = sum > 0 ? Math.round((alumnosData[i] / sum) * 100) : 0;
-            const item = document.createElement('div');
-            item.classList.add('legend-item');
-            
-            // Add specific class for the type
-            if (label === 'MOVE') {
-                item.classList.add('legend-move');
-            } else if (label === 'RIDE') {
-                item.classList.add('legend-ride');
-            } else if (label === 'BOX') {
-                item.classList.add('legend-box');
-            } else {
-                item.classList.add('legend-otro');
-            }
-            
-            const color = document.createElement('div');
-            color.classList.add('legend-color');
-            color.style.backgroundColor = clasesColors[i];
-            
-            const text = document.createElement('span');
-            text.classList.add('legend-label');
-            text.textContent = `${label}: ${alumnosData[i]} (${percentage}%)`;
-            
-            item.appendChild(color);
-            item.appendChild(text);
-            alumnosLegend.appendChild(item);
-            
-            // Añadir interactividad
-            item.addEventListener('mouseover', () => {
-                studentTypeChart.setActiveElements([{datasetIndex: 0, index: i}]);
-                studentTypeChart.update();
-            });
-            
-            item.addEventListener('mouseout', () => {
-                studentTypeChart.setActiveElements([]);
-                studentTypeChart.update();
-            });
-        });
+            // Obtener datos ordenados según las etiquetas
+            getData: function(type) {
+                const sourceData = type === 'clases' ? this.rawData.conteo_tipos : this.rawData.alumnos_tipos;
+                return this.config.labels.map(label => sourceData[label] || 0);
+            },
 
-        // Función para asegurar que los gráficos sean perfectamente circulares
-        function enforceCircularCharts() {
-            // Obtener los canvas de los gráficos
-            const classCanvas = document.getElementById('classTypeChart');
-            const studentCanvas = document.getElementById('studentTypeChart');
-            
-            if (classCanvas && studentCanvas) {
-                // Forzar que sean cuadrados
-                [classCanvas, studentCanvas].forEach(canvas => {
-                    const container = canvas.parentElement;
-                    const width = container.offsetWidth;
-                    
-                    // Establecer dimensiones cuadradas exactas
-                    canvas.style.width = width + 'px';
-                    canvas.style.height = width + 'px';
-                    canvas.width = width;
-                    canvas.height = width;
+            // Obtener datos filtrados (solo valores > 0) con sus etiquetas correspondientes
+            getFilteredData: function(type) {
+                const sourceData = type === 'clases' ? this.rawData.conteo_tipos : this.rawData.alumnos_tipos;
+                const filteredData = [];
+                const filteredLabels = [];
+                const filteredColors = [];
+                
+                this.config.labels.forEach(label => {
+                    const value = sourceData[label] || 0;
+                    if (value > 0) {
+                        filteredData.push(value);
+                        filteredLabels.push(label);
+                        filteredColors.push(this.config.colors[label].primary);
+                    }
                 });
                 
-                // Actualizar los gráficos para aplicar los cambios
-                if (classTypeChart) classTypeChart.update();
-                if (studentTypeChart) studentTypeChart.update();
-            }
-        }
-        
-        // Llamar después de que todo esté cargado
-        window.addEventListener('load', function() {
-            // Esperar un poco para que el DOM termine de renderizarse
-            setTimeout(enforceCircularCharts, 100);
-        });
-        
-        // Recalcular cuando cambie el tamaño de la ventana
-        window.addEventListener('resize', function() {
-            setTimeout(enforceCircularCharts, 200);
-        });
+                return {
+                    data: filteredData,
+                    labels: filteredLabels,
+                    colors: filteredColors,
+                    hoverColors: filteredLabels.map(label => this.config.colors[label].gradient[1])
+                };
+            },
 
+            // Función para crear gradientes
+            createGradient: function(ctx, colors, direction = 'vertical') {
+                const gradient = direction === 'vertical' 
+                    ? ctx.createLinearGradient(0, 0, 0, 300)
+                    : ctx.createLinearGradient(0, 0, 300, 0);
+                gradient.addColorStop(0, colors[0]);
+                gradient.addColorStop(1, colors[1]);
+                return gradient;
+            },
+
+            // Configuración común para tooltips
+            getTooltipConfig: function() {
+                return {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 12,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                                            callbacks: {
+                            title: function(context) {
+                                const index = context[0].dataIndex;
+                                const label = context[0].label;
+                                return `${label}`;
+                            },
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                const label = context.label;
+                                
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                };
+            },
+
+            // Crear gráfico de dona moderno
+            createDoughnutChart: function(canvasId, dataType, title) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                
+                const ctx = canvas.getContext('2d');
+                const filteredData = this.getFilteredData(dataType);
+                
+                return new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: filteredData.labels,
+                        datasets: [{
+                            data: filteredData.data,
+                            backgroundColor: filteredData.colors,
+                            hoverBackgroundColor: filteredData.hoverColors,
+                            borderColor: '#ffffff',
+                            hoverBorderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverBorderWidth: 5,
+                            cutout: '70%',
+                            hoverOffset: 15,
+                            borderRadius: 8,
+                            hoverBorderRadius: 12
+                        }]
+                    },
+                    options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                                ...this.getTooltipConfig(),
+                                displayColors: true,
+                                borderWidth: 2,
+                                caretSize: 8,
+                                caretPadding: 10
+                            }
+                        },
+                        animation: {
+                            duration: this.config.animations.duration,
+                            easing: this.config.animations.easing,
+                            animateRotate: true,
+                            animateScale: true
+                        },
+                        hover: {
+                            animationDuration: 300,
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        elements: {
+                            arc: {
+                                borderJoinStyle: 'round'
+                            }
+                        },
+                        onHover: function(event, activeElements) {
+                            event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                            
+                            // Efecto de glow en hover
+                            if (activeElements.length > 0) {
+                                canvas.style.filter = 'drop-shadow(0 0 10px rgba(102, 126, 234, 0.3))';
+                                canvas.style.transform = 'scale(1.02)';
+                            } else {
+                                canvas.style.filter = 'none';
+                                canvas.style.transform = 'scale(1)';
+                            }
+                        }
+                    }
+                });
+            },
+
+            // Crear gráfico de barras comparativo
+            createBarChart: function(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                
+                const ctx = canvas.getContext('2d');
+                const clasesData = this.getData('clases');
+                const alumnosData = this.getData('alumnos');
+                
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: this.config.labels,
+                        datasets: [
+                            {
+                                label: 'Clases',
+                                data: clasesData,
+                                backgroundColor: this.config.labels.map(label => 
+                                    this.config.colors[label].primary + '80'
+                                ),
+                                hoverBackgroundColor: this.config.labels.map(label => 
+                                    this.config.colors[label].gradient[1]
+                                ),
+                                borderColor: this.config.labels.map(label => 
+                                    this.config.colors[label].primary
+                                ),
+                                hoverBorderColor: this.config.labels.map(label => 
+                                    this.config.colors[label].gradient[1]
+                                ),
+                                borderWidth: 2,
+                                hoverBorderWidth: 3,
+                                borderRadius: 8,
+                                hoverBorderRadius: 12,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Alumnos (÷10)',
+                                data: alumnosData.map(val => Math.round(val / 10)),
+                                backgroundColor: this.config.labels.map(label => 
+                                    this.config.colors[label].primary + '40'
+                                ),
+                                hoverBackgroundColor: this.config.labels.map(label => 
+                                    this.config.colors[label].primary + '60'
+                                ),
+                                borderColor: this.config.labels.map(label => 
+                                    this.config.colors[label].primary
+                                ),
+                                hoverBorderColor: this.config.labels.map(label => 
+                                    this.config.colors[label].gradient[1]
+                                ),
+                                borderWidth: 2,
+                                hoverBorderWidth: 3,
+                                borderRadius: 8,
+                                hoverBorderRadius: 12,
+                                borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20,
+                                    font: { size: 12, weight: '600' }
+                                }
+                            },
+                            tooltip: {
+                                ...this.getTooltipConfig(),
+                                displayColors: true,
+                                borderWidth: 2,
+                                caretSize: 8,
+                                caretPadding: 10,
+                    callbacks: {
+                        label: function(context) {
+                                        if (context.datasetIndex === 1) {
+                                            const realValue = context.parsed.y * 10;
+                                            return `Alumnos: ${realValue}`;
+                                        }
+                                        return `${context.dataset.label}: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { weight: '600' } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { font: { weight: '500' } }
+                            }
+                        },
+            animation: {
+                            duration: this.config.animations.duration,
+                            easing: this.config.animations.easing
+                        },
+                        hover: {
+                            animationDuration: 200,
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        onHover: function(event, activeElements) {
+                            event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                            
+                            // Efecto de elevación en hover
+                            if (activeElements.length > 0) {
+                                canvas.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))';
+                                canvas.style.transform = 'translateY(-2px)';
+                            } else {
+                                canvas.style.filter = 'none';
+                                canvas.style.transform = 'translateY(0)';
+                            }
+                        }
+                    }
+                });
+            },
+
+            // Crear leyendas personalizadas con interactividad
+            createLegend: function(containerId, dataType) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const filteredData = this.getFilteredData(dataType);
+                container.innerHTML = '';
+                
+                filteredData.labels.forEach((label, index) => {
+                    const value = filteredData.data[index];
+                        const item = document.createElement('div');
+                        item.className = 'legend-item-modern';
+                        item.dataset.index = index;
+                        item.dataset.label = label;
+                        
+                        const color = document.createElement('div');
+                        color.className = 'legend-color-modern';
+                        color.style.backgroundColor = this.config.colors[label].primary;
+                        
+                        const text = document.createElement('span');
+                        text.textContent = `${label} (${value})`;
+                        
+                        // Agregar eventos de hover para interacción
+                        item.addEventListener('mouseenter', () => {
+                            this.highlightChartSegment(containerId, index, true);
+                        });
+                        
+                        item.addEventListener('mouseleave', () => {
+                            this.highlightChartSegment(containerId, index, false);
+                        });
+                        
+                        item.appendChild(color);
+                        item.appendChild(text);
+                        container.appendChild(item);
+                });
+            },
+
+            // Crear gráfico de promedio de alumnos
+            createAverageStudentsChart: function(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                
+                const ctx = canvas.getContext('2d');
+                const filteredData = this.getFilteredData('clases');
+                const alumnosData = this.getFilteredData('alumnos');
+                
+                // Calcular promedios
+                const averages = filteredData.labels.map((label, index) => {
+                    const clases = filteredData.data[index];
+                    const alumnos = alumnosData.data[index];
+                    return clases > 0 ? Math.round((alumnos / clases) * 10) / 10 : 0;
+                });
+                
+                return new Chart(ctx, {
+                    type: 'bar',
+            data: {
+                        labels: filteredData.labels,
+                datasets: [{
+                            label: 'Promedio de Alumnos',
+                            data: averages,
+                            backgroundColor: filteredData.colors.map(color => color + '80'),
+                            hoverBackgroundColor: filteredData.hoverColors,
+                            borderColor: filteredData.colors,
+                            hoverBorderColor: filteredData.hoverColors,
+                    borderWidth: 2,
+                            hoverBorderWidth: 3,
+                            borderRadius: 8,
+                            hoverBorderRadius: 12,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                ...this.getTooltipConfig(),
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.parsed.y} alumnos promedio`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { weight: '600' } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 20,
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { 
+                                    font: { weight: '500' },
+                                    callback: function(value) {
+                                        return value + ' alumnos';
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: this.config.animations.duration,
+                            easing: this.config.animations.easing
+                        },
+                        hover: {
+                            animationDuration: 200,
+                            mode: 'nearest',
+                            intersect: true
+                        }
+                    }
+                });
+            },
+
+            // Crear gráfico de ocupación
+            createOccupancyChart: function(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                
+                const ctx = canvas.getContext('2d');
+                const filteredData = this.getFilteredData('clases');
+                const alumnosData = this.getFilteredData('alumnos');
+                
+                // Calcular porcentajes de ocupación (basado en 20 alumnos por clase)
+                const occupancyData = filteredData.labels.map((label, index) => {
+                    const clases = filteredData.data[index];
+                    const alumnos = alumnosData.data[index];
+                    const avgStudents = clases > 0 ? alumnos / clases : 0;
+                    return Math.min(Math.round((avgStudents / 20) * 100), 100);
+                });
+                
+                return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                        labels: filteredData.labels.map((label, index) => 
+                            `${label} (${occupancyData[index]}%)`
+                        ),
+                datasets: [{
+                            data: occupancyData,
+                            backgroundColor: filteredData.colors,
+                            hoverBackgroundColor: filteredData.hoverColors,
+                            borderColor: '#ffffff',
+                            hoverBorderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverBorderWidth: 5,
+                            cutout: '60%',
+                            hoverOffset: 15,
+                            borderRadius: 8,
+                            hoverBorderRadius: 12
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                ...this.getTooltipConfig(),
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label.split(' (')[0]}: ${context.parsed}% ocupación`;
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: this.config.animations.duration,
+                            easing: this.config.animations.easing,
+                            animateRotate: true,
+                            animateScale: true
+                        },
+                        hover: {
+                            animationDuration: 300,
+                            mode: 'nearest',
+                            intersect: true
+                        }
+                    }
+                });
+            },
+
+            // Crear estadísticas detalladas
+            createDetailedStats: function() {
+                const container = document.getElementById('detailedStats');
+                if (!container) return;
+                
+                const clasesData = this.getData('clases');
+                const alumnosData = this.getData('alumnos');
+                const totalClases = clasesData.reduce((a, b) => a + b, 0);
+                const totalAlumnos = alumnosData.reduce((a, b) => a + b, 0);
+                
+                container.innerHTML = '';
+                
+                // Estadísticas por tipo
+                this.config.labels.forEach((label, index) => {
+                    const clases = clasesData[index];
+                    const alumnos = alumnosData[index];
+                    
+                    if (clases > 0) {
+                        const avg = Math.round((alumnos / clases) * 10) / 10;
+                        const occupancy = Math.min(Math.round((avg / 20) * 100), 100);
+                        const percentage = Math.round((clases / totalClases) * 100);
+                        
+                        const statCard = document.createElement('div');
+                        statCard.className = `col-lg-3 col-md-6 mb-3`;
+                        statCard.innerHTML = `
+                            <div class="stat-card stat-${label.toLowerCase()}">
+                                <div class="stat-icon">
+                                    <i class="fas ${this.getIconForType(label)}"></i>
+                                </div>
+                                <div class="stat-value">${avg}</div>
+                                <div class="stat-label">${label}</div>
+                                <div class="stat-description">
+                                    ${clases} clases • ${occupancy}% ocupación<br>
+                                    ${percentage}% del total
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(statCard);
+                    }
+                });
+                
+                // Estadística general
+                const generalCard = document.createElement('div');
+                generalCard.className = `col-lg-3 col-md-6 mb-3`;
+                const generalAvg = totalClases > 0 ? Math.round((totalAlumnos / totalClases) * 10) / 10 : 0;
+                const generalOccupancy = Math.min(Math.round((generalAvg / 20) * 100), 100);
+                
+                generalCard.innerHTML = `
+                    <div class="stat-card stat-general">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-value">${generalAvg}</div>
+                        <div class="stat-label">PROMEDIO GENERAL</div>
+                        <div class="stat-description">
+                            ${totalClases} clases totales<br>
+                            ${generalOccupancy}% ocupación promedio
+                        </div>
+                    </div>
+                `;
+                container.appendChild(generalCard);
+            },
+
+            // Obtener icono para cada tipo
+            getIconForType: function(type) {
+                const icons = {
+                    'MOVE': 'fa-running',
+                    'RIDE': 'fa-bicycle',
+                    'BOX': 'fa-dumbbell',
+                    'OTRO': 'fa-ellipsis-h'
+                };
+                return icons[type] || 'fa-circle';
+            },
+
+            // Función para resaltar segmentos del gráfico
+            highlightChartSegment: function(legendId, segmentIndex, highlight) {
+                // Determinar qué gráfico corresponde a la leyenda
+                let chartCanvas;
+                if (legendId === 'classLegend') {
+                    chartCanvas = document.getElementById('classDistributionChart');
+                } else if (legendId === 'studentLegend') {
+                    chartCanvas = document.getElementById('studentParticipationChart');
+                }
+                
+                if (chartCanvas && chartCanvas.chart) {
+                    const chart = chartCanvas.chart;
+                    const meta = chart.getDatasetMeta(0);
+                    
+                    if (highlight) {
+                        // Atenuar todos los segmentos excepto el seleccionado
+                        meta.data.forEach((element, index) => {
+                            if (index !== segmentIndex) {
+                                element.options.backgroundColor = element.options.backgroundColor + '40';
+                            } else {
+                                element.options.backgroundColor = this.config.colors[this.config.labels[index]].gradient[1];
+                                element.options.borderWidth = 5;
+                                element.options.hoverOffset = 20;
+                            }
+                        });
+                    } else {
+                        // Restaurar colores originales
+                        meta.data.forEach((element, index) => {
+                            element.options.backgroundColor = this.config.colors[this.config.labels[index]].primary;
+                            element.options.borderWidth = 3;
+                            element.options.hoverOffset = 15;
+                        });
+                    }
+                    
+                    chart.update('none'); // Actualizar sin animación
+                }
+            },
+
+            // Actualizar KPIs
+            updateKPIs: function() {
+                const clasesData = this.getData('clases');
+                const alumnosData = this.getData('alumnos');
+                const totalClases = clasesData.reduce((a, b) => a + b, 0);
+                const totalAlumnos = alumnosData.reduce((a, b) => a + b, 0);
+                const avgAlumnos = totalClases > 0 ? (totalAlumnos / totalClases).toFixed(1) : 0;
+                
+                // Encontrar tipo más popular
+                const maxIndex = clasesData.indexOf(Math.max(...clasesData));
+                const topTipo = this.config.labels[maxIndex] || '-';
+                const topPercent = totalClases > 0 ? 
+                    Math.round((clasesData[maxIndex] / totalClases) * 100) : 0;
+                
+                // Actualizar KPIs
+                this.updateElement('topTipoKPI', topTipo);
+                this.updateElement('topTipoPercent', `${topPercent}%`);
+                
+                // Calcular eficiencias
+                this.config.labels.forEach((label, index) => {
+                    const efficiency = clasesData[index] > 0 ? 
+                        Math.round((alumnosData[index] / clasesData[index] / 20) * 100) : 0;
+                    this.updateElement(`${label.toLowerCase()}Efficiency`, `${Math.min(efficiency, 100)}%`);
+                });
+                
+                // Eficiencia general
+                const overallEfficiency = totalClases > 0 ? 
+                    Math.round((totalAlumnos / totalClases / 20) * 100) : 0;
+                this.updateElement('overallEfficiency', `${Math.min(overallEfficiency, 100)}%`);
+            },
+
+            // Función utilitaria para actualizar elementos
+            updateElement: function(id, value) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            },
+
+            // Inicializar todos los gráficos
+            init: function() {
+                // Mostrar loading
+                this.showLoading();
+                
+                // Simular tiempo de carga para mejor UX
+                setTimeout(() => {
+                    // Crear gráficos principales y almacenar referencias
+                    const classChart = this.createDoughnutChart('classDistributionChart', 'clases', 'Distribución de Clases');
+                    const studentChart = this.createDoughnutChart('studentParticipationChart', 'alumnos', 'Participación de Alumnos');
+                    const barChart = this.createBarChart('performanceComparisonChart');
+                    
+                    // Crear nuevos gráficos
+                    const avgChart = this.createAverageStudentsChart('averageStudentsChart');
+                    const occupancyChart = this.createOccupancyChart('occupancyChart');
+                    
+                    // Almacenar referencias en los canvas para acceso posterior
+                    if (classChart) {
+                        document.getElementById('classDistributionChart').chart = classChart;
+                    }
+                    if (studentChart) {
+                        document.getElementById('studentParticipationChart').chart = studentChart;
+                    }
+                    if (barChart) {
+                        document.getElementById('performanceComparisonChart').chart = barChart;
+                    }
+                    if (avgChart) {
+                        document.getElementById('averageStudentsChart').chart = avgChart;
+                    }
+                    if (occupancyChart) {
+                        document.getElementById('occupancyChart').chart = occupancyChart;
+                    }
+                    
+                    // Crear leyendas interactivas
+                    this.createLegend('classLegend', 'clases');
+                    this.createLegend('studentLegend', 'alumnos');
+                    this.createLegend('occupancyLegend', 'clases'); // Usar datos de clases para consistencia
+                    
+                    // Crear estadísticas detalladas
+                    this.createDetailedStats();
+                    
+                    // Actualizar KPIs
+                    this.updateKPIs();
+                    
+                    // Ocultar loading
+                    this.hideLoading();
+                    
+                    // Agregar efectos de entrada escalonados
+                    this.addStaggeredEntryEffects();
+                    
+                    // Inicializar micro-interacciones
+                    this.initMicroInteractions();
+                }, 800); // Tiempo de loading simulado
+                
+                // Debug: mostrar mapeo de datos
+                console.log('=== DEBUG: Mapeo de datos ===');
+                console.log('Raw conteo_tipos:', this.rawData.conteo_tipos);
+                console.log('Raw alumnos_tipos:', this.rawData.alumnos_tipos);
+                
+                const clasesFiltered = this.getFilteredData('clases');
+                const alumnosFiltered = this.getFilteredData('alumnos');
+                
+                console.log('Clases filtradas:', clasesFiltered);
+                console.log('Alumnos filtrados:', alumnosFiltered);
+                
+                console.log('Gráficos modernos inicializados correctamente');
+            },
+
+            // Agregar efectos de entrada escalonados mejorados
+            addStaggeredEntryEffects: function() {
+                const animationGroups = [
+                    {
+                        selector: '.analytics-header-modern',
+                        animation: 'slideInUp',
+                        delay: 0,
+                        stagger: 0
+                    },
+                    {
+                        selector: '.kpi-card',
+                        animation: 'slideInLeft',
+                        delay: 200,
+                        stagger: 150
+                    },
+                    {
+                        selector: '.chart-card-modern',
+                        animation: 'fadeInScale',
+                        delay: 600,
+                        stagger: 200
+                    },
+                    {
+                        selector: '.legend-modern',
+                        animation: 'slideInRight',
+                        delay: 1000,
+                        stagger: 100
+                    },
+                    {
+                        selector: '.stats-summary-card',
+                        animation: 'bounceIn',
+                        delay: 1200,
+                        stagger: 0
+                    },
+                    {
+                        selector: '.stat-card',
+                        animation: 'bounceIn',
+                        delay: 1400,
+                        stagger: 100
+                    }
+                ];
+                
+                animationGroups.forEach(group => {
+                    const items = document.querySelectorAll(group.selector);
+                    items.forEach((item, index) => {
+                        // Resetear estilos iniciales
+                        item.style.opacity = '0';
+                        item.style.transform = this.getInitialTransform(group.animation);
+                        
+                        setTimeout(() => {
+                            item.style.transition = `all ${this.getAnimationDuration(group.animation)} var(--animation-easing-elastic)`;
+                            item.style.opacity = '1';
+                            item.style.transform = 'translateX(0) translateY(0) scale(1) rotate(0)';
+                            
+                            // Agregar clase de animación
+                            item.classList.add('animated', group.animation);
+                        }, group.delay + (index * group.stagger));
+                    });
+                });
+            },
+
+            // Obtener transformación inicial según el tipo de animación
+            getInitialTransform: function(animationType) {
+                const transforms = {
+                    'slideInUp': 'translateY(50px)',
+                    'slideInLeft': 'translateX(-50px)',
+                    'slideInRight': 'translateX(50px)',
+                    'fadeInScale': 'scale(0.8)',
+                    'bounceIn': 'scale(0.3)'
+                };
+                return transforms[animationType] || 'translateY(30px)';
+            },
+
+            // Obtener duración de animación según el tipo
+            getAnimationDuration: function(animationType) {
+                const durations = {
+                    'slideInUp': '0.6s',
+                    'slideInLeft': '0.5s',
+                    'slideInRight': '0.5s',
+                    'fadeInScale': '0.7s',
+                    'bounceIn': '0.8s'
+                };
+                return durations[animationType] || '0.6s';
+            },
+
+            // Mostrar loading overlay
+            showLoading: function() {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.classList.add('active');
+                }
+            },
+
+            // Ocultar loading overlay
+            hideLoading: function() {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                    }, 300);
+                }
+            },
+
+            // Inicializar micro-interacciones
+            initMicroInteractions: function() {
+                // Agregar feedback visual a elementos clickeables
+                const clickableElements = document.querySelectorAll('.micro-feedback');
+                
+                clickableElements.forEach(element => {
+                    element.addEventListener('click', (e) => {
+                        this.createRippleEffect(e, element);
+                    });
+                    
+                    element.addEventListener('mouseenter', () => {
+                        this.addHoverGlow(element);
+                    });
+                    
+                    element.addEventListener('mouseleave', () => {
+                        this.removeHoverGlow(element);
+                    });
+                });
+
+                // Feedback visual para acciones exitosas
+                this.observeSuccessActions();
+            },
+
+            // Crear efecto ripple en click
+            createRippleEffect: function(event, element) {
+                const rect = element.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = event.clientX - rect.left - size / 2;
+                const y = event.clientY - rect.top - size / 2;
+                
+                const ripple = document.createElement('div');
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: rgba(102, 126, 234, 0.3);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple 0.6s ease-out;
+                    pointer-events: none;
+                    z-index: 1000;
+                `;
+                
+                element.style.position = 'relative';
+                element.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            },
+
+            // Agregar glow en hover
+            addHoverGlow: function(element) {
+                element.style.filter = 'drop-shadow(0 0 20px rgba(102, 126, 234, 0.3))';
+            },
+
+            // Remover glow en hover
+            removeHoverGlow: function(element) {
+                element.style.filter = 'none';
+            },
+
+            // Observar acciones exitosas para feedback
+            observeSuccessActions: function() {
+                // Simular feedback de éxito en carga de gráficos
+                setTimeout(() => {
+                    const kpiCards = document.querySelectorAll('.kpi-card');
+                    kpiCards.forEach((card, index) => {
+                        setTimeout(() => {
+                            card.classList.add('success-feedback');
+                            setTimeout(() => {
+                                card.classList.remove('success-feedback');
+                            }, 600);
+                        }, index * 100);
+                    });
+                }, 1000);
+            },
+
+            // Capturar gráficos como imágenes base64 para PDFs
+            captureChartsForPDF: function() {
+                const chartImages = {};
+                
+                // Lista de todos los canvas de gráficos
+                const chartCanvases = [
+                    'classDistributionChart',
+                    'studentParticipationChart', 
+                    'performanceComparisonChart',
+                    'averageStudentsChart',
+                    'occupancyChart'
+                ];
+                
+                console.log('🔍 Buscando canvas de gráficos...');
+                
+                chartCanvases.forEach(canvasId => {
+                    const canvas = document.getElementById(canvasId);
+                    console.log(`Canvas ${canvasId}:`, canvas ? 'encontrado' : 'NO encontrado');
+                    
+                    if (canvas) {
+                        try {
+                            // Verificar que el canvas tenga contenido
+                            const context = canvas.getContext('2d');
+                            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+                            let hasContent = false;
+                            
+                            // Verificar si hay píxeles no transparentes
+                            for (let i = 3; i < data.length; i += 4) {
+                                if (data[i] > 0) {
+                                    hasContent = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (hasContent) {
+                                // Capturar el canvas como imagen base64
+                                const base64Data = canvas.toDataURL('image/png', 1.0);
+                                chartImages[canvasId] = base64Data;
+                                console.log(`✅ Capturado chart: ${canvasId} (${base64Data.length} chars)`);
+                            } else {
+                                console.warn(`⚠️ Canvas ${canvasId} está vacío`);
+                            }
+                        } catch (error) {
+                            console.error(`❌ Error capturing chart ${canvasId}:`, error);
+                        }
+                    } else {
+                        console.warn(`⚠️ Canvas ${canvasId} no encontrado en el DOM`);
+                    }
+                });
+                
+                console.log(`📊 Total gráficos capturados: ${Object.keys(chartImages).length}`);
+                return chartImages;
+            },
+
+            // Generar PDF con gráficos
+            generatePDFWithCharts: function() {
+                console.log('🔄 Iniciando generación de PDF con gráficos...');
+                
+                // Mostrar loading
+                this.showLoading();
+                
+                try {
+                    // Capturar todos los gráficos
+                    console.log('📊 Capturando gráficos...');
+                    const chartImages = this.captureChartsForPDF();
+                    console.log('✅ Gráficos capturados:', Object.keys(chartImages));
+                    
+                    // Preparar datos para enviar al servidor
+                    const pdfData = {
+                        charts: chartImages,
+                        month: window.currentMonth || new Date().getMonth() + 1,
+                        year: window.currentYear || new Date().getFullYear(),
+                        includeCharts: true
+                    };
+                    
+                    console.log('📤 Enviando datos al servidor:', {
+                        month: pdfData.month,
+                        year: pdfData.year,
+                        chartCount: Object.keys(chartImages).length
+                    });
+                    
+                    // Enviar al servidor para generar PDF
+                    fetch('/informes/mensual/pdf-with-charts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(pdfData)
+                    })
+                    .then(response => {
+                        console.log('📥 Respuesta del servidor:', response.status, response.statusText);
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`Server error: ${response.status} - ${text}`);
+                            });
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        console.log('📄 PDF blob recibido, tamaño:', blob.size, 'bytes');
+                        
+                        // Descargar el PDF
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `informe_mensual_${pdfData.year}_${pdfData.month}_con_graficos.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        console.log('✅ PDF descargado exitosamente');
+                        
+                        // Mostrar feedback de éxito
+                        this.showSuccessFeedback('PDF generado con gráficos exitosamente');
+                    })
+                    .catch(error => {
+                        console.error('❌ Error generating PDF:', error);
+                        this.showErrorFeedback(`Error al generar PDF: ${error.message}`);
+                    })
+                    .finally(() => {
+                        this.hideLoading();
+                        console.log('🏁 Proceso de generación de PDF finalizado');
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error en generatePDFWithCharts:', error);
+                    this.showErrorFeedback(`Error crítico: ${error.message}`);
+                    this.hideLoading();
+                }
+            },
+
+            // Mostrar feedback de éxito
+            showSuccessFeedback: function(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification success-notification';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${message}
+                `;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #10b981, #047857);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+                    z-index: 10000;
+                    animation: slideInRight 0.5s ease-out;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.5s ease-in';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 500);
+                }, 3000);
+            },
+
+            // Mostrar feedback de error
+            showErrorFeedback: function(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification error-notification';
+                notification.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    ${message}
+                `;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+                    z-index: 10000;
+                    animation: slideInRight 0.5s ease-out;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.5s ease-in';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 500);
+                }, 3000);
+            },
+
+
+        };
+
+        // Variables globales para PDF
+        window.currentMonth = {{ mes }};
+        window.currentYear = {{ anio }};
+        
+        // Inicializar gráficos modernos
+        ModernCharts.init();
     });
 </script>
 
 <!-- Add SheetJS for Excel export -->
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-{% endblock %} 
+{% endblock %}

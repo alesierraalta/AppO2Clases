@@ -18,7 +18,7 @@ from reportlab.lib.units import cm
 from reportlab.lib.colors import HexColor, white, black
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def safe_database_query(query_func, timeout_seconds: int = 3, fallback_value=Non
             logger.warning("No Flask app context available")
             return fallback_value
         return query_func()
-        except Exception as e:
+    except Exception as e:
         logger.error(f"Database query failed: {e}")
         return fallback_value
 
@@ -192,12 +192,12 @@ def get_monthly_data(mes: int, anio: int) -> Dict[str, Any]:
             prof_id = profesor.id
             if prof_id not in profesores_stats:
                 profesores_stats[prof_id] = {
-                                'nombre': f"{profesor.nombre} {profesor.apellido}",
-                                'total_clases': 0,
-                                'total_alumnos': 0,
-                                'total_pago': 0
-                            }
-                        
+                    'nombre': f"{profesor.nombre} {profesor.apellido}",
+                    'total_clases': 0,
+                    'total_alumnos': 0,
+                    'total_pago': 0
+                }
+            
             profesores_stats[prof_id]['total_clases'] += 1
             profesores_stats[prof_id]['total_alumnos'] += clase.cantidad_alumnos or 0
             profesores_stats[prof_id]['total_pago'] += pago
@@ -222,7 +222,7 @@ def get_monthly_data(mes: int, anio: int) -> Dict[str, Any]:
             'total_clases': total_clases,
             'total_alumnos': total_alumnos,
             'total_pagos': total_pagos,
-                    'clases_con_retraso': clases_con_retraso,
+            'clases_con_retraso': clases_con_retraso,
             'profesores_stats': profesores_list[:10],
             'tipos_stats': tipos_stats,
             'promedio_alumnos': total_alumnos / max(1, total_clases),
@@ -233,25 +233,25 @@ def get_monthly_data(mes: int, anio: int) -> Dict[str, Any]:
         logger.info(f"Cached monthly data for {cache_key}")
         return data
         
-            except Exception as e:
+    except Exception as e:
         logger.error(f"Error getting monthly data: {e}")
         return _get_sample_monthly_data(mes, anio)
-        
+
 
 def _get_sample_monthly_data(mes: int, anio: int) -> Dict[str, Any]:
     """Generate sample data as fallback"""
-            return {
+    return {
         'mes': mes,
         'anio': anio,
         'nombre_mes': MONTH_NAMES[mes],
         'total_clases': 45,
         'total_alumnos': 280,
         'total_pagos': 22500,
-                'clases_con_retraso': 7,
-                'profesores_stats': [
-                    {'nombre': 'Maria Rodriguez', 'total_clases': 12, 'total_alumnos': 96, 'total_pago': 6000},
-                    {'nombre': 'Juan Perez', 'total_clases': 10, 'total_alumnos': 80, 'total_pago': 5000},
-                    {'nombre': 'Ana Martinez', 'total_clases': 8, 'total_alumnos': 64, 'total_pago': 4000},
+        'clases_con_retraso': 7,
+        'profesores_stats': [
+            {'nombre': 'Maria Rodriguez', 'total_clases': 12, 'total_alumnos': 96, 'total_pago': 6000},
+            {'nombre': 'Juan Perez', 'total_clases': 10, 'total_alumnos': 80, 'total_pago': 5000},
+            {'nombre': 'Ana Martinez', 'total_clases': 8, 'total_alumnos': 64, 'total_pago': 4000},
         ],
         'tipos_stats': {
             'MOVE': {'count': 15, 'alumnos': 120},
@@ -267,7 +267,7 @@ def _get_sample_monthly_data(mes: int, anio: int) -> Dict[str, Any]:
 def create_metrics_table(data: Dict[str, Any]) -> Table:
     """Create metrics summary table"""
     metrics_data = [
-            ['📊 CLASES', '👥 ALUMNOS', '💰 TOTAL', '⏰ RETRASOS'],
+        ['📊 CLASES', '👥 ALUMNOS', '💰 TOTAL', '⏰ RETRASOS'],
         [
             str(data['total_clases']),
             str(data['total_alumnos']),
@@ -280,18 +280,18 @@ def create_metrics_table(data: Dict[str, Any]) -> Table:
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), IOS_COLORS['blue']),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 14),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BACKGROUND', (0, 1), (-1, 1), white),
         ('TEXTCOLOR', (0, 1), (-1, 1), IOS_COLORS['label_primary']),
         ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 1), (-1, 1), 20),
-            ('TOPPADDING', (0, 0), (-1, -1), 16),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 16),
-            ('LEFTPADDING', (0, 0), (-1, -1), 16),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 16),
+        ('TOPPADDING', (0, 0), (-1, -1), 16),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 16),
+        ('LEFTPADDING', (0, 0), (-1, -1), 16),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 16),
         ('GRID', (0, 0), (-1, -1), 0.5, IOS_COLORS['border']),
         ('BOX', (0, 0), (-1, -1), 1, IOS_COLORS['border']),
     ]))
@@ -304,10 +304,10 @@ def create_professors_table(data: Dict[str, Any]) -> Table:
     prof_data = [['PROFESOR', 'CLASES', 'ALUMNOS', 'TOTAL']]
     
     for prof in data['profesores_stats'][:5]:
-            prof_data.append([
-                prof['nombre'][:20],
-                str(prof['total_clases']),
-                str(prof['total_alumnos']),
+        prof_data.append([
+            prof['nombre'][:20],
+            str(prof['total_clases']),
+            str(prof['total_alumnos']),
             f"${prof['total_pago']:,.0f}"
         ])
     
@@ -315,18 +315,18 @@ def create_professors_table(data: Dict[str, Any]) -> Table:
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), IOS_COLORS['green']),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BACKGROUND', (0, 1), (-1, -1), white),
         ('TEXTCOLOR', (0, 1), (-1, -1), IOS_COLORS['label_primary']),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
         ('TOPPADDING', (0, 0), (-1, -1), 12),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 0.5, IOS_COLORS['border']),
         ('BOX', (0, 0), (-1, -1), 1, IOS_COLORS['border']),
     ]))
@@ -345,8 +345,8 @@ def generate_monthly_report_pdf(template_vars: Dict[str, Any]) -> Optional[bytes
         
         buffer = BytesIO()
         doc = SimpleDocTemplate(
-            buffer, 
-            pagesize=A4, 
+            buffer,
+            pagesize=A4,
             rightMargin=2*cm,
             leftMargin=2*cm,
             topMargin=2*cm,
@@ -407,7 +407,7 @@ def generate_professor_metrics_pdf(template_vars: Dict[str, Any]) -> Optional[by
         
         buffer = BytesIO()
         doc = SimpleDocTemplate(
-            buffer, 
+            buffer,
             pagesize=A4,
             rightMargin=2*cm,
             leftMargin=2*cm,
@@ -524,8 +524,8 @@ def generate_pdf_from_template(template_name: str, template_vars: Dict[str, Any]
         else:
             # Generic PDF
             return generate_monthly_report_pdf(template_vars)
-                
-            except Exception as e:
+            
+    except Exception as e:
         logger.error(f"PDF generation failed for {template_name}: {e}")
         return generate_error_pdf(str(e))
 
@@ -552,7 +552,7 @@ def generate_chart_image_base64(fig):
         buf.seek(0)
         img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
         return f"data:image/png;base64,{img_str}"
-                    except Exception as e:
+    except Exception as e:
         logger.error(f"Error converting chart to base64: {e}")
         return ""
 

@@ -147,7 +147,7 @@
                                 <th scope="col" class="d-none d-md-table-cell">Duración</th>
                                 <th scope="col" class="d-none d-lg-table-cell">Capacidad</th>
                                 <th scope="col" class="d-none d-md-table-cell">Profesor</th>
-
+                                <th scope="col" class="text-center">Estado</th>
                                 <th scope="col" class="actions-column">Acciones</th>
                             </tr>
                         </thead>
@@ -183,14 +183,38 @@
                                     <span class="text-muted">Sin asignar</span>
                                     {% endif %}
                                 </td>
-
+                                <td class="text-center">
+                                    {% if horario.activo %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Activo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inactivo
+                                        </span>
+                                        {% if horario.fecha_desactivacion %}
+                                            <small class="d-block text-muted mt-1">
+                                                Desde: {{ horario.fecha_desactivacion.strftime('%d/%m/%Y') }}
+                                            </small>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ url_for('editar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-primary" title="Editar horario">
                                             <i class="fas fa-edit"></i>
                                         </a>
-
-                                        <a href="{{ url_for('confirmar_eliminar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-danger">
+                                        {% if horario.activo %}
+                                            <a href="{{ url_for('desactivar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-warning" title="Desactivar horario" 
+                                               onclick="return confirm('¿Está seguro de desactivar este horario? Las clases futuras no aparecerán para registro.')">
+                                                <i class="fas fa-pause-circle"></i>
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ url_for('activar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-success" title="Activar horario">
+                                                <i class="fas fa-play-circle"></i>
+                                            </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('confirmar_eliminar_horario', id=horario.id) }}" class="btn btn-sm btn-outline-danger" title="Eliminar horario">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
@@ -234,7 +258,7 @@
                             <td class="font-weight-bold">{{ '%02d'|format(hora) }}:00</td>
                             {% for dia_id in range(7) %}
                             <td>
-                                {% for h in horarios %}
+                                {% for h in horarios_activos %}
                                     {% if h.dia_semana == dia_id and h.hora_inicio.hour == hora %}
                                     <div class="p-1 mb-1 border rounded clase-{{ h.tipo_clase|lower }}-bg">
                                         <strong>{{ h.nombre }}</strong><br>
@@ -273,7 +297,7 @@
                         <div class="accordion-body p-0">
                             <div class="list-group list-group-flush">
                                 {% set clases_del_dia = false %}
-                                {% for h in horarios %}
+                                {% for h in horarios_activos %}
                                     {% if h.dia_semana|int == dia_id|int %}
                                     {% set clases_del_dia = true %}
                                     <a href="{{ url_for('editar_horario', id=h.id) }}" class="list-group-item list-group-item-action clase-{{ h.tipo_clase|lower }}">

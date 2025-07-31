@@ -16,6 +16,5 @@ numpy
 pandas
 matplotlib==3.10.1
 librosa==0.11.0
-WeasyPrint==65.1
-pytest
-pytest-cov
+reportlab==3.6.9
+Pillow==10.0.0

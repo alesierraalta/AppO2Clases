@@ -3,7 +3,16 @@ import logging
 import traceback
 import re  # para expresiones regulares
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory
-from weasyprint import HTML
+
+# Conditional WeasyPrint import with fallback
+try:
+    from weasyprint import HTML
+    weasyprint_available = True
+except (ImportError, OSError, Exception) as e:
+    weasyprint_available = False
+    HTML = None
+    print(f"WeasyPrint not available: {e}")
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, date, time
 from werkzeug.utils import secure_filename
@@ -26,6 +35,21 @@ import librosa.display
 import io
 import base64
 import time as time_module  # Renamed to avoid conflict with datetime.time
+
+# PDF generation helper function with fallback
+def generate_pdf_from_html(html_content, base_url=None, filename="document.pdf"):
+    """Generate PDF from HTML with fallback handling"""
+    if not weasyprint_available:
+        flash("La funcionalidad de PDF no está disponible. WeasyPrint no pudo cargarse.", "warning")
+        return None
+    
+    try:
+        pdf = HTML(string=html_content, base_url=base_url).write_pdf()
+        return pdf
+    except Exception as e:
+        app.logger.error(f"Error generating PDF: {str(e)}")
+        flash(f"Error al generar PDF: {str(e)}", "danger")
+        return None
 
 # Importar el blueprint de API
 from api_routes import api
@@ -923,8 +947,34 @@ def informe_mensual():
                               total_pagos=total_pagos)
 
         if pdf_requested:
-            pdf = HTML(string=html, base_url=request.base_url).write_pdf()
-            return send_file(io.BytesIO(pdf), download_name=f"informe_mensual_{mes}_{anio}.pdf", mimetype='application/pdf')
+            try:
+                # Import optimized PDF generator
+                from utils.pdf_generator import generate_pdf_from_template
+                
+                # Prepare template variables for PDF
+                pdf_template_vars = {
+                    'mes': mes,
+                    'anio': anio,
+                    'nombre_mes': calendar.month_name[mes],
+                    'total_clases': total_clases,
+                    'total_alumnos': total_alumnos,
+                    'total_pagos': total_pagos,
+                    'clases_con_retraso': total_retrasos,
+                    'is_pdf': True
+                }
+                
+                pdf = generate_pdf_from_template(
+                    'informes/mensual_resultado.html',
+                    pdf_template_vars
+                )
+                
+                if pdf:
+                    return send_file(io.BytesIO(pdf), download_name=f"informe_mensual_{mes}_{anio}.pdf", mimetype='application/pdf')
+                else:
+                    flash("No se pudo generar el PDF. Mostrando informe en HTML.", "warning")
+            except Exception as e:
+                print(f"Error generating PDF: {e}")
+                flash("Error al generar PDF. Mostrando informe en HTML.", "warning")
         return html
     
     # Si es GET normal, mostrar formulario para seleccionar mes y año

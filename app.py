@@ -2,8 +2,7 @@ import os
 import logging
 import traceback
 import re  # para expresiones regulares
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory
-from weasyprint import HTML
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_file, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import datetime, timedelta, date, time
@@ -18,6 +17,17 @@ import click
 import functools
 import glob
 import shutil
+
+# Import PDF generation
+try:
+    from utils.pdf_generator import generate_pdf_from_template, weasyprint_available, pdfkit_available, reportlab_available, pdf_export_available
+    print(f"PDF generation imported successfully. pdf_export_available = {pdf_export_available}")
+except ImportError as e:
+    pdf_export_available = False
+    print(f"WARNING: PDF generation libraries not available. PDF export will be disabled. Error: {e}")
+except Exception as e:
+    pdf_export_available = False
+    print(f"WARNING: Error importing PDF generation. PDF export will be disabled. Error: {e}")
 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -52,16 +62,20 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 app.url_map.strict_slashes = False
 app.config['SECRET_KEY'] = 'tu-clave-secreta'
 csrf = CSRFProtect(app)
+
+# Registrar csrf_token como función global de Jinja2
+app.jinja_env.globals['csrf_token'] = generate_csrf
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gimnasio.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
-# Inicializar la base de datos
-db = SQLAlchemy(app)
+# Importar la instancia db desde models.py y los modelos
+from models import db, Profesor, HorarioClase, ClaseRealizada, EventoHorario, TipoEventoHorario, setup_date_handling
 
-# Importar modelos después de inicializar db y app
-from models import Profesor, HorarioClase, ClaseRealizada, EventoHorario, TipoEventoHorario, setup_date_handling
+# Inicializar la base de datos con la aplicación
+db.init_app(app)
 
 # Configurar el manejo de fechas para la aplicación
 setup_date_handling(app)
@@ -365,9 +379,11 @@ def eliminar_varios_profesores():
 # Rutas para Horarios de Clases
 @app.route('/horarios')
 def listar_horarios():
-    # Mostrar todos los horarios
+    # Mostrar todos los horarios (para gestión)
     horarios = HorarioClase.query.order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
-    return render_template('horarios/lista.html', horarios=horarios, dias_semana=dict(DIAS_SEMANA))
+    # Mostrar solo horarios activos (para horario semanal)
+    horarios_activos = HorarioClase.query.filter_by(activo=True).order_by(HorarioClase.dia_semana, HorarioClase.hora_inicio).all()
+    return render_template('horarios/lista.html', horarios=horarios, horarios_activos=horarios_activos, dias_semana=dict(DIAS_SEMANA))
 
 @app.route('/horarios/nuevo', methods=['GET', 'POST'])
 def nuevo_horario():
@@ -403,8 +419,24 @@ def editar_horario(id):
         horario.profesor_id = int(request.form['profesor_id'])
         horario.capacidad_maxima = int(request.form['capacidad_maxima'])
         horario.tipo_clase = request.form['tipo_clase']
+        
+        # Manejar el estado activo/inactivo
+        nuevo_estado = 'activo' in request.form
+        if horario.activo and not nuevo_estado:
+            # Se está desactivando el horario
+            horario.fecha_desactivacion = date.today()
+            flash(f'Horario "{horario.nombre}" desactivado. No aparecerá más en el registro de asistencia.', 'warning')
+        elif not horario.activo and nuevo_estado:
+            # Se está reactivando el horario
+            horario.fecha_desactivacion = None
+            flash(f'Horario "{horario.nombre}" reactivado exitosamente.', 'success')
+        
+        horario.activo = nuevo_estado
         db.session.commit()
-        flash('Horario actualizado con éxito', 'success')
+        
+        if nuevo_estado or horario.activo:
+            flash('Horario actualizado con éxito', 'success')
+        
         return redirect(url_for('listar_horarios'))
     
     return render_template('horarios/editar.html', horario=horario, profesores=profesores, dias_semana=DIAS_SEMANA, tipos_clase=TIPOS_CLASE)
@@ -550,7 +582,43 @@ def eliminar_varios_horarios():
     
     return redirect(url_for('listar_horarios'))
 
-# Route removed - desactivar_horario
+@app.route('/horarios/desactivar/<int:id>')
+def desactivar_horario(id):
+    """Desactivar un horario de clase"""
+    horario = HorarioClase.query.get_or_404(id)
+    
+    try:
+        horario.activo = False
+        horario.fecha_desactivacion = datetime.now().date()
+        db.session.commit()
+        
+        app.logger.info(f"Horario ID {id} desactivado exitosamente")
+        flash(f'Horario "{horario.nombre}" desactivado con éxito. No aparecerá más en reportes ni anuncios.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error al desactivar horario ID {id}: {str(e)}")
+        flash(f'Error al desactivar el horario: {str(e)}', 'danger')
+    
+    return redirect(url_for('listar_horarios'))
+
+@app.route('/horarios/activar/<int:id>')
+def activar_horario(id):
+    """Activar un horario de clase"""
+    horario = HorarioClase.query.get_or_404(id)
+    
+    try:
+        horario.activo = True
+        horario.fecha_desactivacion = None
+        db.session.commit()
+        
+        app.logger.info(f"Horario ID {id} activado exitosamente")
+        flash(f'Horario "{horario.nombre}" activado con éxito. Volverá a aparecer en reportes y anuncios.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error al activar horario ID {id}: {str(e)}")
+        flash(f'Error al activar el horario: {str(e)}', 'danger')
+    
+    return redirect(url_for('listar_horarios'))
 
 # Rutas para Control de Asistencia
 @app.route('/asistencia')
@@ -561,8 +629,8 @@ def control_asistencia():
         # En Python, weekday() devuelve 0 (lunes) a 6 (domingo)
         dia_semana = hoy.weekday()
         
-        # Obtener todos los horarios programados para hoy sin filtrar por activo
-        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana).order_by(HorarioClase.hora_inicio).all()
+        # Obtener todos los horarios activos programados para hoy
+        horarios_hoy = HorarioClase.query.filter_by(dia_semana=dia_semana, activo=True).order_by(HorarioClase.hora_inicio).all()
         app.logger.info(f"Obtenidos {len(horarios_hoy)} horarios para el día {dia_semana}")
         
         # Clases ya registradas hoy
@@ -686,7 +754,12 @@ def registrar_asistencia(horario_id):
             # Convertir la hora de llegada a un objeto time (only for non-cancelled classes)
             hora_llegada_time = None
             if hora_llegada and estado_clase != 'cancelada':
-                hora_llegada_time = datetime.strptime(hora_llegada, '%H:%M').time()
+                try:
+                    hora_llegada_time = datetime.strptime(hora_llegada, '%H:%M').time()
+                except ValueError as e:
+                    app.logger.error(f"Error al convertir hora_llegada '{hora_llegada}': {e}")
+                    flash(f"Formato de hora inválido: {hora_llegada}", "danger")
+                    return redirect(url_for('control_asistencia'))
                 
             # Crear un nuevo registro
             nueva_clase = ClaseRealizada(
@@ -697,6 +770,8 @@ def registrar_asistencia(horario_id):
                 cantidad_alumnos=cantidad_alumnos,
                 observaciones=observaciones
             )
+            
+            app.logger.info(f"Creando nueva clase: fecha={fecha_registro}, horario_id={horario_id}, profesor_id={profesor_id}")
             
             # Verificar si hay un archivo de audio temporal para este horario
             audio_file = None
@@ -725,6 +800,8 @@ def registrar_asistencia(horario_id):
             db.session.add(nueva_clase)
             db.session.commit()
             
+            app.logger.info(f"Clase guardada exitosamente con ID: {nueva_clase.id}")
+            
             # Limpiar caché de métricas para este profesor
             from models import clear_metrics_cache
             clear_metrics_cache(profesor_id)
@@ -735,7 +812,10 @@ def registrar_asistencia(horario_id):
             return redirect(url_for('control_asistencia'))
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al guardar el registro: {str(e)}', 'error')
+            app.logger.error(f"Error al guardar el registro: {str(e)}")
+            import traceback
+            app.logger.error(f"Traceback completo: {traceback.format_exc()}")
+            flash(f'Error al guardar el registro: {str(e)}', 'danger')
     
     # Obtener todos los profesores para el selector
     profesores = Profesor.query.all()
@@ -789,26 +869,38 @@ def editar_asistencia(id):
             aviso_alumnos = request.form.get('aviso_alumnos', 'no')
             observaciones = f"CLASE CANCELADA - Motivo: {motivo_ausencia} - Aviso: {aviso_alumnos} - " + request.form.get('observaciones', '')
         
-        # Actualizar los datos en la base de datos
-        clase_realizada.hora_llegada_profesor = hora_llegada
-        clase_realizada.cantidad_alumnos = cantidad_alumnos
-        clase_realizada.observaciones = observaciones
-        clase_realizada.profesor_id = int(profesor_id) if profesor_id else clase_realizada.profesor_id
-        
-        db.session.commit()
-        
-        # Limpiar caché de métricas para este profesor
-        from models import clear_metrics_cache
-        clear_metrics_cache(clase_realizada.profesor_id)
-        
-        flash('Registro de asistencia actualizado con éxito', 'success')
-        
-        # Redireccionar según la fecha de la clase actualizada
-        hoy = datetime.now().date()
-        if clase_realizada.fecha == hoy:
+        try:
+            # Actualizar los datos en la base de datos
+            clase_realizada.hora_llegada_profesor = hora_llegada
+            clase_realizada.cantidad_alumnos = cantidad_alumnos
+            clase_realizada.observaciones = observaciones
+            clase_realizada.profesor_id = int(profesor_id) if profesor_id else clase_realizada.profesor_id
+            
+            app.logger.info(f"Actualizando clase ID {id}: profesor_id={clase_realizada.profesor_id}, cantidad_alumnos={cantidad_alumnos}")
+            
+            db.session.commit()
+            
+            app.logger.info(f"Clase ID {id} actualizada exitosamente")
+            
+            # Limpiar caché de métricas para este profesor
+            from models import clear_metrics_cache
+            clear_metrics_cache(clase_realizada.profesor_id)
+            
+            flash('Registro de asistencia actualizado con éxito', 'success')
+            
+            # Redireccionar según la fecha de la clase actualizada
+            hoy = datetime.now().date()
+            if clase_realizada.fecha == hoy:
+                return redirect(url_for('control_asistencia'))
+            else:
+                return redirect(url_for('historial_asistencia'))
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error al actualizar el registro ID {id}: {str(e)}")
+            import traceback
+            app.logger.error(f"Traceback completo: {traceback.format_exc()}")
+            flash(f'Error al actualizar el registro: {str(e)}', 'danger')
             return redirect(url_for('control_asistencia'))
-        else:
-            return redirect(url_for('historial_asistencia'))
     
     # Obtener todos los profesores para el selector
     profesores = Profesor.query.all()
@@ -929,8 +1021,7 @@ def clases_no_registradas():
         # Forzar sincronización de la base de datos
         db.session.commit()
         # Cerrar y reabrir la sesión
-        db.session.close()
-        db.session = db.create_scoped_session()
+        db.session.remove()
         # Limpiar también la caché de SQLAlchemy
         db.session.expire_all()
     
@@ -947,10 +1038,11 @@ def clases_no_registradas():
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
     
     # 1. Obtener todos los horarios activos utilizando una consulta más completa y directa
-    # Obtener todos los horarios sin filtrar por activo
+    # Filtrar solo horarios activos para reportes
     sql_horarios = """
         SELECT h.id, h.nombre, h.hora_inicio, h.tipo_clase, h.dia_semana, h.profesor_id, h.duracion
         FROM horario_clase h 
+        WHERE h.activo = 1
         ORDER BY h.nombre
     """
     app.logger.info("Ejecutando consulta SQL para todos los horarios...")
@@ -1256,6 +1348,41 @@ def limpiar_formato_hora(hora_input):
     # Si nada funciona, devolvemos un valor predeterminado
     return "00:00"
 
+def convertir_hora_con_microsegundos(valor_hora):
+    """
+    Convierte una hora en formato string a objeto time, manejando varios formatos incluyendo los que tienen microsegundos.
+    
+    Args:
+        valor_hora: El valor de hora a convertir (string o time)
+        
+    Returns:
+        Objeto time o None si no se puede convertir
+    """
+    if valor_hora is None:
+        return None
+        
+    # Si ya es un objeto time, devolverlo directamente
+    if isinstance(valor_hora, time):
+        return valor_hora
+        
+    # Si es string, intentar convertir
+    if isinstance(valor_hora, str):
+        # Eliminar parte de microsegundos si existe
+        if '.' in valor_hora:
+            valor_hora = valor_hora.split('.')[0]
+            
+        # Intentar varios formatos
+        for formato in ['%H:%M:%S', '%H:%M']:
+            try:
+                return datetime.strptime(valor_hora, formato).time()
+            except ValueError:
+                continue
+                
+    # Si todas las conversiones fallan
+    # Registrar en el log pero no imprimir en consola
+    app.logger.error(f"No se pudo convertir {valor_hora} a objeto time")
+    return None
+
 @app.route('/informes/mensual', methods=['GET', 'POST'])
 def informe_mensual():
     # Diccionario de nombres de meses en español
@@ -1264,6 +1391,9 @@ def informe_mensual():
         5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
         9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
     }
+    
+    # Check if PDF export is requested
+    pdf_requested = request.args.get('export') == 'pdf' and pdf_export_available
     
     # Función para calcular la puntualidad
     def calcular_puntualidad(hora_llegada, hora_inicio, nombre_clase=""):
@@ -1325,12 +1455,10 @@ def informe_mensual():
         
         return resultado
 
-    pdf_requested = False
     # Para peticiones GET con parámetros
     if request.method == 'GET' and request.args.get('mes') and request.args.get('anio'):
         mes = int(request.args.get('mes'))
         anio = int(request.args.get('anio'))
-        pdf_requested = 'pdf' in request.args
         
         # Obtener el primer y último día del mes
         primer_dia = date(anio, mes, 1)
@@ -1339,7 +1467,6 @@ def informe_mensual():
     elif request.method == 'POST':
         mes = int(request.form['mes'])
         anio = int(request.form['anio'])
-        pdf_requested = 'pdf' in request.form
         
         # Obtener el primer y último día del mes
         primer_dia = date(anio, mes, 1)
@@ -1365,8 +1492,7 @@ def informe_mensual():
     # Esta parte se ejecuta tanto para POST como para GET con parámetros
     # Limpiar caché de la sesión
     db.session.commit()
-    db.session.close()
-    db.session = db.create_scoped_session()
+    db.session.remove()
     
     # Consultar clases realizadas en el rango de fechas usando SQL directo
     # para evitar problemas de caché
@@ -1893,25 +2019,201 @@ def informe_mensual():
     
     # The morning/afternoon classification logic has been removed
     
-    html = render_template('informes/mensual_resultado.html',
-                          mes=mes,
-                          anio=anio,
-                          clases_realizadas=clases_realizadas,
-                          clases_no_registradas=clases_no_registradas,
-                          conteo_no_registradas=conteo_no_registradas,
-                          resumen_profesores=resumen_profesores,
-                          nombre_mes=MESES_ES[mes],
-                          conteo_tipos=conteo_tipos,
-                          alumnos_tipos=alumnos_tipos,
-                          total_clases=total_clases,
-                          total_alumnos=total_alumnos,
-                          total_retrasos=total_retrasos,
-                          total_pagos=total_pagos)
-
+    # Prepare template variables
+    template_vars = {
+        'mes': mes, 
+        'anio': anio, 
+        'clases_realizadas': clases_realizadas,
+        'clases_no_registradas': clases_no_registradas,
+        'conteo_no_registradas': conteo_no_registradas,
+        'resumen_profesores': resumen_profesores,
+        'nombre_mes': MESES_ES[mes],
+        'conteo_tipos': conteo_tipos,
+        'alumnos_tipos': alumnos_tipos,
+        'total_clases': total_clases,
+        'total_alumnos': total_alumnos,
+        'total_retrasos': total_retrasos,
+        'total_pagos': total_pagos
+    }
+    
+    # Generate PDF if requested
     if pdf_requested:
-        pdf = HTML(string=html, base_url=request.base_url).write_pdf()
-        return send_file(io.BytesIO(pdf), download_name=f"informe_mensual_{mes}_{anio}.pdf", mimetype='application/pdf')
-    return html
+        try:
+            # Import the optimized PDF generator
+            from utils.pdf_generator import generate_pdf_from_template
+            
+            # Prepare template variables for PDF generation
+            pdf_template_vars = {
+                'mes': mes,
+                'anio': anio,
+                'nombre_mes': MESES_ES[mes],
+                'total_clases': total_clases,
+                'total_alumnos': total_alumnos,
+                'total_pagos': total_pagos,
+                'clases_con_retraso': total_retrasos,
+                'profesores_stats': [],  # Will be populated from resumen_profesores
+                'tipos_stats': conteo_tipos,
+                'is_pdf': True
+            }
+            
+            # Convert resumen_profesores to the format expected by PDF generator
+            profesores_list = []
+            for prof_id, prof_data in resumen_profesores.items():
+                profesor_info = prof_data['profesor']
+                nombre_completo = f"{profesor_info['nombre']} {profesor_info['apellido']}".strip()
+                
+                profesores_list.append({
+                    'nombre': nombre_completo,
+                    'total_clases': prof_data['total_clases'],
+                    'total_alumnos': prof_data['total_alumnos'],
+                    'total_pago': prof_data['pago_total']
+                })
+            
+            # Sort by total classes and add to template vars
+            profesores_list.sort(key=lambda x: x['total_clases'], reverse=True)
+            pdf_template_vars['profesores_stats'] = profesores_list
+            
+            # Generate PDF using optimized generator
+            pdf = generate_pdf_from_template(
+                'informes/mensual_resultado.html',
+                pdf_template_vars
+            )
+            
+            if pdf:
+                filename = f"informe_mensual_{MESES_ES[mes]}_{anio}.pdf"
+                response = make_response(pdf)
+                response.headers['Content-Type'] = 'application/pdf'
+                response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+                return response
+            else:
+                app.logger.error("PDF generation returned None")
+                flash("Error al generar PDF: El generador devolvió None", "danger")
+                
+        except Exception as e:
+            app.logger.error(f"Error al generar PDF: {str(e)}")
+            flash(f"Error al generar PDF: {str(e)}", "danger")
+            # Continue to render HTML version
+    
+    # Render HTML template
+    return render_template('informes/mensual_resultado.html', **template_vars)
+
+@app.route('/informes/mensual/pdf-with-charts', methods=['POST'])
+def informe_mensual_pdf_with_charts():
+    """Generar PDF del informe mensual incluyendo gráficos capturados desde el frontend"""
+    try:
+        # Diccionario de nombres de meses en español
+        MESES_ES = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        
+        # Obtener datos del request
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        mes = data.get('month')
+        anio = data.get('year') 
+        chart_images = data.get('charts', {})
+        
+        if not mes or not anio:
+            return jsonify({'error': 'Month and year are required'}), 400
+            
+        # Validar mes y año
+        try:
+            mes = int(mes)
+            anio = int(anio)
+            if not (1 <= mes <= 12):
+                raise ValueError("Invalid month")
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid month or year'}), 400
+            
+        # Obtener datos del informe (reutilizar lógica existente)
+        fecha_inicio = date(anio, mes, 1)
+        ultimo_dia = calendar.monthrange(anio, mes)[1]
+        fecha_fin = date(anio, mes, ultimo_dia)
+        
+        # Query classes for the month
+        clases_realizadas = ClaseRealizada.query.filter(
+            ClaseRealizada.fecha >= fecha_inicio,
+            ClaseRealizada.fecha <= fecha_fin
+        ).all()
+        
+        # Calcular estadísticas
+        total_clases = len(clases_realizadas)
+        total_alumnos = sum(clase.cantidad_alumnos or 0 for clase in clases_realizadas)
+        
+        # Calcular total de pagos basado en la tarifa del profesor
+        total_pagos = 0
+        for clase in clases_realizadas:
+            if clase.profesor and hasattr(clase.profesor, 'tarifa_por_clase'):
+                total_pagos += clase.profesor.tarifa_por_clase or 0
+        
+        # Conteo por tipos
+        conteo_tipos = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        alumnos_tipos = {'MOVE': 0, 'RIDE': 0, 'BOX': 0, 'OTRO': 0}
+        
+        for clase in clases_realizadas:
+            horario = HorarioClase.query.get(clase.horario_id)
+            if horario and horario.tipo_clase:
+                tipo = horario.tipo_clase
+                if tipo in conteo_tipos:
+                    conteo_tipos[tipo] += 1
+                    alumnos_tipos[tipo] += clase.cantidad_alumnos or 0
+                else:
+                    conteo_tipos['OTRO'] += 1
+                    alumnos_tipos['OTRO'] += clase.cantidad_alumnos or 0
+        
+        # Preparar variables para el template
+        template_vars = {
+            'mes': mes,
+            'anio': anio,
+            'nombre_mes': MESES_ES[mes],
+            'clases_realizadas': clases_realizadas,
+            'total_clases': total_clases,
+            'total_alumnos': total_alumnos,
+            'total_pagos': total_pagos,
+            'conteo_tipos': conteo_tipos,
+            'alumnos_tipos': alumnos_tipos,
+            'chart_images': chart_images,  # Agregar imágenes de gráficos
+            'include_charts': True,  # Flag para incluir gráficos
+            'is_pdf': True
+        }
+        
+        # Generar PDF con gráficos usando el generador optimizado
+        from utils.pdf_generator import generate_pdf_from_template
+        
+        # Prepare optimized template variables
+        pdf_template_vars = {
+            'mes': mes,
+            'anio': anio,
+            'nombre_mes': MESES_ES[mes],
+            'total_clases': total_clases,
+            'total_alumnos': total_alumnos,
+            'total_pagos': total_pagos,
+            'clases_con_retraso': 0,  # Calculate if needed
+            'chart_images': chart_images,
+            'is_pdf': True
+        }
+        
+        pdf = generate_pdf_from_template(
+            'informes/mensual_resultado.html',
+            pdf_template_vars
+        )
+        
+        if pdf:
+            filename = f"informe_mensual_con_graficos_{MESES_ES[mes]}_{anio}.pdf"
+            response = make_response(pdf)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            return jsonify({'error': 'Failed to generate PDF'}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error generating PDF with charts: {str(e)}")
+        return jsonify({'error': f'Error generating PDF: {str(e)}'}), 500
 
 # Rutas para la importación de Excel
 
@@ -3724,8 +4026,7 @@ def registrar_clases_no_registradas():
             flash(f'Se registraron {clases_registradas} clases correctamente', 'success')
             
             # Limpiar caché para asegurar que las vistas se actualicen
-            db.session.close()
-            db.session = db.create_scoped_session()
+            db.session.remove()
             
             # Añadir timestamp para forzar actualización completa
             timestamp = int(time_module.time())
@@ -4509,7 +4810,6 @@ def depurar_asistencia_base_datos():
         
         # Forzar un reinicio de la sesión para limpiar la caché
         db.session.remove()
-        db.session = db.create_scoped_session()
         
         return redirect(url_for('control_asistencia'))
             
@@ -4531,8 +4831,7 @@ def depurar_base_datos():
     
     try:
         # 1. Reiniciar completamente la sesión de base de datos
-        db.session.close()
-        db.session = db.create_scoped_session()
+        db.session.remove()
         resultados['mensajes'].append("Sesión de base de datos reiniciada exitosamente")
         
         # 2. Verificar clases duplicadas (misma fecha y horario)
@@ -4891,44 +5190,13 @@ def format_hora(hora):
     # Si todo falla, devolver el valor original
     return hora
 
-def convertir_hora_con_microsegundos(valor_hora):
-    """
-    Convierte una hora en formato string a objeto time, manejando varios formatos incluyendo los que tienen microsegundos.
-    
-    Args:
-        valor_hora: El valor de hora a convertir (string o time)
-        
-    Returns:
-        Objeto time o None si no se puede convertir
-    """
-    if valor_hora is None:
-        return None
-        
-    # Si ya es un objeto time, devolverlo directamente
-    if isinstance(valor_hora, time):
-        return valor_hora
-        
-    # Si es string, intentar convertir
-    if isinstance(valor_hora, str):
-        # Eliminar parte de microsegundos si existe
-        if '.' in valor_hora:
-            valor_hora = valor_hora.split('.')[0]
-            
-        # Intentar varios formatos
-        for formato in ['%H:%M:%S', '%H:%M']:
-            try:
-                return datetime.strptime(valor_hora, formato).time()
-            except ValueError:
-                continue
-                
-    # Si todas las conversiones fallan
-    # Registrar en el log pero no imprimir en consola
-    app.logger.error(f"No se pudo convertir {valor_hora} a objeto time")
-    return None
+
 
 @app.route('/informes/profesor/<int:profesor_id>/metricas')
 def metricas_profesor(profesor_id):
     """Mostrar métricas detalladas de un profesor específico"""
+    # Check if PDF export is requested
+    pdf_requested = request.args.get('export') == 'pdf' and pdf_export_available
     try:
         # Diccionario de nombres de meses en español
         MESES_ES = {
@@ -4958,7 +5226,6 @@ def metricas_profesor(profesor_id):
         
         # Verificar si se debe mostrar el modo de depuración
         debug_mode = request.args.get('debug', type=bool, default=False)
-        pdf_requested = 'pdf' in request.args
         
         # Obtener parámetros de filtro opcional
         tipo_clase = request.args.get('tipo_clase', default=None)
@@ -5079,33 +5346,76 @@ def metricas_profesor(profesor_id):
             else:
                 metricas['ranking_profesores'] = Profesor.obtener_ranking_profesores()
         
-        html = render_template(
-            'informes/metricas_profesor.html',
-            profesor=profesor,
-            metricas=metricas if 'metricas_actual' not in metricas else metricas['metricas_actual'],
-            metricas_comparacion=metricas.get('metricas_comparacion'),
-            comparacion=metricas.get('comparacion'),
-            tipos_clase=tipos_clase,
-            tipo_clase_actual=tipo_clase or 'Todos',
-            debug_mode=debug_mode,
-            mes_actual=mes_actual,
-            mes_comparacion=mes_comparacion,
-            meses_disponibles=meses_disponibles,
-            mes_actual_nombre=mes_actual_nombre,
-            mes_comparacion_nombre=mes_comparacion_nombre,
-            tipo_metricas=tipo_metricas,  # Tipo de métricas seleccionado
-            comparar_meses='comparar' in request.args,  # Indicar si estamos en modo comparación
-            error=error  # Pasar el error de validación a la plantilla
-        )
-
+        # Prepare template variables
+        template_vars = {
+            'profesor': profesor, 
+            'metricas': metricas if 'metricas_actual' not in metricas else metricas['metricas_actual'],
+            'metricas_comparacion': metricas.get('metricas_comparacion'),
+            'comparacion': metricas.get('comparacion'),
+            'tipos_clase': tipos_clase,
+            'tipo_clase_actual': tipo_clase or 'Todos',
+            'debug_mode': debug_mode,
+            'mes_actual': mes_actual,
+            'mes_comparacion': mes_comparacion,
+            'meses_disponibles': meses_disponibles,
+            'mes_actual_nombre': mes_actual_nombre,
+            'mes_comparacion_nombre': mes_comparacion_nombre,
+            'tipo_metricas': tipo_metricas,  # Tipo de métricas seleccionado
+            'comparar_meses': 'comparar' in request.args,  # Indicar si estamos en modo comparación
+            'error': error  # Pasar el error de validación a la plantilla
+        }
+        
+        # Generate PDF if requested
         if pdf_requested:
-            pdf = HTML(string=html, base_url=request.base_url).write_pdf()
-            return send_file(io.BytesIO(pdf), download_name=f"metricas_profesor_{profesor_id}.pdf", mimetype='application/pdf')
-        return html
+            try:
+                pdf = generate_pdf_from_template(
+                    'informes/metricas_profesor.html',
+                    template_vars,
+                    base_url=request.host_url
+                )
+                
+                if pdf is None:
+                    raise Exception("La función generate_pdf_from_template retornó None")
+                
+                filename = f"metricas_profesor_{profesor.nombre}_{profesor.apellido}.pdf"
+                response = make_response(pdf)
+                response.headers['Content-Type'] = 'application/pdf'
+                response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+                return response
+            except Exception as e:
+                import traceback
+                app.logger.error(f"Error al generar PDF: {str(e)}")
+                app.logger.error(f"Traceback PDF: {traceback.format_exc()}")
+                flash(f"Error al generar PDF: {str(e)}", "danger")
+                # Continue to render HTML version
+        
+        # Render HTML template
+        try:
+            response = render_template('informes/metricas_profesor.html', **template_vars)
+            if response is None:
+                app.logger.error("render_template retornó None")
+                flash("Error al renderizar la página de métricas", "danger")
+                return redirect(url_for('informe_mensual'))
+            return response
+        except Exception as render_error:
+            app.logger.error(f"Error al renderizar template: {str(render_error)}")
+            import traceback
+            app.logger.error(f"Traceback render: {traceback.format_exc()}")
+            flash(f"Error al renderizar la página: {str(render_error)}", "danger")
+            return redirect(url_for('informe_mensual'))
     except Exception as e:
         app.logger.error(f"Error en metricas_profesor: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback completo: {traceback.format_exc()}")
         flash(f"Error al cargar métricas del profesor: {str(e)}", "danger")
-        return redirect(url_for('informe_mensual'))
+        
+        # Asegurar que siempre retornemos una respuesta válida
+        try:
+            return redirect(url_for('informe_mensual'))
+        except Exception as redirect_error:
+            app.logger.error(f"Error en redirect: {str(redirect_error)}")
+            # Si el redirect falla, retornar una respuesta básica
+            return render_template('500.html'), 500
 
 
 def obtener_meses_disponibles(clases):
@@ -5241,3 +5551,36 @@ def fix_problematic_dates():
             mensaje=f"Ocurrió un error: {str(e)}",
             detalles=f"No se pudieron corregir las fechas problemáticas."
         )
+
+@app.route('/test-pdf')
+def test_pdf():
+    """Route to test PDF generation"""
+    try:
+        # Create a simple PDF
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.units import inch
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        
+        elements = []
+        elements.append(Paragraph("Test PDF Generation", styles['Title']))
+        elements.append(Spacer(1, 0.25*inch))
+        elements.append(Paragraph("This is a test PDF to verify that PDF generation is working correctly.", styles['Normal']))
+        elements.append(Spacer(1, 0.1*inch))
+        elements.append(Paragraph("If you can see this, PDF generation is working with ReportLab.", styles['Normal']))
+        
+        doc.build(elements)
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="test.pdf"'
+        return response
+    except Exception as e:
+        return f"Error: {str(e)}"

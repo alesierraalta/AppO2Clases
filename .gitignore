@@ -1,10 +1,16 @@
-# Python
+# Entorno virtual de Python
+venv/
+env/
+ENV/
+
+# Archivos compilados de Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Archivos de distribución / packaging
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -17,46 +23,66 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
-venv/
-ENV/
-env/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Flask
-instance/
-.webassets-cache
-
-# Database
+# Base de datos
 *.db
-*.sqlite
 *.sqlite3
+instance/
 
-# Logs
+# Logs y archivos temporales
 *.log
-
-# Media
-uploads/
-
-# Coverage reports
-.coverage
-htmlcov/
-
-# Temporary files
 *.tmp
-.DS_Store
-.pytest_cache/
+*.temp
+temp_*
+*_temp.*
 PyWhatKit_DB.txt
 
-# Environment variables
-.env create_db.py 
-notification_lock.txt 
+# Archivos de backup
+*.bak
+*.bak2
+*.backup
+*~
+
+# Archivos de prueba temporales
+test_*.pdf
+minimal_test.*
+final_test_*
+debug_*.py
+*_debug.*
+
+# Archivos del sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos de audio temporales
+temp_*.mp3
+*_temp.mp3
+
+# Backups antiguos
+backups/audios_backup_*/
+
+# Archivos de configuración local
+.env
+config/local.py
+
+# Uploads temporales
+uploads/temp/
+uploads/*.tmp
