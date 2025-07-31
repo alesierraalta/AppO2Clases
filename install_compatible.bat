@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: Configurar codificación UTF-8
+:: Configurar codificacion UTF-8
 chcp 65001 >nul 2>&1
 set PYTHONIOENCODING=utf-8
 set PYTHONUTF8=1
@@ -24,18 +24,15 @@ if %errorlevel% neq 0 (
 )
 
 echo Python encontrado. Verificando version...
-python -c "import sys; print(sys.version_info.major, sys.version_info.minor)" > python_version.txt 2>nul
-if exist python_version.txt (
-    set /p PY_VERSION=<python_version.txt
-    del python_version.txt
-    echo Version de Python: !PY_VERSION!
-) else (
-    echo Version de Python: OK
-)
+python -c "import sys; print(sys.version_info.major, sys.version_info.minor)" > python_version.txt
+set /p PY_VERSION=<python_version.txt
+del python_version.txt
 
-echo Verificando entorno virtual (venv)...
+echo Version de Python: %PY_VERSION%
+
+echo Verificando entorno virtual venv...
 if not exist venv\ (
-    echo Creando entorno virtual en el directorio 'venv'...
+    echo Creando entorno virtual en el directorio venv...
     python -m venv venv
     if %errorlevel% neq 0 (
         echo ERROR: Fallo al crear el entorno virtual.
@@ -51,7 +48,7 @@ if not exist venv\ (
 echo Activando entorno virtual...
 call venv\Scripts\activate.bat
 if %errorlevel% neq 0 (
-    echo ERROR: Fallo al activar el entorno virtual. Verifique que exista 'venv\Scripts\activate.bat'.
+    echo ERROR: Fallo al activar el entorno virtual.
     pause
     exit /b 1
 )
@@ -59,13 +56,13 @@ if %errorlevel% neq 0 (
 echo Actualizando herramientas de construccion...
 python -m pip install --upgrade pip setuptools wheel
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: Fallo al actualizar herramientas de construccion. La instalacion podria fallar.
+    echo ADVERTENCIA: Fallo al actualizar herramientas.
 )
 
 echo Instalando dependencias desde requirements.txt...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: Fallo al instalar algunas dependencias. Intentando instalar manualmente...
+    echo ADVERTENCIA: Fallo al instalar algunas dependencias.
     echo Instalando dependencias criticas una por una...
     
     pip install Flask==2.0.1
@@ -84,26 +81,24 @@ if %errorlevel% neq 0 (
     pip install pyautogui==0.9.54
     
     echo Verificando que flask-wtf se instalo correctamente...
-    python -c "import flask_wtf; print('flask-wtf OK')" 2>nul
+    python -c "import flask_wtf; print('flask-wtf OK')"
     if %errorlevel% neq 0 (
         echo ERROR: flask-wtf no se instalo correctamente
-        echo Intentando instalar flask-wtf nuevamente...
-        pip install flask-wtf==0.15.1 --force-reinstall
-    ) else (
-        echo flask-wtf OK
+        pause
+        exit /b 1
     )
     
     echo Instalando dependencias para procesamiento de datos y audio...
     pip install numpy
     pip install pandas
     pip install matplotlib==3.10.1
-    pip install librosa==0.11.0 || echo ADVERTENCIA: No se pudo instalar librosa, las funciones de audio podrian no funcionar correctamente.
+    pip install librosa==0.11.0
 )
 
 echo Verificando dependencias...
 python check_dependencies.py
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: La verificacion de dependencias reporto problemas. La aplicacion podria no funcionar correctamente.
+    echo ADVERTENCIA: La verificacion de dependencias reporto problemas.
 ) else (
     echo Verificacion de dependencias exitosa.
 )
@@ -111,11 +106,11 @@ if %errorlevel% neq 0 (
 echo.
 echo Configurando notificaciones...
 
-REM Configuración de número de teléfono
+REM Configuracion de numero de telefono
 echo Estableciendo numero de telefono predeterminado para notificaciones...
 set NOTIFICATION_PHONE_NUMBER=+584244461682
   
-REM Configuración de horas de notificación
+REM Configuracion de horas de notificacion
 echo Configurando horas de notificacion predeterminadas: 13:30 y 20:30
 set NOTIFICATION_HOUR_1=13:30
 set NOTIFICATION_HOUR_2=20:30
@@ -123,40 +118,40 @@ set NOTIFICATION_HOUR_2=20:30
 echo Configuracion de notificaciones completada.
 
 echo Inicializando la base de datos...
-REM Secuencia completa de inicialización de base de datos con múltiples métodos
-echo Método 1: Usar fix_db.py (método recomendado)...
+REM Secuencia completa de inicializacion de base de datos con multiples metodos
+echo Metodo 1: Usar fix_db.py metodo recomendado...
 python fix_db.py
 if %errorlevel% neq 0 (
-    echo ADVERTENCIA: El script principal de base de datos falló.
-    echo Método 2: Usando create_db.py...
+    echo ADVERTENCIA: El script principal de base de datos fallo.
+    echo Metodo 2: Usando create_db.py...
     python create_db.py
     
     if %errorlevel% neq 0 (
-        echo ADVERTENCIA: create_db.py falló.
-        echo Método 3: Usando create_tables.py...
+        echo ADVERTENCIA: create_db.py fallo.
+        echo Metodo 3: Usando create_tables.py...
         python create_tables.py
         
         if %errorlevel% neq 0 (
             echo ERROR: No se pudo inicializar la base de datos.
-            echo La aplicación no funcionará correctamente.
-            echo Por favor, contacte con soporte técnico.
+            echo La aplicacion no funcionara correctamente.
+            echo Por favor, contacte con soporte tecnico.
             pause
             exit /b 1
         )
     )
 )
 
-echo Verificando actualización de estructura de base de datos...
-    python update_db.py
+echo Verificando actualizacion de estructura de base de datos...
+python update_db.py
 
 echo Verificando integridad final de la base de datos...
 python -c "import os, sqlite3; conn=sqlite3.connect('gimnasio.db'); c=conn.cursor(); c.execute('SELECT count(name) FROM sqlite_master WHERE type=\"table\"'); count=c.fetchone()[0]; conn.close(); print(f'Tablas encontradas: {count}'); exit(0 if count >= 4 else 1)"
 if %errorlevel% neq 0 (
     echo ADVERTENCIA: La base de datos no contiene todas las tablas necesarias.
-    echo Intentando un último método de recuperación...
+    echo Intentando un ultimo metodo de recuperacion...
     python create_tables.py
     if %errorlevel% neq 0 (
-        echo ERROR: No se pudo completar la inicialización de la base de datos.
+        echo ERROR: No se pudo completar la inicializacion de la base de datos.
         echo Puede intentar ejecutar manualmente los scripts:
         echo   python create_db.py
         echo   python create_tables.py
@@ -165,12 +160,12 @@ if %errorlevel% neq 0 (
     )
 )
 
-echo Verificando columna 'activo' en la tabla horario_clase...
+echo Verificando columna activo en la tabla horario_clase...
 echo Ejecutando verificacion completa de la columna activo...
 python verify_columns.py
 if %errorlevel% neq 0 (
-    echo ERROR: No se pudo verificar o agregar la columna 'activo'. La aplicación podría no funcionar correctamente.
-    echo Por favor, contacte con soporte técnico.
+    echo ERROR: No se pudo verificar o agregar la columna activo.
+    echo Por favor, contacte con soporte tecnico.
     pause
 )
 
@@ -188,7 +183,7 @@ if exist app\models.py (
     copy /y models.py app\models.py
 )
 
-echo Limpiando archivos de caché Python...
+echo Limpiando archivos de cache Python...
 for /d /r %%d in (__pycache__) do (
     echo Limpiando %%d
     rd /s /q "%%d" 2>nul
@@ -223,4 +218,4 @@ echo Presione cualquier tecla para finalizar la instalacion...
 pause >nul
 
 deactivate
-endlocal 
+endlocal

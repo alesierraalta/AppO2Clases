@@ -17,13 +17,13 @@ echo.
 echo [1/8] Verificando Python...
 python --version 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ ERROR: Python no encontrado
+    echo ERROR: Python no encontrado
     echo    - Python no esta instalado o no esta en el PATH
     echo    - Descargar desde: https://www.python.org/downloads/
-    echo    - Asegurese de marcar "Add Python to PATH" durante la instalacion
+    echo    - Asegurese de marcar Add Python to PATH durante la instalacion
     set PYTHON_OK=0
 ) else (
-    echo ✅ Python encontrado
+    echo OK: Python encontrado
     python --version
     set PYTHON_OK=1
 )
@@ -34,15 +34,15 @@ echo [2/8] Verificando pip...
 if %PYTHON_OK%==1 (
     python -m pip --version 2>nul
     if %errorlevel% neq 0 (
-        echo ❌ ERROR: pip no encontrado
+        echo ERROR: pip no encontrado
         set PIP_OK=0
     ) else (
-        echo ✅ pip encontrado
+        echo OK: pip encontrado
         python -m pip --version
         set PIP_OK=1
     )
 ) else (
-    echo ⏭️ Saltando (Python no disponible)
+    echo SALTANDO: Python no disponible
     set PIP_OK=0
 )
 
@@ -52,14 +52,14 @@ echo [3/8] Verificando capacidad de crear entornos virtuales...
 if %PYTHON_OK%==1 (
     python -m venv --help >nul 2>&1
     if %errorlevel% neq 0 (
-        echo ❌ ERROR: modulo venv no disponible
+        echo ERROR: modulo venv no disponible
         set VENV_OK=0
     ) else (
-        echo ✅ Modulo venv disponible
+        echo OK: Modulo venv disponible
         set VENV_OK=1
     )
 ) else (
-    echo ⏭️ Saltando (Python no disponible)
+    echo SALTANDO: Python no disponible
     set VENV_OK=0
 )
 
@@ -68,11 +68,11 @@ echo.
 echo [4/8] Verificando permisos de escritura...
 echo test > test_write.tmp 2>nul
 if exist test_write.tmp (
-    echo ✅ Permisos de escritura OK
+    echo OK: Permisos de escritura correctos
     del test_write.tmp
     set WRITE_OK=1
 ) else (
-    echo ❌ ERROR: Sin permisos de escritura en el directorio actual
+    echo ERROR: Sin permisos de escritura en el directorio actual
     set WRITE_OK=0
 )
 
@@ -80,16 +80,16 @@ if exist test_write.tmp (
 echo.
 echo [5/8] Verificando entorno virtual existente...
 if exist venv\ (
-    echo ⚠️ Ya existe un directorio venv
+    echo ADVERTENCIA: Ya existe un directorio venv
     if exist venv\Scripts\activate.bat (
-        echo ✅ El entorno virtual parece valido
+        echo OK: El entorno virtual parece valido
         set VENV_EXISTS=1
     ) else (
-        echo ❌ El directorio venv existe pero no es valido
+        echo ERROR: El directorio venv existe pero no es valido
         set VENV_EXISTS=0
     )
 ) else (
-    echo ✅ No hay entorno virtual previo (normal para primera instalacion)
+    echo OK: No hay entorno virtual previo normal para primera instalacion
     set VENV_EXISTS=0
 )
 
