@@ -1795,7 +1795,7 @@
                                         <th scope="col">Profesor</th>
                                         <th scope="col" class="text-center">Total Clases</th>
                                         <th scope="col" class="text-center">Promedio Alumnos/Clase</th>
-                                        <th scope="col" class="text-center">Tarifa por Clase</th>
+                                        <th scope="col" class="text-center">Tarifa por Clase / Total Mensual</th>
                                         <th scope="col" class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -1836,7 +1836,14 @@
                                                 0
                                             {% endif %}
                                         </td>
-                                        <td class="text-center align-middle">${{ datos.profesor.tarifa_por_clase|round(2) }}</td>
+                                        <td class="text-center align-middle">
+                                            <div class="d-flex flex-column">
+                                                <small class="text-muted">Tarifa:</small>
+                                                <strong>${{ datos.profesor.tarifa_por_clase|round(2) }}</strong>
+                                                <small class="text-muted mt-1">Total:</small>
+                                                <span class="badge bg-success">${{ datos.pago_total|round(2) }}</span>
+                                            </div>
+                                        </td>
                                         <td class="text-center align-middle">
                                             <a href="{{ url_for('metricas_profesor', profesor_id=profesor_id) }}" class="btn btn-sm btn-primary">
                                                 <i class="fas fa-chart-line me-1"></i> Métricas
