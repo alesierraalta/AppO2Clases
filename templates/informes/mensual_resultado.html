@@ -3931,6 +3931,118 @@
         window.currentMonth = {{ mes }};
         window.currentYear = {{ anio }};
         
+        // Manejo de actualización dinámica después de registro masivo
+        function handleDuplicateClassesUI() {
+            // Verificar si hay parámetros de refresh en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const refreshParam = urlParams.get('_refresh');
+            
+            if (refreshParam) {
+                // Limpiar el parámetro de la URL sin recargar
+                const newUrl = window.location.pathname + window.location.search.replace(/[?&]_refresh=[^&]*/, '').replace(/^&/, '?');
+                window.history.replaceState({}, document.title, newUrl);
+                
+                // Mostrar notificación de actualización
+                showNotification('✅ Vista actualizada después del procesamiento', 'success');
+                
+                // Scroll automático a la sección de clases no registradas si existe
+                const clasesNoRegistradasSection = document.getElementById('clases-no-registradas');
+                if (clasesNoRegistradasSection) {
+                    setTimeout(() => {
+                        clasesNoRegistradasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Mejorar el manejo del formulario de registro masivo
+        function enhanceMassRegistrationForm() {
+            const form = document.getElementById('formRegistroMasivo');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const checkedBoxes = form.querySelectorAll('input[name="clases_ids[]"]:checked');
+                    
+                    if (checkedBoxes.length === 0) {
+                        e.preventDefault();
+                        showNotification('⚠️ Seleccione al menos una clase para registrar', 'warning');
+                        return false;
+                    }
+                    
+                    // Mostrar indicador de carga
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Procesando...';
+                        submitBtn.disabled = true;
+                    }
+                    
+                    // Agregar timestamp para cache-busting
+                    const timestampInput = document.createElement('input');
+                    timestampInput.type = 'hidden';
+                    timestampInput.name = '_timestamp';
+                    timestampInput.value = Date.now();
+                    form.appendChild(timestampInput);
+                });
+            }
+        }
+        
+        // Función mejorada para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            
+            let bgColor, icon;
+            switch(type) {
+                case 'success':
+                    bgColor = 'linear-gradient(135deg, #10b981, #059669)';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                case 'error':
+                    bgColor = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                default:
+                    bgColor = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                    icon = 'fas fa-info-circle';
+            }
+            
+            notification.innerHTML = `
+                <i class="${icon} me-2"></i>
+                ${message}
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                animation: slideInRight 0.5s ease-out;
+                max-width: 400px;
+                word-wrap: break-word;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.5s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 500);
+            }, 5000);
+        }
+        
+        // Inicializar mejoras
+        handleDuplicateClassesUI();
+        enhanceMassRegistrationForm();
+        
         // Inicializar gráficos modernos
         ModernCharts.init();
     });

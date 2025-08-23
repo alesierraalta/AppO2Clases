@@ -109,11 +109,7 @@ db.init_app(app)
 # Configurar el manejo de fechas para la aplicación
 setup_date_handling(app)
 
-# Importar el blueprint de API
-from api_routes import api
-
-# Importar el blueprint de audio
-from audio_routes import audio_bp
+# Blueprints eliminados durante la limpieza del proyecto
 
 # Importar módulo de notificaciones
 from notifications import setup_notification_scheduler, check_and_notify_unregistered_classes, send_whatsapp_notification, is_notification_locked
