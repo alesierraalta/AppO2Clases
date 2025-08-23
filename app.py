@@ -717,15 +717,16 @@ def registrar_asistencia(horario_id):
     horario = HorarioClase.query.get_or_404(horario_id)
     hoy = datetime.now().date()
     
-    # Verificar si ya existe una clase realizada para este horario en esta fecha
-    clase_existente = ClaseRealizada.query.filter_by(
+    # Para GET requests, solo verificar si existe registro para hoy como información
+    # No bloquear el acceso al formulario
+    clase_existente_hoy = ClaseRealizada.query.filter_by(
         horario_id=horario_id,
         fecha=hoy
     ).first()
     
-    if clase_existente:
-        flash('Ya existe un registro para este horario en la fecha actual', 'warning')
-        return redirect(url_for('control_asistencia'))
+    # Solo mostrar advertencia si es GET y existe registro para hoy
+    if request.method == 'GET' and clase_existente_hoy:
+        flash(f'Información: Ya existe un registro para este horario en la fecha actual ({hoy.strftime("%d/%m/%Y")}). Puede registrar para otra fecha usando el campo de fecha manual.', 'info')
     
     if request.method == 'POST':
         # Obtener fecha manual si se proporciona, de lo contrario usar la fecha actual
@@ -3752,7 +3753,7 @@ def registrar_asistencia_fecha(fecha, horario_id):
         flash(f'Ya existe un registro para esta clase el {fecha_obj.strftime("%d/%m/%Y")}', 'warning')
         return redirect(url_for('editar_asistencia', id=registro_existente.id))
     
-    # También comprobar si hay un registro para hoy (para evitar confusiones)
+    # También comprobar si hay un registro para hoy (solo como información, no como bloqueo)
     if fecha_obj != hoy:
         registro_hoy = ClaseRealizada.query.filter_by(
             fecha=hoy,
@@ -3760,8 +3761,10 @@ def registrar_asistencia_fecha(fecha, horario_id):
         ).first()
         
         if registro_hoy:
-            print(f"AVISO: Existe un registro para la FECHA ACTUAL ({hoy.strftime('%d/%m/%Y')}), ID={registro_hoy.id}")
-            flash(f'Atención: Ya existe un registro para esta clase en la fecha actual ({hoy.strftime("%d/%m/%Y")})', 'info')
+            print(f"INFO: Existe un registro para la FECHA ACTUAL ({hoy.strftime('%d/%m/%Y')}), ID={registro_hoy.id}")
+            # Solo mostrar este mensaje si la fecha seleccionada es futura, no pasada
+            if fecha_obj > hoy:
+                flash(f'Información: Ya existe un registro para esta clase en la fecha actual ({hoy.strftime("%d/%m/%Y")}). Está registrando para una fecha futura.', 'info')
     
     # Procesar el formulario si es POST
     if request.method == 'POST':
