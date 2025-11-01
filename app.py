@@ -1312,6 +1312,233 @@ def clases_no_registradas():
 def informes():
     return render_template('informes/index.html')
 
+@app.route('/informes/clases')
+def lista_clases():
+    """
+    Muestra una lista de todas las clases únicas disponibles,
+    agrupadas por nombre independientemente del horario.
+    """
+    try:
+        # Obtener todas las clases únicas usando el método del modelo
+        clases = HorarioClase.obtener_clases_unicas()
+        
+        # Ordenar alfabéticamente por nombre
+        clases_ordenadas = sorted(clases, key=lambda x: x['nombre'])
+        
+        return render_template('informes/lista_clases.html', clases=clases_ordenadas)
+    except Exception as e:
+        app.logger.error(f"Error en lista_clases: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        flash(f"Error al cargar la lista de clases: {str(e)}", "danger")
+        return redirect(url_for('informes'))
+
+@app.route('/informes/clase/<path:nombre_clase>/metricas')
+def metricas_clase(nombre_clase):
+    """
+    Mostrar métricas detalladas de una clase específica agrupada por nombre.
+    El nombre de la clase puede contener espacios y caracteres especiales,
+    por lo que usamos <path:nombre_clase> para capturar todo el nombre.
+    """
+    from urllib.parse import unquote
+    from utils.metricas_clases import calcular_metricas_clase, obtener_clases_por_nombre
+    
+    # Check if PDF export is requested
+    pdf_requested = request.args.get('export') == 'pdf' and pdf_export_available
+    
+    try:
+        # Decodificar el nombre de la clase desde la URL
+        nombre_clase_decodificado = unquote(nombre_clase)
+        
+        # Diccionario de nombres de meses en español
+        MESES_ES = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto', 
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        
+        # Verificar que existe al menos un horario con este nombre
+        horarios = HorarioClase.query.filter_by(nombre=nombre_clase_decodificado).first()
+        if not horarios:
+            flash(f"No se encontró ninguna clase con el nombre '{nombre_clase_decodificado}'", "warning")
+            return redirect(url_for('lista_clases'))
+        
+        # Obtener todas las clases realizadas para este nombre de clase
+        clases = obtener_clases_por_nombre(nombre_clase_decodificado)
+        
+        # Obtener datos de meses disponibles para los selectores
+        meses_disponibles = obtener_meses_disponibles(clases)
+        
+        # Variables comunes
+        mes_actual = None
+        mes_comparacion = None
+        mes_actual_nombre = "Sin selección"
+        mes_comparacion_nombre = "Sin selección"
+        error = None
+        
+        # Verificar si estamos en modo comparación
+        if 'comparar' in request.args:
+            # --- MODO COMPARACIÓN ENTRE MESES ---
+            mes_actual_str = request.args.get('mes_actual', default=None)
+            mes_comparacion_str = request.args.get('mes_comparacion', default=None)
+            
+            # Procesar primer mes (mes actual)
+            if mes_actual_str:
+                try:
+                    anio, mes = mes_actual_str.split('-')
+                    mes_actual = (int(anio), int(mes))
+                    mes_actual_nombre = f"{MESES_ES[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato del primer mes inválido. Use YYYY-MM", "warning")
+            
+            # Procesar segundo mes (mes de comparación)
+            if mes_comparacion_str:
+                try:
+                    anio, mes = mes_comparacion_str.split('-')
+                    mes_comparacion = (int(anio), int(mes))
+                    mes_comparacion_nombre = f"{MESES_ES[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato del segundo mes inválido. Use YYYY-MM", "warning")
+            
+            # Validar selección de ambos meses
+            if not mes_actual or not mes_comparacion:
+                error = "Debe seleccionar dos meses diferentes para realizar la comparación."
+                metricas = {}
+            elif mes_actual == mes_comparacion:
+                error = "Los meses seleccionados para comparar deben ser diferentes."
+                metricas = {}
+            else:
+                # Calcular métricas con comparación
+                tipo_metricas_original = request.args.get('tipo_metricas', default='mensual')
+                
+                # Siempre usar los meses específicos en modo comparación
+                metricas = calcular_metricas_clase(
+                    nombre_clase=nombre_clase_decodificado,
+                    clases=clases,
+                    mes_actual=mes_actual,
+                    mes_comparacion=mes_comparacion
+                )
+                
+                # Manejar errores de validación
+                if 'error_comparacion' in metricas:
+                    error = metricas['error_comparacion']
+                    if 'comparacion' in metricas:
+                        del metricas['comparacion']
+            
+            tipo_metricas = tipo_metricas_original
+            
+        else:
+            # --- MODO VISUALIZACIÓN NORMAL ---
+            tipo_metricas = request.args.get('tipo_metricas', default='mensual')
+            mes_actual_str = request.args.get('mes_actual', default=None)
+            
+            # Procesar parámetros de mes solo si es tipo mensual
+            if tipo_metricas == 'mensual' and mes_actual_str:
+                try:
+                    anio, mes = mes_actual_str.split('-')
+                    mes_actual = (int(anio), int(mes))
+                    mes_actual_nombre = f"{MESES_ES[int(mes)]} {anio}"
+                except (ValueError, TypeError):
+                    flash(f"Formato de mes inválido. Use YYYY-MM", "warning")
+                    tipo_metricas = 'totales'
+            
+            # Para métricas totales, mostrar mensaje apropiado
+            if tipo_metricas == 'totales':
+                mes_actual = None
+                mes_actual_nombre = "Todas las clases"
+            elif tipo_metricas == 'mensual' and not mes_actual:
+                # Si no se seleccionó un mes pero estamos en vista mensual y hay meses disponibles,
+                # seleccionamos el mes más reciente por defecto
+                if meses_disponibles:
+                    mes_mas_reciente = meses_disponibles[0]
+                    mes_actual = (mes_mas_reciente['anio'], mes_mas_reciente['mes'])
+                    mes_actual_nombre = mes_mas_reciente['etiqueta']
+            
+            # Calcular métricas según el tipo seleccionado
+            metricas = calcular_metricas_clase(
+                nombre_clase=nombre_clase_decodificado,
+                clases=clases,
+                mes_actual=mes_actual,
+                mes_comparacion=None
+            )
+        
+        # Obtener tipos de clase para filtros en la UI (si se necesita)
+        tipos_clase = HorarioClase.obtener_tipos_clase()
+        
+        # Obtener información adicional de la clase: lista de horarios con este nombre
+        horarios_clase = HorarioClase.query.filter_by(nombre=nombre_clase_decodificado).all()
+        
+        # Prepare template variables
+        template_vars = {
+            'nombre_clase': nombre_clase_decodificado,
+            'horarios_clase': horarios_clase,  # Lista de horarios con este nombre
+            'metricas': metricas if 'metricas_actual' not in metricas else metricas['metricas_actual'],
+            'metricas_comparacion': metricas.get('metricas_comparacion'),
+            'comparacion': metricas.get('comparacion'),
+            'tipos_clase': tipos_clase,
+            'debug_mode': request.args.get('debug', type=bool, default=False),
+            'mes_actual': mes_actual,
+            'mes_comparacion': mes_comparacion,
+            'meses_disponibles': meses_disponibles,
+            'mes_actual_nombre': mes_actual_nombre,
+            'mes_comparacion_nombre': mes_comparacion_nombre,
+            'tipo_metricas': tipo_metricas,
+            'comparar_meses': 'comparar' in request.args,
+            'error': error
+        }
+        
+        # Generate PDF if requested
+        if pdf_requested:
+            try:
+                pdf = generate_pdf_from_template(
+                    'informes/metricas_clase.html',
+                    template_vars,
+                    base_url=request.host_url
+                )
+                
+                if pdf is None:
+                    raise Exception("La función generate_pdf_from_template retornó None")
+                
+                # Crear nombre de archivo seguro
+                nombre_archivo = nombre_clase_decodificado.replace(' ', '_').replace('/', '_')
+                filename = f"metricas_clase_{nombre_archivo}.pdf"
+                response = make_response(pdf)
+                response.headers['Content-Type'] = 'application/pdf'
+                response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+                return response
+            except Exception as e:
+                import traceback
+                app.logger.error(f"Error al generar PDF: {str(e)}")
+                app.logger.error(f"Traceback PDF: {traceback.format_exc()}")
+                flash(f"Error al generar PDF: {str(e)}", "danger")
+        
+        # Render HTML template
+        try:
+            response = render_template('informes/metricas_clase.html', **template_vars)
+            if response is None:
+                app.logger.error("render_template retornó None")
+                flash("Error al renderizar la página de métricas", "danger")
+                return redirect(url_for('lista_clases'))
+            return response
+        except Exception as render_error:
+            app.logger.error(f"Error al renderizar template: {str(render_error)}")
+            import traceback
+            app.logger.error(f"Traceback render: {traceback.format_exc()}")
+            flash(f"Error al renderizar la página: {str(render_error)}", "danger")
+            return redirect(url_for('lista_clases'))
+            
+    except Exception as e:
+        app.logger.error(f"Error en metricas_clase: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback completo: {traceback.format_exc()}")
+        flash(f"Error al cargar métricas de la clase: {str(e)}", "danger")
+        
+        try:
+            return redirect(url_for('lista_clases'))
+        except Exception as redirect_error:
+            app.logger.error(f"Error en redirect: {str(redirect_error)}")
+            return render_template('500.html'), 500
+
 # Función para calcular la hora de finalización como string (definida globalmente)
 def calcular_hora_fin(hora_inicio, duracion=60):
     if not hora_inicio:

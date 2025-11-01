@@ -134,6 +134,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Métricas por Clase -->
+    <div class="row mt-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-info text-white">
+                    <h5 class="m-0 fw-bold"><i class="fas fa-chart-line me-2"></i> Métricas por Clase</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-4">
+                        <p class="text-muted">Visualiza métricas detalladas de cada clase, agrupadas por nombre independientemente del horario. Por ejemplo, "Power Bike" de las 7:30 AM y 6:30 PM se cuentan como una sola clase.</p>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('lista_clases') }}" class="btn btn-info btn-lg w-100 text-white">
+                            <i class="fas fa-list me-2"></i> Ver Clases Disponibles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>

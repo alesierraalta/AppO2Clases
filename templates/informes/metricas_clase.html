@@ -1,0 +1,2038 @@
+{% extends 'base.html' %}
+
+{% block title %}Métricas de Clase - {{ nombre_clase }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* Estilos generales */
+    .metrics-card {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .metrics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .chart-container {
+        position: relative;
+        margin: 0 auto;
+        height: 300px;
+        width: 100%;
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .metric-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .professor-card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .avatar-container {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f0f4f8;
+    }
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+        .metric-value {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabecera con información de la clase -->
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <div class="card professor-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="avatar-container mb-3">
+                        <i class="fas fa-graduation-cap fa-4x text-primary"></i>
+                    </div>
+                    <h4 class="mb-1">{{ nombre_clase }}</h4>
+                    
+                    <div class="d-flex justify-content-center mb-3">
+                        <span class="badge bg-primary rounded-pill px-3 py-2">
+                            <i class="fas fa-calendar-check me-1"></i> {{ metricas.total_clases }} clases
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="text-start">
+                        <h6 class="mb-2"><i class="fas fa-clock text-muted me-2"></i> Horarios de esta clase:</h6>
+                        {% if horarios_clase %}
+                            {% for horario in horarios_clase %}
+                            <div class="mb-1 small">
+                                <span class="badge bg-secondary">{{ horario.nombre_dia }} {{ horario.hora_inicio.strftime('%H:%M') }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">No hay horarios disponibles</p>
+                        {% endif %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ url_for('lista_clases') }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-arrow-left me-1"></i> Volver a Lista de Clases
+                        </a>
+                        <button class="btn btn-outline-success btn-sm w-100 mt-2" onclick="window.print()">
+                            <i class="fas fa-print me-1"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Selector de Tipo de Vista -->
+        <div class="col-lg-8 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="m-0"><i class="fas fa-eye me-2 text-primary"></i>Tipo de Vista</h5>
+                </div>
+                <div class="card-body">
+                    <form id="tipoVistaForm" method="GET" class="row g-3 align-items-end" novalidate>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasMes" value="mensual" {% if tipo_metricas != 'totales' %}checked{% endif %}>
+                                <label class="form-check-label" for="metricasMes">
+                                    <i class="fas fa-calendar-alt me-1 text-primary"></i> Ver métricas mensuales
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_metricas" id="metricasTotales" value="totales" {% if tipo_metricas == 'totales' %}checked{% endif %}>
+                                <label class="form-check-label" for="metricasTotales">
+                                    <i class="fas fa-chart-line me-1 text-success"></i> Ver métricas totales
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="seleccionMesVista" class="col-md-4 {% if tipo_metricas == 'totales' %}d-none{% endif %}">
+                            <label for="mes_vista" class="form-label fw-semibold">Seleccionar mes para visualizar</label>
+                            <select name="mes_actual" id="mes_vista" class="form-select" {% if tipo_metricas != 'totales' %}required{% endif %}>
+                                <option value="">Seleccione un mes</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Seleccione un mes
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <button type="submit" id="btnAplicarVista" class="btn btn-primary w-100">
+                                <i class="fas fa-check me-1"></i> Aplicar
+                            </button>
+                        </div>
+                        
+                        {% if debug_mode %}
+                        <input type="hidden" name="debug" value="true">
+                        {% endif %}
+                        
+                        <div class="col-12 mt-2" id="vistaValidationMessages"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Indicador de Modo -->
+    {% if comparar_meses %}
+    <div class="alert alert-primary mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="fas fa-exchange-alt fa-2x"></i>
+            </div>
+            <div>
+                <h5 class="mb-1">Modo Comparación</h5>
+                <p class="mb-0">Comparando métricas entre <strong>{{ mes_actual_nombre }}</strong> y <strong>{{ mes_comparacion_nombre }}</strong>.</p>
+                <a href="{{ url_for('metricas_clase', nombre_clase=nombre_clase) }}" class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Vista Normal
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de Comparación de Meses -->
+    {% if not comparar_meses %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="m-0"><i class="fas fa-balance-scale me-2 text-primary"></i>Comparación Entre Meses</h5>
+                </div>
+                <div class="card-body">
+                    <form id="comparacionForm" method="GET" class="row g-3 align-items-end" novalidate>
+                        <!-- Primer mes (mes actual) - Siempre visible -->
+                        <div class="col-md-4">
+                            <label for="mes_actual_comparacion" class="form-label fw-semibold">Primer mes</label>
+                            <select name="mes_actual" id="mes_actual_comparacion" class="form-select" required>
+                                <option value="">Seleccione el primer mes</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}" {% if mes_actual and mes_actual[0] == mes.anio and mes_actual[1] == mes.mes %}selected{% endif %}>
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Seleccione el primer mes para comparar
+                            </div>
+                        </div>
+                        
+                        <!-- Segundo mes -->
+                        <div class="col-md-4">
+                            <label for="mes_comparacion" class="form-label fw-semibold">Segundo mes</label>
+                            <select name="mes_comparacion" id="mes_comparacion" class="form-select" required>
+                                <option value="">Seleccione el segundo mes</option>
+                                {% if meses_disponibles %}
+                                    {% for mes in meses_disponibles %}
+                                    <option value="{{ mes.valor }}">
+                                        {{ mes.etiqueta }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="invalid-feedback">
+                                El segundo mes debe ser diferente al primero
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <button type="submit" id="btnComparar" class="btn btn-primary w-100">
+                                <i class="fas fa-balance-scale me-1"></i> Comparar
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="comparar" value="true">
+                        
+                        {% if debug_mode %}
+                        <input type="hidden" name="debug" value="true">
+                        {% endif %}
+                        
+                        <div class="col-12 mt-2" id="validationMessages"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Resumen de Rendimiento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="m-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Resumen de Rendimiento</h5>
+                        {% if metricas.score_global is defined %}
+                        <div class="d-flex align-items-center">
+                            <span class="me-2 text-muted">Puntuación Global:</span>
+                            <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">{{ metricas.score_global|round(1) }}/100</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body py-4">
+                    <div class="row g-4 justify-content-center">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <p class="metric-title">Clases Impartidas</p>
+                                    <h2 class="metric-value text-primary mb-0" style="font-size: 3rem;">{{ metricas.total_clases }}</h2>
+                                    {% set clases_norm = [(metricas.clases_por_mes / 20) * 100, 100]|min %}
+                                    <div class="text-muted small mt-2">
+                                        <span class="badge bg-light text-dark border">
+                                            Puntuación: {{ clases_norm|round(1) }}/100
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-primary text-white p-2 text-center">
+                                    <span><i class="fas fa-calendar-alt me-1"></i>Total</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <p class="metric-title">Alumnos Totales</p>
+                                    <h2 class="metric-value text-success mb-0" style="font-size: 3rem;">{{ metricas.total_alumnos }}</h2>
+                                    {% if metricas.promedio_profesores and metricas.promedio_profesores.alumnos > 0 %}
+                                        {% set alumnos_norm = [((metricas.promedio_alumnos / metricas.promedio_profesores.alumnos) * 50), 100]|min %}
+                                    {% else %}
+                                        {% set alumnos_norm = [(metricas.promedio_alumnos / 20) * 100, 100]|min %}
+                                    {% endif %}
+                                    <div class="text-muted small mt-2">
+                                        <span class="badge bg-light text-dark border">
+                                            Puntuación: {{ alumnos_norm|round(1) }}/100
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-success text-white p-2 text-center">
+                                    <span><i class="fas fa-users me-1"></i>Participantes</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <p class="metric-title">Puntualidad</p>
+                                    <h2 class="metric-value text-info mb-0" style="font-size: 3rem;">
+                                        {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+                                            {{ (metricas.puntualidad.tasa)|round(1) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h2>
+                                    <div class="text-muted small mt-2">
+                                        <span class="badge bg-light text-dark border">
+                                            Puntuación: {{ metricas.puntualidad.tasa|round(1) }}/100
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-info text-white p-2 text-center">
+                                    <span><i class="fas fa-clock me-1"></i>A tiempo</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card metrics-card border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <p class="metric-title">Costo por Alumno</p>
+                                    <h2 class="metric-value text-orange mb-0" style="font-size: 3rem;">
+                                        {% if metricas.costo_por_alumno is defined and metricas.costo_por_alumno > 0 %}
+                                            ${{ metricas.costo_por_alumno|round(2) }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h2>
+                                                                                    {% if metricas.costo_por_alumno is defined and metricas.costo_por_alumno > 0 %}
+                                                    {% if metricas.promedio_profesores and metricas.promedio_profesores.costo_por_alumno %}
+                                                        {% set min_costo = metricas.promedio_profesores.costo_por_alumno.minimo %}
+                                                        {% set max_costo = metricas.promedio_profesores.costo_por_alumno.maximo %}
+                                                        {% if min_costo == max_costo %}
+                                                            {% set costo_norm = 100 if metricas.costo_por_alumno <= min_costo else 0 %}
+                                                        {% else %}
+                                                            {% set costo_norm = [100 - ((metricas.costo_por_alumno - min_costo) / (max_costo - min_costo)) * 100, 0]|max %}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {% set costo_norm = [100 - (metricas.costo_por_alumno / 50) * 100, 0]|max %}
+                                                    {% endif %}
+                                                    <div class="text-muted small mt-2">
+                                                        <span class="badge bg-light text-dark border">
+                                                            Puntuación: {{ costo_norm|round(1) }}/100
+                                                        </span>
+                                                    </div>
+                                                {% endif %}
+                                </div>
+                                <div class="card-footer bg-orange text-white p-2 text-center" style="background-color: rgba(255, 165, 0, 1);">
+                                    <span><i class="fas fa-dollar-sign me-1"></i>Por estudiante</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if metricas.resumen_rendimiento and metricas.resumen_rendimiento.datos and metricas.resumen_rendimiento.datos.recomendaciones %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-center mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Recomendaciones</h6>
+                                    <ul class="list-group list-group-flush">
+                                        {% for recomendacion in metricas.resumen_rendimiento.datos.recomendaciones %}
+                                        <li class="list-group-item bg-transparent border-0">
+                                            <i class="fas fa-check-circle text-success me-2"></i>{{ recomendacion }}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if metricas.resumen_rendimiento and metricas.resumen_rendimiento.datos and metricas.resumen_rendimiento.datos.calificacion_global %}
+                    <div class="row mt-4 justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-2">Calificación Global</h6>
+                                    <h3 class="mb-1">{{ metricas.resumen_rendimiento.datos.calificacion_global.nivel }}</h3>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}%;" 
+                                             aria-valuenow="{{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}" 
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2">
+                                            {{ metricas.resumen_rendimiento.datos.calificacion_global.valor }}/100
+                                        </span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#detalleCalculo" aria-expanded="false" aria-controls="detalleCalculo">
+                                        <i class="fas fa-calculator me-1"></i> Ver cálculo detallado
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel con detalle del cálculo -->
+                    <div class="row mt-3 justify-content-center">
+                        <div class="col-md-10">
+                            <div class="collapse" id="detalleCalculo">
+                                <div class="card border shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-calculator me-2 text-primary"></i>Detalles del Cálculo de Puntuación</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <p class="text-muted small mb-3">
+                                                    La puntuación global se calcula combinando 4 factores con diferentes pesos. 
+                                                    Cada factor se normaliza a una escala de 0-100 puntos.
+                                                </p>
+                                                
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Factor</th>
+                                                            <th>Valor Real</th>
+                                                            <th>Valor Normalizado</th>
+                                                            <th>Peso</th>
+                                                            <th>Contribución</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><i class="fas fa-users text-primary me-1"></i> Promedio Alumnos</td>
+                                                            <td>{{ metricas.promedio_alumnos|round(1) }}</td>
+                                                            <td>
+                                                                {% if metricas.promedio_profesores and metricas.promedio_profesores.alumnos > 0 %}
+                                                                    {% set alumnos_norm = [((metricas.promedio_alumnos / metricas.promedio_profesores.alumnos) * 50), 100]|min %}
+                                                                {% else %}
+                                                                    {% set alumnos_norm = [(metricas.promedio_alumnos / 20) * 100, 100]|min %}
+                                                                {% endif %}
+                                                                {{ alumnos_norm|round(1) }}
+                                                            </td>
+                                                            <td>40%</td>
+                                                            <td>{{ (alumnos_norm * 0.4)|round(1) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><i class="fas fa-clock text-info me-1"></i> Puntualidad</td>
+                                                            <td>{{ metricas.puntualidad.tasa|round(1) }}%</td>
+                                                            <td>{{ metricas.puntualidad.tasa|round(1) }}</td>
+                                                            <td>30%</td>
+                                                            <td>{{ (metricas.puntualidad.tasa * 0.3)|round(1) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><i class="fas fa-calendar-alt text-success me-1"></i> Clases por Mes</td>
+                                                            <td>{{ metricas.clases_por_mes|round(1) }}</td>
+                                                            <td>
+                                                                {% set clases_norm = [(metricas.clases_por_mes / 20) * 100, 100]|min %}
+                                                                {{ clases_norm|round(1) }}
+                                                            </td>
+                                                            <td>15%</td>
+                                                            <td>{{ (clases_norm * 0.15)|round(1) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><i class="fas fa-dollar-sign text-warning me-1"></i> Costo por Alumno</td>
+                                                            <td>${{ metricas.costo_por_alumno|round(2) }}</td>
+                                                            <td>
+                                                                {% if metricas.costo_por_alumno > 0 %}
+                                                                    {% if metricas.promedio_profesores and metricas.promedio_profesores.costo_por_alumno %}
+                                                                        {% set min_costo = metricas.promedio_profesores.costo_por_alumno.minimo %}
+                                                                        {% set max_costo = metricas.promedio_profesores.costo_por_alumno.maximo %}
+                                                                        {% if min_costo == max_costo %}
+                                                                            {% set costo_norm = 100 if metricas.costo_por_alumno <= min_costo else 0 %}
+                                                                        {% else %}
+                                                                            {% set costo_norm = [100 - ((metricas.costo_por_alumno - min_costo) / (max_costo - min_costo)) * 100, 0]|max %}
+                                                                        {% endif %}
+                                                                    {% else %}
+                                                                        {% set costo_norm = [100 - (metricas.costo_por_alumno / 50) * 100, 0]|max %}
+                                                                    {% endif %}
+                                                                {% else %}
+                                                                    {% set costo_norm = 0 %}
+                                                                {% endif %}
+                                                                {{ costo_norm|round(1) }}
+                                                            </td>
+                                                            <td>15%</td>
+                                                            <td>{{ (costo_norm * 0.15)|round(1) }}</td>
+                                                        </tr>
+                                                        <tr class="table-light fw-bold">
+                                                            <td colspan="4" class="text-end">Puntuación Global:</td>
+                                                            <td>
+                                                                {% set puntuacion_calculada = (alumnos_norm * 0.4) + (metricas.puntualidad.tasa * 0.3) + (clases_norm * 0.15) + (costo_norm * 0.15) %}
+                                                                {{ puntuacion_calculada|round(1) }}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                
+                                                <div class="alert alert-light border small mt-3">
+                                                    <h6><i class="fas fa-info-circle me-2 text-primary"></i>Fórmula de Cálculo</h6>
+                                                    <p class="mb-0">
+                                                        Puntuación = (AlumnosNorm × 0.4) + (PuntualidadNorm × 0.3) + (ClasesNorm × 0.15) + (CostoNorm × 0.15)
+                                                    </p>
+                                                    <hr>
+                                                    <p class="mb-0">
+                                                        <strong>Normalización:</strong><br>
+                                                        • Alumnos: min(100, (promedio_alumnos ÷ promedio_global) × 50)<br>
+                                                        • Puntualidad: Ya está en % (0-100)<br>
+                                                        • Clases por mes: min(100, (clases_por_mes ÷ 20) × 100)<br>
+                                                        • Costo por alumno: Escala relativa donde el profesor con menor costo = 100 puntos, mayor costo = 0 puntos
+                                                    </p>
+                                                    
+                                                    {% if metricas.promedio_profesores and metricas.promedio_profesores.costo_por_alumno %}
+                                                    <hr>
+                                                    <p class="mb-0">
+                                                        <strong>Rango de Costos por Alumno (Todos los profesores):</strong><br>
+                                                        • Costo Mínimo: ${{ metricas.promedio_profesores.costo_por_alumno.minimo|round(2) }} (= 100 puntos)<br>
+                                                        • Costo Máximo: ${{ metricas.promedio_profesores.costo_por_alumno.maximo|round(2) }} (= 0 puntos)<br>
+                                                        • Costo Promedio: ${{ metricas.promedio_profesores.costo_por_alumno.promedio|round(2) }}
+                                                    </p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if debug_mode %}
+    <!-- Panel de depuración -->
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-bug me-2"></i>
+                Depuración de Métricas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionDebug">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            Métricas Generales
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas|tojson(indent=2) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Puntualidad
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.puntualidad|tojson(indent=2) if metricas.puntualidad is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            Distribución
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.distribucion|tojson(indent=2) if metricas.distribucion is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                            Tendencias
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.tendencias|tojson(indent=2) if metricas.tendencias is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFive">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                            Datos por Tipo
+                        </button>
+                    </h2>
+                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas.datos_por_tipo|tojson(indent=2) if metricas.datos_por_tipo is defined else 'No disponible' }}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if comparacion %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingSix">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                            Datos de Comparación
+                        </button>
+                    </h2>
+                    <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ comparacion|tojson(indent=2) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if metricas_comparacion %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingSeven">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                            Métricas Mes Comparación
+                        </button>
+                    </h2>
+                    <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#accordionDebug">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3 rounded">{{ metricas_comparacion|tojson(indent=2) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if comparacion %}
+    <!-- Resultados de la comparación -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-balance-scale me-2 text-primary"></i>Comparación Entre Meses</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <!-- Puntuación Global -->
+                        <div class="col-lg-3 col-md-6">
+                            {% set mes_actual_puntuacion = comparacion.mes_actual.puntuacion if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 %}
+                            {% set mes_comparacion_puntuacion = comparacion.mes_comparacion.puntuacion if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 %}
+                            {% set mostrar_cambio_significativo = comparacion.global > 10 or comparacion.global < -10 %}
+                            {% set son_ambos_cero = mes_actual_puntuacion == 0 and mes_comparacion_puntuacion == 0 %}
+                            
+                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.global > 10 and not son_ambos_cero else 'border-start border-danger border-5' if comparacion.global < -10 and not son_ambos_cero else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.global > 10 and not son_ambos_cero else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.global < -10 and not son_ambos_cero }}">
+                                <div class="card-body text-center p-3">
+                                    <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Puntuación Global
+                                        {% if mostrar_cambio_significativo and not son_ambos_cero %}
+                                        <span class="badge bg-{{ 'success' if comparacion.global > 10 else 'danger' }} ms-2">
+                                            Cambio significativo
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    <div class="d-flex justify-content-center align-items-center mb-2">
+                                        {% if comparacion and comparacion.global is defined and comparacion.global is not none and not son_ambos_cero %}
+                                            {% if comparacion.global > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.global|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.global < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.global * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
+                                        {% else %}
+                                            <h3 class="text-muted mb-0">
+                                                <i class="fas fa-equals me-2"></i>0%
+                                            </h3>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-center align-items-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ mes_actual_puntuacion|round(1) if mes_actual_puntuacion != 0 else "0" }} (Actual)</span>
+                                        <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ mes_comparacion_puntuacion|round(1) if mes_comparacion_puntuacion != 0 else "0" }} (Anterior)</span>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 6px;">
+                                        <div class="progress-bar bg-{{ 'success' if comparacion.global > 0 and not son_ambos_cero else 'danger' if comparacion.global < 0 and not son_ambos_cero else 'secondary' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.global|abs, 100]|min if not son_ambos_cero else 0 }}%;" 
+                                             aria-valuenow="{{ comparacion.global|abs if not son_ambos_cero else 0 }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alumnos -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.promedio_alumnos > 10 else 'border-start border-danger border-5' if comparacion.promedio_alumnos < -10 else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.promedio_alumnos > 10 else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.promedio_alumnos < -10 }}">
+                                <div class="card-body text-center p-3">
+                                    <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-users me-2"></i>
+                                        Promedio Alumnos
+                                        {% if comparacion.promedio_alumnos > 10 or comparacion.promedio_alumnos < -10 %}
+                                        <span class="badge bg-{{ 'success' if comparacion.promedio_alumnos > 10 else 'danger' }} ms-2">
+                                            Cambio significativo
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    <div class="d-flex justify-content-center align-items-center mb-2">
+                                        {% if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none %}
+                                            {% if comparacion.promedio_alumnos > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.promedio_alumnos|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.promedio_alumnos < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.promedio_alumnos * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
+                                        {% else %}
+                                            <h3 class="text-muted mb-0">
+                                                <i class="fas fa-equals me-2"></i>0%
+                                            </h3>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-center align-items-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.promedio_alumnos is defined and comparacion.mes_actual.promedio_alumnos is not none else 0 }} (Actual)</span>
+                                        <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.promedio_alumnos is defined and comparacion.mes_comparacion.promedio_alumnos is not none else 0 }} (Anterior)</span>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 6px;">
+                                        <div class="progress-bar bg-{{ 'success' if comparacion.promedio_alumnos > 0 else 'danger' if comparacion.promedio_alumnos < 0 else 'secondary' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.promedio_alumnos|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.promedio_alumnos|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Puntualidad -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.puntualidad > 10 else 'border-start border-danger border-5' if comparacion.puntualidad < -10 else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.puntualidad > 10 else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.puntualidad < -10 }}">
+                                <div class="card-body text-center p-3">
+                                    <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-clock me-2"></i>
+                                        Puntualidad
+                                        {% if comparacion.puntualidad > 10 or comparacion.puntualidad < -10 %}
+                                        <span class="badge bg-{{ 'success' if comparacion.puntualidad > 10 else 'danger' }} ms-2">
+                                            Cambio significativo
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    <div class="d-flex justify-content-center align-items-center mb-2">
+                                        {% if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none %}
+                                            {% if comparacion.puntualidad > 0 %}
+                                                <h3 class="text-success mb-0">
+                                                    <i class="fas fa-arrow-up me-2"></i>{{ comparacion.puntualidad|round(1) }}%
+                                                </h3>
+                                            {% elif comparacion.puntualidad < 0 %}
+                                                <h3 class="text-danger mb-0">
+                                                    <i class="fas fa-arrow-down me-2"></i>{{ (comparacion.puntualidad * -1)|round(1) }}%
+                                                </h3>
+                                            {% else %}
+                                                <h3 class="text-muted mb-0">
+                                                    <i class="fas fa-equals me-2"></i>0%
+                                                </h3>
+                                            {% endif %}
+                                        {% else %}
+                                            <h3 class="text-muted mb-0">
+                                                <i class="fas fa-equals me-2"></i>0%
+                                            </h3>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-center align-items-center mt-2">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 me-2">{{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntualidad is defined and comparacion.mes_actual.puntualidad is not none else 0 }}% (Actual)</span>
+                                        <i class="fas fa-arrows-alt-h text-muted mx-2"></i>
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntualidad is defined and comparacion.mes_comparacion.puntualidad is not none else 0 }}% (Anterior)</span>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 6px;">
+                                        <div class="progress-bar bg-{{ 'success' if comparacion.puntualidad > 0 else 'danger' if comparacion.puntualidad < 0 else 'secondary' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ [comparacion.puntualidad|abs, 100]|min }}%;" 
+                                             aria-valuenow="{{ comparacion.puntualidad|abs }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Número de Clases -->
+                        <div class="col-lg-3 col-md-6">
+                            {% set mes_actual_clases = comparacion.mes_actual.total_clases if comparacion and comparacion.mes_actual and comparacion.mes_actual.total_clases is defined and comparacion.mes_actual.total_clases is not none else 0 %}
+                            {% set mes_comparacion_clases = comparacion.mes_comparacion.total_clases if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.total_clases is defined and comparacion.mes_comparacion.total_clases is not none else 0 %}
+                            {% set mostrar_cambio_significativo = comparacion.total_clases > 10 or comparacion.total_clases < -10 %}
+                            {% set son_ambos_cero = mes_actual_clases == 0 and mes_comparacion_clases == 0 %}
+                            
+                            <div class="card border-0 h-100 {{ 'border-start border-success border-5' if comparacion.total_clases > 10 else 'border-start border-danger border-5' if comparacion.total_clases < -10 else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.total_clases > 10 else 'background-color: rgba(220, 53, 69, 0.05);' if comparacion.total_clases < -10 }}">
+                                <div class="card-body text-center p-3">
+                                    <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        Número de Clases
+                                        {% if mostrar_cambio_significativo and not son_ambos_cero %}
+                                        <span class="badge bg-{{ 'success' if comparacion.total_clases > 0 else 'danger' }} ms-2 animate__animated animate__fadeIn" title="Cambio significativo">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    
+                                    {% if comparacion and comparacion.total_clases is defined and not son_ambos_cero %}
+                                    <div class="fs-2 mb-2 {{ 'text-success fw-bold' if comparacion.total_clases > 0 else 'text-danger fw-bold' if comparacion.total_clases < 0 else '' }}">
+                                        {{ (comparacion.total_clases)|abs|round(1) }}%
+                                        <i class="fas {{ 'fa-arrow-up' if comparacion.total_clases > 0 else 'fa-arrow-down' if comparacion.total_clases < 0 else 'fa-equals' }} fs-6"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="fs-2 mb-2">0%</div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-around small">
+                                        <div>
+                                            <span class="text-muted">Actual</span><br>
+                                            <strong>{{ mes_actual_clases }}</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted">Anterior</span><br>
+                                            <strong>{{ mes_comparacion_clases }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Costo por Alumno -->
+                        <div class="col-lg-3 col-md-6">
+                            {% set mes_actual_costo = comparacion.mes_actual.costo_por_alumno if comparacion and comparacion.mes_actual and comparacion.mes_actual.costo_por_alumno is defined and comparacion.mes_actual.costo_por_alumno is not none else 0 %}
+                            {% set mes_comparacion_costo = comparacion.mes_comparacion.costo_por_alumno if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.costo_por_alumno is defined and comparacion.mes_comparacion.costo_por_alumno is not none else 0 %}
+                            {% set mostrar_cambio_significativo = comparacion.costo_por_alumno > 10 or comparacion.costo_por_alumno < -10 %}
+                            {% set son_ambos_cero = mes_actual_costo == 0 and mes_comparacion_costo == 0 %}
+                            
+                            <div class="card border-0 h-100 {{ 'border-start border-warning border-5' if comparacion.costo_por_alumno > 10 else 'border-start border-success border-5' if comparacion.costo_por_alumno < -10 else 'shadow-sm' }}" 
+                                style="{{ 'background-color: rgba(255, 193, 7, 0.05);' if comparacion.costo_por_alumno > 10 else 'background-color: rgba(40, 167, 69, 0.05);' if comparacion.costo_por_alumno < -10 }}">
+                                <div class="card-body text-center p-3">
+                                    <h6 class="text-muted mb-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-dollar-sign me-2"></i>
+                                        Costo por Alumno
+                                        {% if mostrar_cambio_significativo and not son_ambos_cero %}
+                                        <span class="badge bg-{{ 'warning' if comparacion.costo_por_alumno > 0 else 'success' }} ms-2 animate__animated animate__fadeIn" title="Cambio significativo">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    
+                                    {% if comparacion and comparacion.costo_por_alumno is defined and not son_ambos_cero %}
+                                    <div class="fs-2 mb-2 {{ 'text-warning fw-bold' if comparacion.costo_por_alumno > 0 else 'text-success fw-bold' if comparacion.costo_por_alumno < 0 else '' }}">
+                                        {{ (comparacion.costo_por_alumno)|abs|round(1) }}%
+                                        <i class="fas {{ 'fa-arrow-up' if comparacion.costo_por_alumno > 0 else 'fa-arrow-down' if comparacion.costo_por_alumno < 0 else 'fa-equals' }} fs-6"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="fs-2 mb-2">0%</div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-around small">
+                                        <div>
+                                            <span class="text-muted">Actual</span><br>
+                                            <strong>${{ mes_actual_costo|round(2) }}</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted">Anterior</span><br>
+                                            <strong>${{ mes_comparacion_costo|round(2) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Metodología de comparación y explicación -->
+                <div class="mt-4 p-3 bg-light rounded border">
+                    <div class="row">
+                        <div class="col-lg-7">
+                            <h6 class="mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>Metodología de Comparación</h6>
+                            <p class="text-muted small mb-2">La comparación muestra la diferencia porcentual entre los valores de <strong>{{ comparacion.mes_actual_nombre if comparacion and comparacion.mes_actual_nombre else mes_actual_nombre if mes_actual_nombre else 'Mes actual' }}</strong> y <strong>{{ comparacion.mes_comparacion_nombre if comparacion and comparacion.mes_comparacion_nombre else mes_comparacion_nombre if mes_comparacion_nombre else 'Mes anterior' }}</strong>.</p>
+                            <ul class="text-muted small mb-0">
+                                <li>Un valor <span class="text-success">positivo</span> indica una mejora en el rendimiento.</li>
+                                <li>Un valor <span class="text-danger">negativo</span> indica una disminución en el rendimiento.</li>
+                                <li>Valores con cambios mayores al 10% se consideran <strong>cambios significativos</strong>.</li>
+                                <li>La puntuación global combina asistencia (45%), puntualidad (30%) y clases (25%).</li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-5">
+                            <h6 class="mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Cambios Destacados</h6>
+                            <div class="list-group list-group-flush bg-transparent">
+                                {% set has_significant_changes = false %}
+                                
+                                {% if comparacion.global|abs > 10 %}
+                                {% set has_significant_changes = true %}
+                                <div class="list-group-item bg-transparent px-0 py-1 d-flex align-items-center">
+                                    <span class="badge rounded-pill bg-{{ 'success' if comparacion.global > 0 else 'danger' }} me-2">
+                                        <i class="fas fa-{{ 'arrow-up' if comparacion.global > 0 else 'arrow-down' }}"></i>
+                                    </span>
+                                    <span>
+                                        Rendimiento global 
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.global is defined and comparacion.global is not none and comparacion.global > 0 else 'danger' }}">
+                                            {{ comparacion.global|abs|round(1) if comparacion and comparacion.global is defined and comparacion.global is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.global is defined and comparacion.global is not none and comparacion.global > 0 else 'menor' }}
+                                        </strong>
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if comparacion.puntualidad|abs > 10 %}
+                                {% set has_significant_changes = true %}
+                                <div class="list-group-item bg-transparent px-0 py-1 d-flex align-items-center">
+                                    <span class="badge rounded-pill bg-{{ 'success' if comparacion.puntualidad > 0 else 'danger' }} me-2">
+                                        <i class="fas fa-{{ 'arrow-up' if comparacion.puntualidad > 0 else 'arrow-down' }}"></i>
+                                    </span>
+                                    <span>
+                                        Puntualidad 
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none and comparacion.puntualidad > 0 else 'danger' }}">
+                                            {{ comparacion.puntualidad|abs|round(1) if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.puntualidad is defined and comparacion.puntualidad is not none and comparacion.puntualidad > 0 else 'menor' }}
+                                        </strong>
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if comparacion.promedio_alumnos|abs > 10 %}
+                                {% set has_significant_changes = true %}
+                                <div class="list-group-item bg-transparent px-0 py-1 d-flex align-items-center">
+                                    <span class="badge rounded-pill bg-{{ 'success' if comparacion.promedio_alumnos > 0 else 'danger' }} me-2">
+                                        <i class="fas fa-{{ 'arrow-up' if comparacion.promedio_alumnos > 0 else 'arrow-down' }}"></i>
+                                    </span>
+                                    <span>
+                                        Promedio de alumnos
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none and comparacion.promedio_alumnos > 0 else 'danger' }}">
+                                            {{ comparacion.promedio_alumnos|abs|round(1) if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.promedio_alumnos is defined and comparacion.promedio_alumnos is not none and comparacion.promedio_alumnos > 0 else 'menor' }}
+                                        </strong>
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if comparacion.total_clases|abs > 10 %}
+                                {% set has_significant_changes = true %}
+                                <div class="list-group-item bg-transparent px-0 py-1 d-flex align-items-center">
+                                    <span class="badge rounded-pill bg-{{ 'success' if comparacion.total_clases > 0 else 'danger' }} me-2">
+                                        <i class="fas fa-{{ 'arrow-up' if comparacion.total_clases > 0 else 'arrow-down' }}"></i>
+                                    </span>
+                                    <span>
+                                        Número de clases
+                                        <strong class="text-{{ 'success' if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none and comparacion.total_clases > 0 else 'danger' }}">
+                                            {{ comparacion.total_clases|abs|round(1) if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none else 0 }}% {{ 'mayor' if comparacion and comparacion.total_clases is defined and comparacion.total_clases is not none and comparacion.total_clases > 0 else 'menor' }}
+                                        </strong>
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if not has_significant_changes %}
+                                <div class="bg-transparent px-0 py-1">
+                                    <em class="text-muted">No se detectaron cambios significativos (>10%) entre estos meses.</em>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty state for no comparison data -->
+    <div class="row mb-4">
+        <div class="col-12">
+            {% if error %}
+            <div class="alert alert-warning mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ error }}
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                {% if mes_actual and mes_comparacion %}
+                    No hay suficientes datos para realizar la comparación entre {{ mes_actual_nombre }} y {{ mes_comparacion_nombre }}.
+                {% else %}
+                    Seleccione dos meses diferentes en el formulario anterior para realizar una comparación.
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error state for API failures -->
+    {% if error %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ error }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de gráficos principales -->
+    <div class="row mb-4">        
+        <!-- Evolución Mensual -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-line me-2 text-primary"></i>Evolución Mensual</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="evolucionMensualChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar la evolución mensual.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis de puntualidad -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Análisis de Puntualidad</h5>
+                </div>
+                <div class="card-body">
+                    {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="puntualidadChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="text-center mb-3 fw-semibold">Detalle de Puntualidad</h6>
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-check-circle text-success me-2"></i>Clases puntuales</span>
+                                                <span class="badge bg-success rounded-pill">{{ metricas.puntualidad.puntual }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-exclamation-circle text-warning me-2"></i>Retrasos leves</span>
+                                                <span class="badge bg-warning rounded-pill">{{ metricas.puntualidad.retraso_leve }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span><i class="fas fa-times-circle text-danger me-2"></i>Retrasos significativos</span>
+                                                <span class="badge bg-danger rounded-pill">{{ metricas.puntualidad.retraso_significativo }}</span>
+                                            </li>
+                                            <li class="list-group-item border-0 bg-transparent d-flex justify-content-between align-items-center px-0">
+                                                <span class="fw-semibold"><i class="fas fa-clipboard-list text-primary me-2"></i>Total</span>
+                                                <span class="badge bg-primary rounded-pill">{{ metricas.puntualidad.total }}</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-4"></i>
+                            <div>No hay datos suficientes para mostrar el análisis de puntualidad.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metodología de Comparación -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Metodología de Comparación</h5>
+        </div>
+        <div class="card-body">
+            <p>La comparación muestra la diferencia porcentual entre los valores de <strong>{{ mes_actual_str }}</strong> y <strong>{{ mes_comparacion_str }}</strong>.</p>
+            <ul class="mb-0">
+                <li>Un valor <span class="text-success">positivo</span> indica una mejora en el rendimiento.</li>
+                <li>Un valor <span class="text-danger">negativo</span> indica una disminución en el rendimiento.</li>
+                <li>Valores con cambios mayores al 10% se consideran <span class="badge bg-info">cambios significativos</span>.</li>
+                <li>La puntuación global combina asistencia (40%), puntualidad (30%), clases (15%) y costo por alumno (15%).</li>
+                <li>Para el costo por alumno, usamos una escala relativa donde el profesor con el menor costo recibe 100 puntos y el de mayor costo 0 puntos.</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- Incluir Chart.js y plugin datalabels -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+<!-- Scripts específicos para gráficos -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Registrar el plugin datalabels globalmente
+    Chart.register(ChartDataLabels);
+    
+    // Definir colores para los gráficos
+    const colors = {
+        primary: {
+            main: 'rgba(25, 118, 210, 1)',
+            light: 'rgba(25, 118, 210, 0.7)'
+        },
+        success: {
+            main: 'rgba(56, 142, 60, 1)',
+            light: 'rgba(56, 142, 60, 0.7)'
+        },
+        warning: {
+            main: 'rgba(245, 124, 0, 1)',
+            light: 'rgba(245, 124, 0, 0.7)'
+        },
+        danger: {
+            main: 'rgba(229, 57, 53, 1)',
+            light: 'rgba(229, 57, 53, 0.7)'
+        },
+        info: {
+            main: 'rgba(2, 136, 209, 1)',
+            light: 'rgba(2, 136, 209, 0.7)'
+        },
+        orange: {
+            main: 'rgba(255, 165, 0, 1)',
+            light: 'rgba(255, 165, 0, 0.7)'
+        }
+    };
+
+    // Verificar si Chart.js está disponible
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está disponible. Asegúrate de incluir la biblioteca.');
+        
+        // Mostrar mensaje de error en los contenedores de gráficos
+        const errorMessage = '<div class="alert alert-danger">No se pueden cargar los gráficos: Chart.js no está disponible.</div>';
+        document.querySelectorAll('.chart-container').forEach(container => {
+            container.style.display = 'none';
+            container.insertAdjacentHTML('afterend', errorMessage);
+        });
+        return;
+    }
+
+    // Configuración global de Chart.js
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(33, 37, 41, 0.9)';
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 4;
+    Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+    
+    {% if metricas.datos_mensuales and metricas.datos_mensuales|length > 0 %}
+    try {
+        // Gráfico de evolución mensual
+        const datosMensuales = {{ metricas.datos_mensuales|tojson }};
+        const ctxEvolucion = document.getElementById('evolucionMensualChart').getContext('2d');
+        
+        // Función para crear un degradado
+        function createGradient(ctx, color) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, color.replace('1)', '0.3)'));
+            gradient.addColorStop(1, color.replace('1)', '0.0)'));
+            return gradient;
+        }
+        
+        {% if comparacion and mes_actual and mes_comparacion %}
+        // Modo de comparación: mostrar solo los dos meses seleccionados en formato de barras
+        
+        // Mes actual y mes de comparación para etiquetas
+        const mesActualLabel = '{{ comparacion.mes_actual_nombre if comparacion and comparacion.mes_actual_nombre else mes_actual_nombre if mes_actual_nombre else "Mes actual" }}';
+        const mesComparacionLabel = '{{ comparacion.mes_comparacion_nombre if comparacion and comparacion.mes_comparacion_nombre else mes_comparacion_nombre if mes_comparacion_nombre else "Mes anterior" }}';
+        
+        // Preparar datos del mes actual
+        const mesActualData = {
+            alumnos: {{ comparacion.mes_actual.promedio_alumnos|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.promedio_alumnos is defined and comparacion.mes_actual.promedio_alumnos is not none else 0 }},
+            puntualidad: {{ comparacion.mes_actual.puntualidad|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntualidad is defined and comparacion.mes_actual.puntualidad is not none else 0 }},
+            clases: {{ comparacion.mes_actual.total_clases if comparacion and comparacion.mes_actual and comparacion.mes_actual.total_clases is defined and comparacion.mes_actual.total_clases is not none else 0 }},
+            score: {{ comparacion.mes_actual.puntuacion|round(1) if comparacion and comparacion.mes_actual and comparacion.mes_actual.puntuacion is defined and comparacion.mes_actual.puntuacion is not none else 0 }},
+            costo: {{ comparacion.mes_actual.costo_por_alumno|round(2) if comparacion and comparacion.mes_actual and comparacion.mes_actual.costo_por_alumno is defined and comparacion.mes_actual.costo_por_alumno is not none else 0 }}
+        };
+        
+        // Preparar datos del mes de comparación
+        const mesComparacionData = {
+            alumnos: {{ comparacion.mes_comparacion.promedio_alumnos|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.promedio_alumnos is defined and comparacion.mes_comparacion.promedio_alumnos is not none else 0 }},
+            puntualidad: {{ comparacion.mes_comparacion.puntualidad|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntualidad is defined and comparacion.mes_comparacion.puntualidad is not none else 0 }},
+            clases: {{ comparacion.mes_comparacion.total_clases if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.total_clases is defined and comparacion.mes_comparacion.total_clases is not none else 0 }},
+            score: {{ comparacion.mes_comparacion.puntuacion|round(1) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.puntuacion is defined and comparacion.mes_comparacion.puntuacion is not none else 0 }},
+            costo: {{ comparacion.mes_comparacion.costo_por_alumno|round(2) if comparacion and comparacion.mes_comparacion and comparacion.mes_comparacion.costo_por_alumno is defined and comparacion.mes_comparacion.costo_por_alumno is not none else 0 }}
+        };
+        
+        // Definir función para comprobar si se debe mostrar cambio significativo
+        const sonAmbosCero = (val1, val2) => (val1 === 0 && val2 === 0);
+        
+        // Define min/max values for scaling with proper validation
+        const minAlumnos = Math.min(mesActualData.alumnos, mesComparacionData.alumnos) * 0.8 || 0;
+        const maxAlumnos = Math.max(mesActualData.alumnos, mesComparacionData.alumnos) * 1.2 || 10;
+        
+        // Crear gráfico de comparación
+        new Chart(ctxEvolucion, {
+            type: 'bar',
+            data: {
+                labels: ['Puntuación Global', 'Puntualidad', 'Promedio Alumnos', 'Total Clases', 'Costo por Alumno'],
+                datasets: [
+                    {
+                        label: mesActualLabel,
+                        data: [
+                            mesActualData.score,
+                            mesActualData.puntualidad,
+                            mesActualData.alumnos,
+                            mesActualData.clases,
+                            mesActualData.costo
+                        ],
+                        backgroundColor: [
+                            colors.primary.light,
+                            colors.success.light,
+                            colors.warning.light,
+                            colors.info.light,
+                            colors.orange.light
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: mesComparacionLabel,
+                        data: [
+                            mesComparacionData.score,
+                            mesComparacionData.puntualidad,
+                            mesComparacionData.alumnos,
+                            mesComparacionData.clases,
+                            mesComparacionData.costo
+                        ],
+                        backgroundColor: [
+                            'rgba(150, 150, 150, 0.7)',
+                            'rgba(150, 150, 150, 0.7)',
+                            'rgba(150, 150, 150, 0.7)',
+                            'rgba(150, 150, 150, 0.7)',
+                            'rgba(150, 150, 150, 0.7)'
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                const datasetIndex = context.datasetIndex;
+                                const dataIndex = context.dataIndex;
+                                
+                                // Determinar unidad y formato según el tipo de dato
+                                let unidad = '';
+                                let formatted = value;
+                                if (dataIndex === 0 || dataIndex === 1) { // Score global o puntualidad
+                                    unidad = '%';
+                                    formatted = parseFloat(value).toFixed(1);
+                                } else if (dataIndex === 2) { // Promedio alumnos
+                                    formatted = parseFloat(value).toFixed(1);
+                                } else if (dataIndex === 3) { // Total clases
+                                    formatted = Math.round(value);
+                                } else { // Costo por alumno
+                                    formatted = '$' + parseFloat(value).toFixed(2);
+                                }
+                                
+                                return `${context.dataset.label}: ${formatted}${unidad}`;
+                            }
+                        }
+                    },
+                    // Plugin personalizado para mostrar los valores en el gráfico
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value, context) {
+                            if (value === 0 || value === undefined || value === null) {
+                                return '0';
+                            }
+                            
+                            const dataIndex = context.dataIndex;
+                            
+                            // Determinar unidad y formato según el tipo de dato
+                            let unidad = '';
+                            let formatted = value;
+                            if (dataIndex === 0 || dataIndex === 1) { // Score global o puntualidad
+                                unidad = '%';
+                                formatted = parseFloat(value).toFixed(1);
+                            } else if (dataIndex === 2) { // Promedio alumnos
+                                formatted = parseFloat(value).toFixed(1);
+                            } else if (dataIndex === 3) { // Total clases
+                                formatted = Math.round(value);
+                            } else { // Costo por alumno
+                                formatted = '$' + parseFloat(value).toFixed(2);
+                            }
+                            
+                            return `${formatted}${unidad}`;
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: minAlumnos,
+                        suggestedMax: maxAlumnos,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% else %}
+        // Modo normal: mostrar evolución en el tiempo
+        const etiquetasMeses = datosMensuales.map(d => d.etiqueta);
+        const datosAlumnos = datosMensuales.map(d => d.promedio_alumnos);
+        const datosPuntualidad = datosMensuales.map(d => d.puntualidad);
+        
+        // Calculate min/max values for better scaling with fallback values
+        let minAlumnos = 0;
+        let maxAlumnos = 10;
+        
+        if (datosAlumnos && datosAlumnos.length > 0) {
+            const validValues = datosAlumnos.filter(val => val > 0);
+            if (validValues.length > 0) {
+                minAlumnos = Math.min(...validValues) * 0.8;
+                maxAlumnos = Math.max(...datosAlumnos) * 1.2;
+            }
+        }
+        
+        new Chart(ctxEvolucion, {
+            type: 'line',
+            data: {
+                labels: etiquetasMeses,
+                datasets: [
+                    {
+                        label: 'Promedio Alumnos',
+                        data: datosAlumnos,
+                        borderColor: colors.primary.main,
+                        backgroundColor: createGradient(ctxEvolucion, colors.primary.main),
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'white',
+                        pointBorderColor: colors.primary.main,
+                        pointBorderWidth: 2,
+                        datalabels: {
+                            align: 'end',
+                            anchor: 'end',
+                            backgroundColor: colors.primary.main,
+                            borderRadius: 4,
+                            color: 'white',
+                            padding: 4,
+                            formatter: function(value) {
+                                return value.toFixed(1);
+                            }
+                        }
+                    },
+                    {
+                        label: 'Puntualidad (%)',
+                        data: datosPuntualidad,
+                        borderColor: colors.success.main,
+                        backgroundColor: createGradient(ctxEvolucion, colors.success.main),
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y1',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'white',
+                        pointBorderColor: colors.success.main,
+                        pointBorderWidth: 2,
+                        datalabels: {
+                            align: 'start',
+                            anchor: 'start',
+                            backgroundColor: colors.success.main,
+                            borderRadius: 4,
+                            color: 'white',
+                            padding: 4,
+                            formatter: function(value) {
+                                return value.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Nota: El gráfico utiliza una escala ajustada para mostrar tendencias',
+                        position: 'bottom',
+                        font: {
+                            size: 11,
+                            style: 'italic'
+                        },
+                        color: '#666',
+                        padding: {
+                            top: 10,
+                            bottom: 0
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 12,
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    // Configuración global para datalabels en el gráfico de línea
+                    datalabels: {
+                        display: function(context) {
+                            // Solo mostrar etiquetas en puntos específicos para evitar sobrecarga
+                            return context.dataIndex % 2 === 0;
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        color: '#fff',
+                        textStrokeColor: 'rgba(0, 0, 0, 0.5)',
+                        textStrokeWidth: 1,
+                        offset: 8,
+                        padding: {
+                            top: 4,
+                            bottom: 4,
+                            left: 6,
+                            right: 6
+                        },
+                        borderRadius: 4
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Promedio Alumnos'
+                        },
+                        beginAtZero: false,
+                        suggestedMin: minAlumnos,
+                        suggestedMax: maxAlumnos,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Puntualidad (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+        {% endif %}
+    } catch (error) {
+        console.error('Error al generar gráfico de evolución mensual:', error);
+        document.getElementById('evolucionMensualChart').closest('.chart-container').insertAdjacentHTML('afterend', 
+            `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
+    }
+    {% endif %}
+
+    {% if metricas.puntualidad and metricas.puntualidad.total > 0 %}
+    try {
+        // Determinar si estamos en modo comparación
+        {% if comparacion and metricas_comparacion and metricas_comparacion.puntualidad %}
+        // Modo comparación: mostrar una gráfica de barras comparativa
+        
+        // Mes actual y mes de comparación para etiquetas
+        const mesActualLabel = '{{ mes_actual_str if mes_actual_str else "Mes actual" }}';
+        const mesComparacionLabel = '{{ mes_comparacion_str if mes_comparacion_str else "Mes anterior" }}';
+        
+        // Datos del mes actual
+        const puntualidadActual = {
+            puntual: {{ metricas.puntualidad.puntual_porcentaje|round(1) if metricas.puntualidad.puntual_porcentaje is defined else (metricas.puntualidad.puntual / metricas.puntualidad.total * 100)|round(1) if metricas.puntualidad.total > 0 else 0 }},
+            retraso_leve: {{ metricas.puntualidad.retraso_leve_porcentaje|round(1) if metricas.puntualidad.retraso_leve_porcentaje is defined else (metricas.puntualidad.retraso_leve / metricas.puntualidad.total * 100)|round(1) if metricas.puntualidad.total > 0 else 0 }},
+            retraso_significativo: {{ metricas.puntualidad.retraso_significativo_porcentaje|round(1) if metricas.puntualidad.retraso_significativo_porcentaje is defined else (metricas.puntualidad.retraso_significativo / metricas.puntualidad.total * 100)|round(1) if metricas.puntualidad.total > 0 else 0 }}
+        };
+        
+        // Datos del mes de comparación
+        const puntualidadComparacion = {
+            puntual: {{ metricas_comparacion.puntualidad.puntual_porcentaje|round(1) if metricas_comparacion.puntualidad.puntual_porcentaje is defined else (metricas_comparacion.puntualidad.puntual / metricas_comparacion.puntualidad.total * 100)|round(1) if metricas_comparacion.puntualidad.total > 0 else 0 }},
+            retraso_leve: {{ metricas_comparacion.puntualidad.retraso_leve_porcentaje|round(1) if metricas_comparacion.puntualidad.retraso_leve_porcentaje is defined else (metricas_comparacion.puntualidad.retraso_leve / metricas_comparacion.puntualidad.total * 100)|round(1) if metricas_comparacion.puntualidad.total > 0 else 0 }},
+            retraso_significativo: {{ metricas_comparacion.puntualidad.retraso_significativo_porcentaje|round(1) if metricas_comparacion.puntualidad.retraso_significativo_porcentaje is defined else (metricas_comparacion.puntualidad.retraso_significativo / metricas_comparacion.puntualidad.total * 100)|round(1) if metricas_comparacion.puntualidad.total > 0 else 0 }}
+        };
+        
+        const ctxPuntualidad = document.getElementById('puntualidadChart').getContext('2d');
+        new Chart(ctxPuntualidad, {
+            type: 'bar',
+            data: {
+                labels: ['Puntual', 'Retraso Leve', 'Retraso Significativo'],
+                datasets: [
+                    {
+                        label: mesActualLabel,
+                        data: [
+                            puntualidadActual.puntual,
+                            puntualidadActual.retraso_leve,
+                            puntualidadActual.retraso_significativo
+                        ],
+                        backgroundColor: [
+                            colors.success.light,
+                            colors.warning.light,
+                            colors.danger.light
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: mesComparacionLabel,
+                        data: [
+                            puntualidadComparacion.puntual,
+                            puntualidadComparacion.retraso_leve,
+                            puntualidadComparacion.retraso_significativo
+                        ],
+                        backgroundColor: 'rgba(150, 150, 150, 0.7)',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value) {
+                            return value.toFixed(1) + '%';
+                        },
+                        anchor: 'center',
+                        align: 'center'
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Porcentaje'
+                        }
+                    }
+                }
+            }
+        });
+        {% else %}
+        // Modo normal: mostrar gráfico circular
+        const puntualidadData = {
+            labels: ['Puntual', 'Retraso Leve', 'Retraso Significativo'],
+            data: [
+                {{ metricas.puntualidad.puntual }},
+                {{ metricas.puntualidad.retraso_leve }},
+                {{ metricas.puntualidad.retraso_significativo }}
+            ]
+        };
+        
+        // Calcular porcentajes para puntualidad
+        const totalPuntualidad = puntualidadData.data.reduce((acc, val) => acc + val, 0);
+        const porcentajesPuntualidad = puntualidadData.data.map(val => 
+            totalPuntualidad > 0 ? (val / totalPuntualidad * 100).toFixed(1) : 0
+        );
+        
+        // Preparar etiquetas con porcentajes
+        const puntualidadLabelsWithPercentages = puntualidadData.labels.map((label, i) => 
+            `${label}: ${porcentajesPuntualidad[i]}%`
+        );
+        
+        const ctxPuntualidad = document.getElementById('puntualidadChart').getContext('2d');
+        new Chart(ctxPuntualidad, {
+            type: 'pie',
+            data: {
+                labels: puntualidadLabelsWithPercentages,
+                datasets: [{
+                    data: puntualidadData.data,
+                    backgroundColor: [
+                        colors.success.light,
+                        colors.warning.light,
+                        colors.danger.light
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                const percentage = porcentajesPuntualidad[context.dataIndex];
+                                return `${value} clases (${percentage}%)`;
+                            }
+                        }
+                    },
+                    // Plugin para mostrar los porcentajes en el gráfico
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value, context) {
+                            return porcentajesPuntualidad[context.dataIndex] + '%';
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0
+                    }
+                }
+            }
+        });
+        {% endif %}
+    } catch (error) {
+        console.error('Error al generar gráfico de puntualidad:', error);
+        document.getElementById('puntualidadChart').closest('.chart-container').insertAdjacentHTML('afterend', 
+            `<div class="alert alert-danger">Error al generar el gráfico: ${error.message}</div>`);
+    }
+    {% endif %}
+
+    // Active los tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Inicializar selectores de meses al cargar la página
+    window.addEventListener('DOMContentLoaded', function() {
+        cargarMesesDisponibles();
+    });
+    
+    // Si estamos en modo debug, expandir automáticamente los paneles de depuración
+    {% if debug_mode %}
+    // Expandir el primer panel del acordeón de depuración
+    const firstAccordionButton = document.querySelector('#accordionDebug .accordion-button');
+    const firstAccordionCollapse = document.querySelector('#accordionDebug .accordion-collapse');
+    if (firstAccordionButton && firstAccordionCollapse) {
+        firstAccordionButton.classList.remove('collapsed');
+        firstAccordionButton.setAttribute('aria-expanded', 'true');
+        firstAccordionCollapse.classList.add('show');
+    }
+    {% endif %}
+    
+    // Añadir botón de modo depuración en la esquina superior derecha
+    const addDebugToggle = () => {
+        const container = document.querySelector('.container');
+        if (!container) return;
+        
+        const currentUrl = new URL(window.location.href);
+        const hasDebug = currentUrl.searchParams.has('debug');
+        
+        const debugButton = document.createElement('div');
+        debugButton.className = 'position-fixed top-0 end-0 m-3';
+        debugButton.innerHTML = `
+            <a href="${hasDebug ? currentUrl.pathname : currentUrl.pathname + '?debug=true'}" 
+               class="btn btn-sm ${hasDebug ? 'btn-danger' : 'btn-secondary'} shadow-sm">
+                <i class="fas fa-bug me-1"></i>${hasDebug ? 'Desactivar Depuración' : 'Modo Depuración'}
+            </a>
+        `;
+        
+        container.appendChild(debugButton);
+    };
+    
+    addDebugToggle();
+    
+    // =============================================
+    // Implementación del selector de meses
+    // =============================================
+    
+    // Función para inicializar los selectores de meses con los datos ya disponibles
+    function cargarMesesDisponibles() {
+        const mesVista = document.getElementById('mes_vista');
+        const mesComparacionSelect = document.getElementById('mes_comparacion');
+        
+        if (!mesVista || !mesComparacionSelect) return;
+
+        // Los meses disponibles ya están definidos en el template, no necesitamos hacer una petición AJAX
+        try {
+            // Mantener selecciones anteriores
+            const urlParams = new URLSearchParams(window.location.search);
+            const mesActualParam = urlParams.get('mes_actual');
+            const mesComparacionParam = urlParams.get('mes_comparacion');
+            
+            if (mesActualParam) {
+                mesVista.value = mesActualParam;
+            }
+            
+            if (mesComparacionParam) {
+                mesComparacionSelect.value = mesComparacionParam;
+            }
+            
+            // Si no hay un mes seleccionado y tenemos opciones, seleccionar el primero por defecto
+            if (!mesVista.value && mesVista.options.length > 1) {
+                mesVista.value = mesVista.options[1].value;
+            }
+        } catch (error) {
+            console.error('Error al configurar meses:', error);
+        }
+    }
+    
+    // Implementar validación para el formulario de comparación
+    const comparacionForm = document.getElementById('comparacionForm');
+    const validationMessages = document.getElementById('validationMessages');
+    
+    if (comparacionForm) {
+        comparacionForm.addEventListener('submit', function(event) {
+            let isValid = true;
+            
+            if (validationMessages) {
+                validationMessages.innerHTML = '';
+            }
+            
+            // Validar que se ha seleccionado un mes de comparación
+            const mesComparacion = document.getElementById('mes_comparacion');
+            if (!mesComparacion.value) {
+                isValid = false;
+                mesComparacion.classList.add('is-invalid');
+            } else {
+                mesComparacion.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+                if (validationMessages) {
+                    validationMessages.innerHTML = '<div class="alert alert-danger">Por favor, seleccione un mes para comparar</div>';
+                }
+            } else {
+                // Mostrar estado de carga
+                const btnComparar = document.getElementById('btnComparar');
+                if (btnComparar) {
+                    btnComparar.disabled = true;
+                    btnComparar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Comparando...';
+                }
+            }
+        });
+    }
+    
+    // Toggle functionality para el selector de tipo de métricas
+    const metricasMes = document.getElementById('metricasMes');
+    const metricasTotales = document.getElementById('metricasTotales');
+    const seleccionMesVista = document.getElementById('seleccionMesVista');
+    
+    if (metricasMes && metricasTotales && seleccionMesVista) {
+        metricasMes.addEventListener('change', function() {
+            seleccionMesVista.classList.remove('d-none');
+            document.getElementById('mes_vista').setAttribute('required', '');
+        });
+        
+        metricasTotales.addEventListener('change', function() {
+            seleccionMesVista.classList.add('d-none');
+            document.getElementById('mes_vista').removeAttribute('required');
+        });
+    }
+});
+</script>
+
+<!-- Add this before the closing body tag -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const tipoMetricas = document.querySelectorAll('input[name="tipo_metricas"]');
+        const mesVistaSelect = document.getElementById('mes_vista');
+        const seleccionMesVista = document.getElementById('seleccionMesVista');
+        const mesActualComparacion = document.getElementById('mes_actual_comparacion');
+        const mesComparacion = document.getElementById('mes_comparacion');
+        const tipoVistaForm = document.getElementById('tipoVistaForm');
+        const comparacionForm = document.getElementById('comparacionForm');
+        const validationMessages = document.getElementById('validationMessages');
+        
+        // Toggle month selection visibility based on metrics type
+        tipoMetricas.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (this.value === 'totales') {
+                    seleccionMesVista.classList.add('d-none');
+                    mesVistaSelect.removeAttribute('required');
+                    
+                    // No sincronizamos automáticamente cuando cambiamos a vista total
+                    // Pero mantenemos el selector activo en el formulario de comparación
+                } else {
+                    seleccionMesVista.classList.remove('d-none');
+                    mesVistaSelect.setAttribute('required', 'required');
+                    
+                    // Sincronizar el mes seleccionado con el formulario de comparación
+                    if (mesVistaSelect.value) {
+                        syncMonthSelections(mesVistaSelect, mesActualComparacion);
+                    }
+                }
+            });
+        });
+        
+        // Update the comparison form's first month select when the view month changes
+        if (mesVistaSelect && mesActualComparacion) {
+            mesVistaSelect.addEventListener('change', function() {
+                syncMonthSelections(mesVistaSelect, mesActualComparacion);
+                
+                // If second month is the same as first month, reset it
+                if (mesComparacion && mesComparacion.value === this.value) {
+                    mesComparacion.selectedIndex = 0;
+                }
+            });
+            
+            // Initial sync when page loads
+            syncMonthSelections(mesVistaSelect, mesActualComparacion);
+        }
+        
+        // Prevent selecting the same month in comparison dropdown
+        if (mesActualComparacion && mesComparacion) {
+            mesActualComparacion.addEventListener('change', function() {
+                if (mesComparacion.value === this.value && this.value !== '') {
+                    mesComparacion.selectedIndex = 0;
+                }
+                
+                // Disable the option in the comparison dropdown that matches the first month
+                updateDisabledOptions(mesActualComparacion, mesComparacion);
+            });
+            
+            mesComparacion.addEventListener('change', function() {
+                if (mesActualComparacion.value === this.value && this.value !== '') {
+                    // Show a warning tooltip
+                    showValidationMessage('No puede seleccionar el mismo mes en ambos campos', 'warning');
+                }
+            });
+            
+            // Initial update of disabled options
+            updateDisabledOptions(mesActualComparacion, mesComparacion);
+        }
+        
+        // Validation for comparison form
+        if (comparacionForm) {
+            comparacionForm.addEventListener('submit', function(event) {
+                // Get selected values
+                const mesActualValue = mesActualComparacion.value;
+                const mesComparacionValue = mesComparacion.value;
+                
+                // Clear previous validation messages
+                validationMessages.innerHTML = '';
+                
+                // Validate selections
+                if (!mesActualValue || !mesComparacionValue) {
+                    event.preventDefault();
+                    showValidationMessage('Debe seleccionar ambos meses para comparar', 'warning');
+                    return false;
+                }
+                
+                if (mesActualValue === mesComparacionValue) {
+                    event.preventDefault();
+                    showValidationMessage('Los meses seleccionados deben ser diferentes', 'warning');
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+        // Helper function to sync month selections
+        function syncMonthSelections(sourceSelect, targetSelect) {
+            if (sourceSelect && targetSelect) {
+                const selectedValue = sourceSelect.value;
+                if (selectedValue) {
+                    // Find the same option in the target select
+                    for (let i = 0; i < targetSelect.options.length; i++) {
+                        if (targetSelect.options[i].value === selectedValue) {
+                            targetSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Helper function to update disabled options in second dropdown
+        function updateDisabledOptions(firstSelect, secondSelect) {
+            const selectedValue = firstSelect.value;
+            
+            // Reset all options first
+            for (let i = 0; i < secondSelect.options.length; i++) {
+                secondSelect.options[i].disabled = false;
+            }
+            
+            // Disable the matching option in the second select
+            if (selectedValue) {
+                for (let i = 0; i < secondSelect.options.length; i++) {
+                    if (secondSelect.options[i].value === selectedValue) {
+                        secondSelect.options[i].disabled = true;
+                        if (secondSelect.value === selectedValue) {
+                            secondSelect.selectedIndex = 0;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Helper function to show validation messages
+        function showValidationMessage(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} mt-2`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = message;
+            validationMessages.innerHTML = '';
+            validationMessages.appendChild(alertDiv);
+        }
+    });
+</script>
+{% endblock %}
