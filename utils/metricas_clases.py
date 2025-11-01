@@ -6,7 +6,7 @@ agrupando todas las instancias de una clase por su nombre (ej: "Power Bike" de 7
 Reutiliza funciones auxiliares de metricas_profesores.py para mantener consistencia.
 """
 from datetime import datetime, timedelta
-from app.models import HorarioClase, ClaseRealizada
+from models import HorarioClase, ClaseRealizada
 
 # Importar funciones auxiliares reutilizables desde metricas_profesores
 from utils.metricas_profesores import (

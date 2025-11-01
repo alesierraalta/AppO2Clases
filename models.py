@@ -493,6 +493,41 @@ class HorarioClase(db.Model):
         return [tipo[0] for tipo in tipos]
     
     @staticmethod
+    def obtener_clases_unicas():
+        """
+        Obtiene todas las clases únicas agrupadas por nombre, independientemente del horario.
+        Esto permite que clases como "Power Bike" de las 7:30 AM y 6:30 PM se cuenten como una sola.
+        
+        Returns:
+            list: Lista de diccionarios con información de cada clase única
+            Cada diccionario contiene:
+                - 'nombre': str - Nombre de la clase
+                - 'cantidad_horarios': int - Cantidad de horarios diferentes para esta clase
+        """
+        from sqlalchemy import func
+        
+        try:
+            # Agrupar por nombre y contar la cantidad de horarios únicos
+            clases_unicas = db.session.query(
+                HorarioClase.nombre,
+                func.count(HorarioClase.id).label('cantidad_horarios')
+            ).group_by(HorarioClase.nombre).order_by(HorarioClase.nombre).all()
+            
+            # Convertir resultados a lista de diccionarios
+            resultado = [
+                {
+                    'nombre': nombre,
+                    'cantidad_horarios': cantidad
+                }
+                for nombre, cantidad in clases_unicas
+            ]
+            
+            return resultado
+        except Exception as e:
+            print(f"Error en obtener_clases_unicas: {str(e)}")
+            return []
+    
+    @staticmethod
     def estadisticas_por_tipo():
         """
         Obtiene estadísticas agregadas por tipo de clase.

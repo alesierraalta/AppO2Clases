@@ -3881,7 +3881,9 @@ def configuracion_exportar():
                 
                 # Obtener lista de archivos exportados para mostrar
                 for tabla, info in resultados.items():
-                    archivos_exportados.append(info['file_path'])
+                    file_path = info.get('file_path')
+                    if file_path:  # Solo agregar si existe (no None)
+                        archivos_exportados.append(file_path)
                 
                 flash(mensaje_resultado, 'success')
             except Exception as e:
