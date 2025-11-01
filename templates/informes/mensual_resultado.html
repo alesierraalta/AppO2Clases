@@ -2829,6 +2829,201 @@
             });
         }
 
+        // Funcionalidad de búsqueda para tabla de clases
+        const searchInputClasses = document.getElementById('searchInput');
+        const tableClases = document.getElementById('tableclases');
+
+        if (searchInputClasses && tableClases) {
+            // Función para detectar si el término parece una búsqueda de fecha
+            function isDateSearch(term) {
+                // Formato DD/MM/YYYY o DD-MM-YYYY
+                const datePattern1 = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+                // Formato YYYY/MM/DD o YYYY-MM-DD
+                const datePattern2 = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/;
+                // Formato DD/MM o DD-MM (sin año)
+                const datePattern3 = /^(\d{1,2})[\/\-](\d{1,2})$/;
+                // Solo números (1-2 dígitos podrían ser día o mes, 4 dígitos podrían ser año)
+                const numericPattern = /^\d{1,4}$/;
+                
+                return datePattern1.test(term) || datePattern2.test(term) || 
+                       datePattern3.test(term) || numericPattern.test(term);
+            }
+            
+            // Función para extraer partes de fecha de diferentes formatos
+            function extractDateParts(term) {
+                const parts = {
+                    day: null,
+                    month: null,
+                    year: null,
+                    variants: []
+                };
+                
+                // Formato DD/MM/YYYY o DD-MM-YYYY
+                const datePattern1 = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+                // Formato YYYY/MM/DD o YYYY-MM-DD
+                const datePattern2 = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/;
+                // Formato DD/MM o DD-MM (sin año)
+                const datePattern3 = /^(\d{1,2})[\/\-](\d{1,2})$/;
+                
+                let match;
+                if ((match = term.match(datePattern1))) {
+                    parts.day = match[1].padStart(2, '0');
+                    parts.month = match[2].padStart(2, '0');
+                    parts.year = match[3];
+                    parts.variants.push(`${parts.day}/${parts.month}/${parts.year}`);
+                    parts.variants.push(`${parts.day}/${parts.month}`);
+                    parts.variants.push(parts.day);
+                } else if ((match = term.match(datePattern2))) {
+                    parts.year = match[1];
+                    parts.month = match[2].padStart(2, '0');
+                    parts.day = match[3].padStart(2, '0');
+                    parts.variants.push(`${parts.day}/${parts.month}/${parts.year}`);
+                    parts.variants.push(`${parts.day}/${parts.month}`);
+                    parts.variants.push(parts.day);
+                } else if ((match = term.match(datePattern3))) {
+                    parts.day = match[1].padStart(2, '0');
+                    parts.month = match[2].padStart(2, '0');
+                    parts.variants.push(`${parts.day}/${parts.month}`);
+                    parts.variants.push(parts.day);
+                    parts.variants.push(parts.month);
+                } else if (/^\d{1,2}$/.test(term)) {
+                    // Solo un número (1-2 dígitos) - podría ser día o mes
+                    const num = term.padStart(2, '0');
+                    parts.variants.push(num);
+                    parts.variants.push(term); // También sin padding
+                } else if (/^\d{4}$/.test(term)) {
+                    // 4 dígitos - probablemente año
+                    parts.year = term;
+                    parts.variants.push(term);
+                }
+                
+                return parts;
+            }
+            
+            // Función para verificar si una fecha coincide con los criterios de búsqueda
+            function dateMatches(dateStr, dateParts) {
+                const dateLower = dateStr.toLowerCase().trim();
+                
+                // Si hay año específico, debe coincidir
+                if (dateParts.year) {
+                    if (!dateLower.includes(dateParts.year)) {
+                        return false;
+                    }
+                }
+                
+                // Verificar variantes de fecha
+                for (const variant of dateParts.variants) {
+                    // Para números de 1-2 dígitos (día o mes), usar regex más estricto
+                    // Debe coincidir solo si está al inicio seguido de "/" (día) o precedido y seguido de "/" (mes)
+                    if (variant.length <= 2 && /^\d+$/.test(variant)) {
+                        // Formato fecha: DD/MM/YYYY
+                        // Buscar que el número sea el día (inicio de la fecha): "30/" o "30/MM/YYYY"
+                        const dayPattern = new RegExp('^' + variant.replace(/^0+/, '') + '/', 'i');
+                        // O que sea el mes (entre barras): "/30/" pero NO ":30" (hora)
+                        const monthPattern = new RegExp('/' + variant.replace(/^0+/, '') + '/', 'i');
+                        
+                        if (dayPattern.test(dateLower) || monthPattern.test(dateLower)) {
+                            return true;
+                        }
+                    } else {
+                        // Para fechas completas o parciales con formato, buscar coincidencia
+                        const regex = new RegExp('(^|/)' + variant.replace(/\//g, '\\/') + '(/|$)', 'i');
+                        if (regex.test(dateLower)) {
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            searchInputClasses.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                const tbody = tableClases.querySelector('tbody');
+                
+                if (!tbody) return;
+                
+                const rows = tbody.querySelectorAll('tr');
+                let visibleCount = 0;
+                
+                // Si el término está vacío, mostrar todas las filas
+                if (searchTerm === '') {
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    const cardFooter = tableClases.closest('.card').querySelector('.card-footer');
+                    const resultsCount = cardFooter ? cardFooter.querySelector('small') : null;
+                    if (resultsCount) {
+                        resultsCount.textContent = `Mostrando ${rows.length} clases`;
+                    }
+                    return;
+                }
+                
+                const searchTermLower = searchTerm.toLowerCase();
+                const isDate = isDateSearch(searchTerm);
+                let dateParts = null;
+                
+                // Si parece una búsqueda de fecha, extraer las partes
+                if (isDate) {
+                    dateParts = extractDateParts(searchTerm);
+                }
+                
+                rows.forEach(row => {
+                    // Obtener texto de todas las celdas en la fila
+                    const cells = row.querySelectorAll('td');
+                    let textContent = '';
+                    let dateContent = ''; // Contenido de la celda de fecha
+                    
+                    cells.forEach((cell, index) => {
+                        const cellText = cell.innerText || cell.textContent || '';
+                        textContent += cellText.toLowerCase() + ' ';
+                        
+                        // La primera celda generalmente es la fecha
+                        if (index === 0) {
+                            dateContent = cellText.toLowerCase().trim();
+                        }
+                    });
+                    
+                    let matches = false;
+                    
+                    // Si es búsqueda de fecha (especialmente números de 1-2 dígitos), buscar SOLO en fecha
+                    if (isDate && dateParts && dateContent) {
+                        // Para números de 1-2 dígitos, buscar SOLO en la columna de fecha (no en horas)
+                        if (/^\d{1,2}$/.test(searchTerm)) {
+                            matches = dateMatches(dateContent, dateParts);
+                        } else {
+                            // Para fechas completas o con formato, buscar primero en fecha, luego en todo
+                            matches = dateMatches(dateContent, dateParts);
+                            if (!matches) {
+                                matches = textContent.includes(searchTermLower);
+                            }
+                        }
+                    } else {
+                        // Si no es búsqueda de fecha, buscar en todo el contenido
+                        matches = textContent.includes(searchTermLower);
+                    }
+                    
+                    if (matches) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Actualizar contador si existe
+                const cardFooter = tableClases.closest('.card').querySelector('.card-footer');
+                const resultsCount = cardFooter ? cardFooter.querySelector('small') : null;
+                if (resultsCount) {
+                    if (searchTerm) {
+                        resultsCount.textContent = `Mostrando ${visibleCount} de ${rows.length} clases`;
+                    } else {
+                        resultsCount.textContent = `Mostrando ${rows.length} clases`;
+                    }
+                }
+            });
+        }
+
         // CONFIGURACIÓN MODERNA DE GRÁFICOS
         const ModernCharts = {
             // Configuración centralizada

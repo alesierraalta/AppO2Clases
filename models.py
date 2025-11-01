@@ -497,30 +497,50 @@ class HorarioClase(db.Model):
         """
         Obtiene todas las clases únicas agrupadas por nombre, independientemente del horario.
         Esto permite que clases como "Power Bike" de las 7:30 AM y 6:30 PM se cuenten como una sola.
+        Normaliza los nombres para evitar duplicados por espacios o diferencias de mayúsculas/minúsculas.
         
         Returns:
             list: Lista de diccionarios con información de cada clase única
             Cada diccionario contiene:
-                - 'nombre': str - Nombre de la clase
+                - 'nombre': str - Nombre de la clase (normalizado)
                 - 'cantidad_horarios': int - Cantidad de horarios diferentes para esta clase
         """
         from sqlalchemy import func
         
         try:
-            # Agrupar por nombre y contar la cantidad de horarios únicos
-            clases_unicas = db.session.query(
-                HorarioClase.nombre,
-                func.count(HorarioClase.id).label('cantidad_horarios')
-            ).group_by(HorarioClase.nombre).order_by(HorarioClase.nombre).all()
+            # Obtener todos los horarios con sus nombres
+            todos_horarios = db.session.query(HorarioClase.nombre).all()
             
-            # Convertir resultados a lista de diccionarios
+            # Normalizar nombres: quitar espacios al inicio/final, convertir a mayúsculas para comparación
+            # Luego agrupar y contar
+            clases_normalizadas = {}
+            
+            for (nombre_raw,) in todos_horarios:
+                # Normalizar: quitar espacios al inicio/final y convertir a mayúsculas para comparación
+                nombre_normalizado = nombre_raw.strip().upper() if nombre_raw else ''
+                
+                # Usar el nombre original (sin normalizar mayúsculas) como clave de presentación
+                # pero normalizado para agrupar
+                if nombre_normalizado:
+                    if nombre_normalizado not in clases_normalizadas:
+                        # Guardar el primer nombre encontrado (original) como nombre de presentación
+                        clases_normalizadas[nombre_normalizado] = {
+                            'nombre': nombre_raw.strip(),  # Nombre original sin espacios
+                            'cantidad_horarios': 0
+                        }
+                    clases_normalizadas[nombre_normalizado]['cantidad_horarios'] += 1
+            
+            # Convertir a lista y ordenar por nombre
             resultado = [
                 {
-                    'nombre': nombre,
-                    'cantidad_horarios': cantidad
+                    'nombre': info['nombre'],
+                    'cantidad_horarios': info['cantidad_horarios']
                 }
-                for nombre, cantidad in clases_unicas
+                for info in clases_normalizadas.values()
             ]
+            
+            # Ordenar alfabéticamente
+            resultado.sort(key=lambda x: x['nombre'].upper())
             
             return resultado
         except Exception as e:

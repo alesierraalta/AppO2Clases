@@ -1333,6 +1333,23 @@ def lista_clases():
         flash(f"Error al cargar la lista de clases: {str(e)}", "danger")
         return redirect(url_for('informes'))
 
+@app.route('/informes/profesores')
+def lista_profesores():
+    """
+    Muestra una lista de todos los profesores disponibles
+    para acceder a sus métricas.
+    """
+    try:
+        # Obtener todos los profesores y ordenarlos alfabéticamente
+        profesores = Profesor.query.order_by(Profesor.apellido, Profesor.nombre).all()
+        return render_template('informes/lista_profesores.html', profesores=profesores)
+    except Exception as e:
+        app.logger.error(f"Error en lista_profesores: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        flash(f"Error al cargar la lista de profesores: {str(e)}", "danger")
+        return redirect(url_for('informes'))
+
 @app.route('/informes/clase/<path:nombre_clase>/metricas')
 def metricas_clase(nombre_clase):
     """
@@ -1673,15 +1690,9 @@ def informe_mensual():
             print("⚠️ ADVERTENCIA: hora_inicio es None, no se puede calcular puntualidad")
             return "N/A"
         
-        # Registrar en el log los tipos de datos (debug desactivado)
-        # Comentado para producción
-        
-        # CORRECCIÓN ESPECÍFICA PARA POWER BIKE
-        if nombre_clase and "POWER BIKE" in nombre_clase:
-            # Crear una nueva hora_inicio fija de 7:30
-            hora_correcta = time(hour=7, minute=30)
-            # Log eliminado para producción
-            hora_inicio = hora_correcta
+        # NOTA: Eliminada corrección hardcodeada para POWER BIKE.
+        # El hora_inicio debe venir correctamente del horario asociado (horario_id).
+        # Si hora_inicio es None, no hay forma válida de calcular puntualidad sin asumir datos incorrectos.
         
         # Convertir las horas usando nuestra función global
         hora_llegada_convertida = convertir_hora_con_microsegundos(hora_llegada)
@@ -1857,35 +1868,33 @@ def informe_mensual():
             # Esta es la causa del problema: la hora de llegada no debe ser la referencia para
             # calcular la puntualidad
             
-            # CORRECCIÓN ESPECÍFICA PARA POWER BIKE
+            # Fallback: Intentar extraer la hora del nombre del horario SOLO si hora_inicio es None
+            # NOTA: No asumimos horarios específicos para clases con mismo nombre (ej: POWER BIKE de mañana vs tarde)
             nombre_horario = row.nombre if hasattr(row, 'nombre') else "Sin nombre"
-            if "POWER BIKE" in nombre_horario:
-                # Para POWER BIKE, sabemos que la hora de inicio es 7:30
-                hora_inicio = time(hour=7, minute=30)
-                print(f"CORRECCIÓN: Clase POWER BIKE, usando hora fija 7:30 como hora de inicio")
+            import re
+            hora_match = re.search(r'(\d{1,2})[:.:](\d{2})', nombre_horario)
+            if hora_match:
+                hora, minuto = map(int, hora_match.groups())
+                hora_inicio = time(hour=hora, minute=minuto)
+                print(f"ADVERTENCIA: hora_inicio estaba None, extraída del nombre '{nombre_horario}': {hora_inicio}")
             else:
-                # Intentamos extraer la hora del nombre del horario
-                import re
-                hora_match = re.search(r'(\d{1,2})[:.:](\d{2})', nombre_horario)
-                if hora_match:
-                    hora, minuto = map(int, hora_match.groups())
-                    hora_inicio = time(hour=hora, minute=minuto)
-                    print(f"Hora extraída del nombre: {hora_inicio}")
-                else:
-                    # Si no se puede extraer, dejamos la hora_inicio como None para mostrar un error claro
-                    print(f"ADVERTENCIA: No se pudo determinar la hora de inicio para '{nombre_horario}'")
-                    hora_inicio = time(hour=0, minute=0)  # Usar 00:00 como valor por defecto
+                # Si no se puede extraer, usar 00:00 como valor por defecto pero registrar advertencia
+                print(f"ADVERTENCIA CRÍTICA: No se pudo determinar hora_inicio para clase ID {row.id}, nombre '{nombre_horario}'. Usando 00:00 como fallback.")
+                hora_inicio = time(hour=0, minute=0)  # Usar 00:00 como valor por defecto
 
         # Obtener la duración o usar valor por defecto
         duracion = getattr(row, 'duracion', 60)
         
         # Calcular la hora de finalización como string
+        # IMPORTANTE: hora_inicio proviene directamente del horario asociado (horario_id) mediante el JOIN SQL.
+        # Cada clase realizada (ClaseRealizada) debe mostrar el horario correcto según su horario_id,
+        # sin mezclar datos de otros horarios aunque tengan el mismo nombre.
         if hora_inicio:
             hora_fin_str = calcular_hora_fin(hora_inicio, duracion)
             # Formatear hora_inicio como string para la plantilla
             try:
                 hora_inicio_str = hora_inicio.strftime('%H:%M')
-                print(f"DEBUG hora_inicio_str: {hora_inicio_str}")
+                print(f"DEBUG informe_mensual: Clase ID {row.id}, horario_id={row.horario_id}, hora_inicio_str={hora_inicio_str}, hora_fin_str={hora_fin_str}")
             except:
                 print(f"ERROR formateando hora_inicio: {hora_inicio}, tipo: {type(hora_inicio)}")
                 hora_inicio_str = None
@@ -1948,17 +1957,12 @@ def informe_mensual():
             }
         }
         
-        # Para POWER BIKE, establecemos la hora específica antes de calcular la puntualidad
-        if "POWER BIKE" in row.nombre:
-            print(f"CORRIGIENDO CLASE POWER BIKE para informe: ID={row.id}, hora_llegada={hora_llegada_str}")
-            hora_correcta = time(hour=7, minute=30)
-            clase['horario']['hora_inicio'] = hora_correcta
-            clase['horario']['hora_inicio_str'] = "07:30"
-            # Actualizar hora para puntualidad también
-            hora_para_puntualidad = hora_correcta
-            print(f"Hora corregida para POWER BIKE: {hora_correcta}")
+        # NOTA: Eliminada corrección hardcodeada para POWER BIKE que sobrescribía hora_inicio
+        # El JOIN SQL ya garantiza que row.hora_inicio corresponde al horario_id correcto.
+        # Si hora_inicio es None/null, el fallback en líneas 1860-1865 ya lo maneja apropiadamente.
+        # Esta sobrescritura causaba mezcla de horarios entre instancias de mañana y tarde.
         
-        # Calcular la puntualidad después de las correcciones
+        # Calcular la puntualidad usando el hora_inicio del horario asociado
         clase['puntualidad'] = calcular_puntualidad(hora_llegada, hora_para_puntualidad, row.nombre)
         
         clases_realizadas.append(clase)
@@ -1977,21 +1981,26 @@ def informe_mensual():
         key = (clase['fecha'], clase['horario_id'])
         clases_registradas_dict[key] = True
     
-    # Obtener todos los horarios activos
-    # Obtener todos los horarios, incluidos los inactivos pero con fecha de desactivación
+    # Obtener todos los horarios activos para el cálculo de clases no registradas
+    # IMPORTANTE: Filtrar solo horarios activos (activo=1) para evitar incluir horarios desactivados.
+    # Esto previene que aparezcan clases no registradas de horarios que ya no están en uso.
+    # Se mantiene compatibilidad con bases de datos antiguas que pueden no tener la columna 'activo'.
     try:
         sql_horarios = """
         SELECT id, nombre, hora_inicio, tipo_clase, dia_semana, profesor_id, duracion, activo, fecha_desactivacion 
         FROM horario_clase
+        WHERE activo = 1
+        ORDER BY nombre
         """
         result_horarios = db.session.execute(sql_horarios)
     except Exception as e:
         # Si la columna activo no existe, usar versión compatible con bases de datos antiguas
-        print(f"Error al ejecutar consulta con columna 'activo': {str(e)}")
+        print(f"Error al filtrar por activo: {str(e)}")
         print("Usando consulta alternativa sin columna 'activo'")
         sql_horarios = """
         SELECT id, nombre, hora_inicio, tipo_clase, dia_semana, profesor_id, duracion
         FROM horario_clase
+        ORDER BY nombre
         """
         result_horarios = db.session.execute(sql_horarios)
     
@@ -2075,10 +2084,28 @@ def informe_mensual():
         horarios_activos.append(horario)
     
     # Generar las clases que deberían haberse realizado pero no están registradas
+    # Solo incluir clases de horarios que estaban activos en la fecha específica
     clases_no_registradas = []
     for horario in horarios_activos:
         for fecha in fechas_mes:
-            # Si el día de la semana coincide con el día del horario
+            # Validar que el horario estaba activo en esta fecha específica
+            # 1. Verificar si el horario está marcado como activo
+            # (Ya filtrado por SQL, pero doble verificación por seguridad)
+            if not horario.get('activo', True):
+                continue
+            
+            # 2. Verificar fecha_desactivacion: si existe, la fecha debe ser anterior
+            # Un horario desactivado el día 15 no debe aparecer en clases no registradas del día 16 en adelante
+            fecha_desactivacion = horario.get('fecha_desactivacion')
+            if fecha_desactivacion is not None:
+                # Convertir a date si es datetime
+                if isinstance(fecha_desactivacion, datetime):
+                    fecha_desactivacion = fecha_desactivacion.date()
+                # Si la fecha del mes es posterior o igual a la fecha de desactivación, omitir
+                if fecha >= fecha_desactivacion:
+                    continue  # El horario fue desactivado antes o en esta fecha
+            
+            # 3. Si el día de la semana coincide con el día del horario
             if fecha.weekday() == horario['dia_semana']:
                 key = (fecha, horario['id'])
                 # Verificar si esta clase no está registrada
